@@ -1,20 +1,19 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import { UX_PREVIEW_PERSONAS, previewPersonaFromSearch } from "@/lib/ux-preview";
 
 export function PreviewRoleSwitcher() {
-  const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const active = previewPersonaFromSearch(searchParams.get("previewRole"));
   const persona = UX_PREVIEW_PERSONAS[active];
 
   function changeRole(role: string) {
-    const next = new URLSearchParams(searchParams.toString());
-    next.set("previewRole", previewPersonaFromSearch(role));
-    router.replace(`${pathname}?${next.toString()}`);
+    const next = new URL(window.location.href);
+    next.search = "";
+    next.searchParams.set("previewRole", previewPersonaFromSearch(role));
+    window.location.assign(next.toString());
   }
 
   return (
