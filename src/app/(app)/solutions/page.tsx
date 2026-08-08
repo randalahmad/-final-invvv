@@ -18,8 +18,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { readinessColor } from "@/lib/utils";
+import { PageHeader } from "@/components/shared/page-header";
 
-export const metadata: Metadata = { title: "سجل الحلول الابتكارية" };
+export const metadata: Metadata = { title: "الحلول الابتكارية" };
 
 const selectClass =
   "rounded-lg border border-border bg-surface px-3 py-2 text-[12.5px] outline-none focus:border-primary dark:border-border-dark dark:bg-surface-dark";
@@ -48,20 +49,18 @@ export default async function SolutionsPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">سجل الحلول الابتكارية</h1>
-          <p className="mt-1 text-[13px] text-muted">السجل الرئيسي للحلول ضمن نطاقك (5.24.1).</p>
-        </div>
-        {canCreate && (
+      <PageHeader
+        title="الحلول الابتكارية"
+        description="محفظة الحلول المسجلة ومراحل نضجها وتنفيذها ضمن نطاق صلاحياتك."
+        action={canCreate ? (
           <Button asChild>
             <Link href="/solutions/new">
               <Plus className="h-4 w-4" />
-              حل جديد
+              تسجيل حل
             </Link>
           </Button>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {/* Server-rendered search + filters (GET) */}
       <form method="GET" className="flex flex-wrap items-end gap-2 rounded-2xl border border-border bg-surface p-3 dark:border-border-dark dark:bg-surface-dark">
@@ -111,10 +110,10 @@ export default async function SolutionsPage({
                 <thead>
                   <tr className="border-b border-border text-[11.5px] text-muted dark:border-border-dark">
                     <th className="px-4 py-2.5 text-start font-medium">الحل</th>
-                    <th className="px-4 py-2.5 text-start font-medium">الإدارة</th>
+                    <th className="px-4 py-2.5 text-start font-medium">المسؤول</th>
                     <th className="px-4 py-2.5 text-start font-medium">المصدر</th>
-                    <th className="px-4 py-2.5 text-start font-medium">النضج</th>
-                    <th className="px-4 py-2.5 text-start font-medium">التنفيذ</th>
+                    <th className="px-4 py-2.5 text-start font-medium">مرحلة النضج</th>
+                    <th className="px-4 py-2.5 text-start font-medium">حالة التنفيذ</th>
                     <th className="px-4 py-2.5 text-start font-medium">الحالة</th>
                     <th className="px-4 py-2.5 text-start font-medium">اكتمال البيانات</th>
                   </tr>

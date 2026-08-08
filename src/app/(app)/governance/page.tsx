@@ -7,19 +7,23 @@ import { listKanbanIdeas } from "@/modules/ideas/kanban";
 import { IdeasKanban } from "@/modules/ideas/components/ideas-kanban";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/shared/page-header";
 
-export const metadata: Metadata = { title: "حوكمة الابتكار" };
+export const metadata: Metadata = { title: "اللجان والتقييمات" };
 
 export default async function GovernancePage() {
   const ctx = await getAccessContext();
   // Server-side gate: no idea data is fetched without `idea.view`.
   if (!ctx || !can(ctx, "idea.view")) {
     return (
-      <Card className="border-dashed">
-        <CardContent className="px-6 py-16 text-center">
-          <p className="text-sm text-muted">لوحة حوكمة الأفكار متاحة للمستخدمين المخوّلين فقط.</p>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-5">
+        <PageHeader title="اللجان والتقييمات" description="متابعة اللجان ومسارات تقييم مخرجات الابتكار ضمن صلاحياتك." />
+        <Card className="border-dashed">
+          <CardContent className="px-6 py-16 text-center">
+            <p className="text-sm text-muted">تفاصيل التقييم متاحة للمستخدمين المخوّلين فقط.</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -27,29 +31,25 @@ export default async function GovernancePage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">حوكمة الابتكار — من الفكرة إلى الاعتماد</h1>
-          <p className="mt-1 text-[13px] text-muted">
-            لوحة مبنية على سجلات الأفكار الفعلية ضمن نطاقك. اضغط على أي بطاقة لفتح تفاصيل الفكرة وتنفيذ الإجراءات.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="اللجان والتقييمات"
+        description="متابعة لجان الابتكار ومسار تقييم السجلات الفعلية ضمن نطاقك."
+        action={<div className="flex items-center gap-2">
           <Button asChild variant="outline">
             <Link href="/governance/committees">اللجان</Link>
           </Button>
           <Button asChild>
             <Link href="/governance/ideas/new">
               <Plus className="h-4 w-4" />
-              فكرة جديدة
+              إضافة إلى بنك الابتكار
             </Link>
           </Button>
-        </div>
-      </div>
+        </div>}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>مسار حوكمة الأفكار</CardTitle>
+          <CardTitle>مسار التقييم والاعتماد</CardTitle>
         </CardHeader>
         <CardContent>
           <IdeasKanban columns={columns} />

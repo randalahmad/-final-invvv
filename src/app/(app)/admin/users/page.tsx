@@ -7,8 +7,9 @@ import { AssignRoleForm, UserRoleBadges } from "@/modules/admin/users/components
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shared/page-header";
 
-export const metadata: Metadata = { title: "إدارة المستخدمين والصلاحيات" };
+export const metadata: Metadata = { title: "المستخدمون والصلاحيات" };
 
 const STATUS_LABELS: Record<string, string> = { ACTIVE: "نشط", INACTIVE: "غير نشط", SUSPENDED: "موقوف" };
 const STATUS_VARIANT: Record<string, "success" | "neutral" | "danger"> = { ACTIVE: "success", INACTIVE: "neutral", SUSPENDED: "danger" };
@@ -21,15 +22,11 @@ export default async function AdminUsersPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">إدارة المستخدمين والصلاحيات</h1>
-          <p className="mt-1 text-[13px] text-muted">المستخدمون المعتمدون وأدوارهم على مستوى المنصة.</p>
-        </div>
+      <PageHeader title="المستخدمون والصلاحيات" description="المستخدمون المعتمدون وأدوارهم على مستوى المنصة." action={
         <Button asChild size="sm" variant="outline">
           <Link href="/admin/users/requests">طلبات التسجيل</Link>
         </Button>
-      </div>
+      } />
 
       <Card>
         <CardContent className="p-0">

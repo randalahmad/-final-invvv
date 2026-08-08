@@ -5,6 +5,7 @@ import { listAuditLog, listDistinctAuditActions } from "@/modules/audit/service"
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shared/page-header";
 
 export const metadata: Metadata = { title: "سجل التدقيق" };
 
@@ -21,10 +22,7 @@ export default async function AuditLogPage({ searchParams }: { searchParams: { q
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">سجل التدقيق</h1>
-        <p className="mt-1 text-[13px] text-muted">آخر 200 عملية مُسجَّلة على مستوى المنصة — للقراءة فقط.</p>
-      </div>
+      <PageHeader title="سجل التدقيق" description="آخر 200 عملية مسجلة على مستوى المنصة — للقراءة فقط." />
 
       <form method="GET" className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-surface/60 p-3 dark:border-border-dark dark:bg-surface-dark/40">
         <div className="flex min-w-[200px] flex-1 flex-col gap-1.5">

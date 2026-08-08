@@ -52,8 +52,8 @@ export function EvidenceUploadForm({ solutionId }: { solutionId: string }) {
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="classification">تصنيف الدليل (اختياري)</Label>
-        <Input id="classification" name="classification" placeholder="مثال: APPROVAL_MEMO" />
-        <p className="text-[11px] text-muted">يُستخدم لاحقًا في مطابقة أنواع الأدلة المطلوبة.</p>
+        <Input id="classification" name="classification" placeholder="مثال: محضر اعتماد أو تقرير قياس أثر" />
+        <p className="text-[11px] text-muted">يساعد التصنيف في مطابقة الوثيقة مع متطلبات الأدلة.</p>
       </div>
 
       <div className="flex flex-col gap-2">

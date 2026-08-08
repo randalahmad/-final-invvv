@@ -8,7 +8,7 @@
   }
 
   body {
-    @apply bg-bg text-slate-800 antialiased;
+    @apply overflow-x-hidden bg-bg text-slate-800 antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 

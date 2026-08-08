@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/shared/page-header";
 
-export const metadata: Metadata = { title: "التوجه الاستراتيجي" };
+export const metadata: Metadata = { title: "الاستراتيجية والخطة السنوية" };
 
 const STATUS_VARIANT: Record<string, "success" | "neutral" | "warning"> = {
   ACTIVE: "success",
@@ -35,22 +36,18 @@ export default async function StrategyPage({ searchParams }: { searchParams: { a
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">التوجه الاستراتيجي</h1>
-          <p className="mt-1 text-[13px] text-muted">
-            الأهداف الاستراتيجية والجهات المسؤولة عنها (5.23.1). ربط الأهداف بمعايير الامتثال والوثائق المُستوفاة يُبنى في المرحلة التالية.
-          </p>
-        </div>
-        {canManage && !includeArchived && (
+      <PageHeader
+        title="الاستراتيجية والخطة السنوية"
+        description="الأهداف الاستراتيجية ومؤشرات الأداء والجهات المسؤولة عنها ضمن نطاقك."
+        action={canManage && !includeArchived ? (
           <Button asChild>
             <Link href="/strategy/new">
               <Plus className="h-4 w-4" />
               هدف استراتيجي جديد
             </Link>
           </Button>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       <form method="GET" className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-surface/60 p-3 dark:border-border-dark dark:bg-surface-dark/40">
         <div className="flex min-w-[200px] flex-1 flex-col gap-1.5">

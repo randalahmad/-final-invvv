@@ -6,6 +6,7 @@ import { requirePermission, getAccessContext } from "@/server/authz";
 import { getPlatformSummary } from "@/modules/reports/service";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shared/page-header";
 
 export const metadata: Metadata = { title: "التقارير" };
 
@@ -25,10 +26,7 @@ export default async function ReportsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">التقارير</h1>
-        <p className="mt-1 text-[13px] text-muted">ملخص حيّ من البيانات الفعلية ضمن نطاقك، وتصدير تقارير الامتثال التفصيلية.</p>
-      </div>
+      <PageHeader title="التقارير" description="ملخص حي من البيانات الفعلية ضمن نطاقك، مع الوصول إلى التقارير التفصيلية المتاحة." />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c) => (

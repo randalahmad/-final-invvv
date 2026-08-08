@@ -12,8 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/shared/page-header";
 
-export const metadata: Metadata = { title: "الأفكار" };
+export const metadata: Metadata = { title: "بنك الابتكار" };
 
 // "ARCHIVED" is intentionally not a pill here — it's reached via the
 // dedicated ?archived=1 toggle below (same mechanism as /solutions), which
@@ -43,26 +44,20 @@ export default async function IdeasListPage({ searchParams }: { searchParams: { 
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">
-            {includeArchived ? "أرشيف الأفكار" : "الأفكار الابتكارية"}
-          </h1>
-          <p className="mt-1 text-[13px] text-muted">
-            {includeArchived
-              ? "الأفكار المؤرشفة ضمن نطاقك. يمكن استعادة أي فكرة إلى حالتها السابقة."
-              : "إنشاء ومتابعة الأفكار ضمن نطاق إدارتك (5.23.3 حوكمة الابتكار)."}
-          </p>
-        </div>
-        {!includeArchived && (
+      <PageHeader
+        title={includeArchived ? "أرشيف بنك الابتكار" : "بنك الابتكار"}
+        description={includeArchived
+          ? "السجلات المؤرشفة ضمن نطاقك، مع إمكانية استعادتها إلى حالتها السابقة."
+          : "تسجيل ومتابعة الأفكار ومخرجات الابتكار المتاحة ضمن نطاق إدارتك."}
+        action={!includeArchived ? (
           <Button asChild>
             <Link href="/governance/ideas/new">
               <Plus className="h-4 w-4" />
-              فكرة جديدة
+              إضافة سجل
             </Link>
           </Button>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-1.5">
@@ -117,7 +112,7 @@ export default async function IdeasListPage({ searchParams }: { searchParams: { 
                     <th className="px-4 py-2.5 text-start font-medium">العنوان</th>
                     <th className="px-4 py-2.5 text-start font-medium">الحالة</th>
                     <th className="px-4 py-2.5 text-start font-medium">الإدارة</th>
-                    <th className="px-4 py-2.5 text-start font-medium">مقدّم الفكرة</th>
+                    <th className="px-4 py-2.5 text-start font-medium">المسؤول</th>
                     <th className="px-4 py-2.5 text-start font-medium">آخر تحديث</th>
                     {includeArchived && <th className="px-4 py-2.5 text-start font-medium">إجراء</th>}
                   </tr>

@@ -15,9 +15,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen bg-bg dark:bg-bg-dark">
       <AppSidebar isAdmin={isAdmin} canViewIdeas={canViewIdeas} />
-      <div className="flex min-h-screen flex-1 flex-col">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <Topbar userName={user.name} />
-        <main className="flex-1 p-6 print:p-0 lg:p-7">{children}</main>
+        <main className="min-w-0 flex-1 p-4 print:p-0 sm:p-6 lg:p-7">{children}</main>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, FileCheck2, FolderCheck } from "lucide-react";
 
 import { StatTile } from "@/components/shared/stat-tile";
+import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReadinessGrid } from "@/modules/dashboard/components/readiness-grid";
 import { MaturityBreakdown } from "@/modules/dashboard/components/maturity-breakdown";
@@ -25,6 +26,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-5">
+      <PageHeader
+        title="لوحة العمل"
+        description="نقطة البداية لمتابعة الحلول والجاهزية والإجراءات المتاحة ضمن نطاق صلاحياتك."
+      />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <StatTile
           label="مؤشر جاهزية تقديري داخلي"
@@ -58,7 +63,7 @@ export default async function DashboardPage() {
         <MaturityBreakdown stats={stats} />
         <Card>
           <CardHeader>
-            <CardTitle>مسار العرض التشغيلي</CardTitle>
+            <CardTitle>ابدأ من هنا</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
             <Link
@@ -66,7 +71,7 @@ export default async function DashboardPage() {
               className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5 text-[13px] font-semibold hover:border-primary/40 hover:bg-primary-50/40 dark:border-border-dark"
             >
               <FolderCheck className="h-4 w-4 text-primary" />
-              <span className="flex-1">فتح ملف الامتثال والفجوات</span>
+              <span className="flex-1">مراجعة الجاهزية وفجوات الامتثال</span>
               <ArrowLeft className="h-4 w-4 text-muted" />
             </Link>
             <Link
@@ -74,7 +79,7 @@ export default async function DashboardPage() {
               className="flex items-center gap-3 rounded-lg border border-border px-3 py-2.5 text-[13px] font-semibold hover:border-primary/40 hover:bg-primary-50/40 dark:border-border-dark"
             >
               <FileCheck2 className="h-4 w-4 text-primary" />
-              <span className="flex-1">استعراض الحلول والأدلة</span>
+              <span className="flex-1">استعراض الحلول الابتكارية</span>
               <ArrowLeft className="h-4 w-4 text-muted" />
             </Link>
           </CardContent>

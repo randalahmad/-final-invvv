@@ -30,8 +30,8 @@ export function AlertsCenter({ alerts }: { alerts: AlertItemData[] }) {
     <div className="flex flex-col gap-4">
       <Card>
         <CardContent className="pt-5 text-[12.5px] leading-relaxed text-muted">
-          يبني النظام تلقائيًا المحدّدات الزمنية من قاعدة البيانات (مواعيد الاجتماعات الدورية،
-          انتهاء الاتفاقيات، وتجاوز نوافذ قياس الأثر).
+          تظهر هنا المواعيد والإجراءات المستخرجة من السجلات الفعلية، مثل الاجتماعات الدورية
+          وانتهاء الاتفاقيات ومواعيد قياس الأثر.
         </CardContent>
       </Card>
 

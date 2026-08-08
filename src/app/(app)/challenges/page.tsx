@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/shared/page-header";
 
-export const metadata: Metadata = { title: "إدارة التحديات" };
+export const metadata: Metadata = { title: "التحديات" };
 
 const STATUS_VARIANT: Record<string, "success" | "neutral" | "warning" | "primary" | "danger"> = {
   NEW: "neutral",
@@ -45,20 +46,18 @@ export default async function ChallengesPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">إدارة التحديات</h1>
-          <p className="mt-1 text-[13px] text-muted">تسجيل التحديات التي تواجه الجهات، وربطها بالحلول الابتكارية المقترحة.</p>
-        </div>
-        {canCreate && !includeArchived && (
+      <PageHeader
+        title="التحديات"
+        description="التحديات المسجلة لدى الجهات ومسار ربطها بالحلول الابتكارية."
+        action={canCreate && !includeArchived ? (
           <Button asChild>
             <Link href="/challenges/new">
               <Plus className="h-4 w-4" />
               تسجيل تحدٍّ جديد
             </Link>
           </Button>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       <form method="GET" className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-surface/60 p-3 dark:border-border-dark dark:bg-surface-dark/40">
         <div className="flex min-w-[200px] flex-1 flex-col gap-1.5">

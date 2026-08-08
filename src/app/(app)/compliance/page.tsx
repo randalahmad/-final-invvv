@@ -12,8 +12,9 @@ import { READINESS_BAND_LABELS, READINESS_BAND_VARIANT, ESTIMATED_NOTE } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { PageHeader } from "@/components/shared/page-header";
 
-export const metadata: Metadata = { title: "ملف الامتثال" };
+export const metadata: Metadata = { title: "الجاهزية والامتثال" };
 
 const BAND_COLOR = { READY: "#16a34a", NEARLY_READY: "#4F46E5", IN_PROGRESS: "#d97706", NOT_READY: "#dc2626" } as const;
 
@@ -31,10 +32,10 @@ export default async function CompliancePage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">ملف الامتثال</h1>
-        <p className="mt-1 text-[12.5px] leading-relaxed text-muted">{ESTIMATED_NOTE}</p>
-      </div>
+      <PageHeader
+        title="الجاهزية والامتثال"
+        description={`متابعة الجاهزية التقديرية والأدلة الناتجة عن العمل التشغيلي. ${ESTIMATED_NOTE}`}
+      />
 
       {strategyReadiness !== null && (
         <Card>

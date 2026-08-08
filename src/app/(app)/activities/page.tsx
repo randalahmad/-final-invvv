@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/shared/page-header";
 
-export const metadata: Metadata = { title: "منهجيات الابتكار وفعالياته" };
+export const metadata: Metadata = { title: "البرامج والفعاليات" };
 
 const STATUS_VARIANT: Record<string, "success" | "neutral" | "warning" | "danger"> = {
   PLANNED: "neutral",
@@ -46,20 +47,18 @@ export default async function ActivitiesPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">منهجيات الابتكار وفعالياته</h1>
-          <p className="mt-1 text-[13px] text-muted">توثيق اللقاءات والبرامج والورش والهاكاثونات والمبادرات (5.23.2).</p>
-        </div>
-        {canManage && !includeArchived && (
+      <PageHeader
+        title="البرامج والفعاليات"
+        description="إدارة البرامج والورش والهاكاثونات والمبادرات الموثقة ضمن نطاقك."
+        action={canManage && !includeArchived ? (
           <Button asChild>
             <Link href="/activities/new">
               <Plus className="h-4 w-4" />
-              نشاط جديد
+              برنامج أو فعالية جديدة
             </Link>
           </Button>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       <form method="GET" className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-surface/60 p-3 dark:border-border-dark dark:bg-surface-dark/40">
         <div className="flex min-w-[200px] flex-1 flex-col gap-1.5">

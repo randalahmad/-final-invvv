@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { ShieldCheck, Lightbulb } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 import { navGroups } from "@/config/navigation";
 import { site } from "@/config/site";
@@ -17,15 +15,12 @@ export function AppSidebar({
   canViewIdeas?: boolean;
 }) {
   const pathname = usePathname();
-  const adminActive = pathname.startsWith("/admin");
-  const ideasActive = pathname.startsWith("/governance/ideas");
-
   return (
-    <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col overflow-y-auto bg-gradient-sidebar px-3.5 py-4 text-slate-200 print:hidden">
+    <aside className="sticky top-0 flex h-screen w-16 shrink-0 flex-col overflow-y-auto overflow-x-hidden bg-gradient-sidebar px-2 py-4 text-slate-200 print:hidden md:w-64 md:px-3.5">
       {/* Brand — temporary text-based identity */}
-      <div className="mb-3.5 border-b border-white/10 px-2 pb-4 pt-1.5">
-        <div className="text-[14.5px] font-bold text-white">{site.name}</div>
-        <div className="mt-1.5 text-[11px] leading-relaxed text-slate-400">
+      <div className="mb-3.5 border-b border-white/10 px-1 pb-4 pt-1.5 text-center md:px-2 md:text-start">
+        <div className="text-sm font-bold text-white md:text-[14.5px]">{site.shortName}</div>
+        <div className="mt-1.5 hidden text-[11px] leading-relaxed text-slate-400 md:block">
           {site.owner}
           <br />
           {site.ownerUnit}
@@ -33,11 +28,17 @@ export function AppSidebar({
       </div>
 
       <nav className="flex flex-col gap-1">
-        {navGroups.map((group) => (
+        {navGroups.map((group) => {
+          const visibleItems = group.items.filter(
+            (item) => (!item.adminOnly || isAdmin) && (!item.ideaAccessOnly || canViewIdeas),
+          );
+          if (!visibleItems.length) return null;
+          return (
           <div key={group.label}>
-            <div className="px-2.5 pb-1.5 pt-3.5 text-[10.5px] text-slate-400">{group.label}</div>
-            {group.items.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(item.href + "/");
+            <div className="hidden px-2.5 pb-1.5 pt-3.5 text-[10.5px] text-slate-400 md:block">{group.label}</div>
+            {visibleItems.map((item) => {
+              const exactOnly = item.href === "/governance" || item.href === "/admin/users";
+              const active = pathname === item.href || (!exactOnly && pathname.startsWith(item.href + "/"));
               const Icon = item.icon;
               return (
                 <Link
@@ -45,53 +46,19 @@ export function AppSidebar({
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "mb-0.5 flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.3px] transition-colors",
+                    "mb-0.5 flex items-center justify-center gap-2.5 rounded-lg px-2 py-2.5 text-[13.3px] transition-colors md:justify-start md:px-3",
                     active
                       ? "bg-secondary font-semibold text-white shadow-lg shadow-secondary/30"
                       : "text-slate-300 hover:bg-white/5 hover:text-white",
                   )}
                 >
                   <Icon className="h-[18px] w-[18px] shrink-0" />
-                  <span className="truncate">{item.label}</span>
+                  <span className="hidden truncate md:inline">{item.label}</span>
                 </Link>
               );
             })}
-            {canViewIdeas && group.label === "مسار العرض التشغيلي" && (
-              <Link
-                href="/governance/ideas"
-                aria-current={ideasActive ? "page" : undefined}
-                className={cn(
-                  "mb-0.5 flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.3px] transition-colors",
-                  ideasActive
-                    ? "bg-secondary font-semibold text-white shadow-lg shadow-secondary/30"
-                    : "text-slate-300 hover:bg-white/5 hover:text-white",
-                )}
-              >
-                <Lightbulb className="h-[18px] w-[18px] shrink-0" />
-                <span className="truncate">الأفكار</span>
-              </Link>
-            )}
           </div>
-        ))}
-
-        {isAdmin && (
-          <div>
-            <div className="px-2.5 pb-1.5 pt-3.5 text-[10.5px] text-slate-400">إدارة النظام</div>
-            <Link
-              href="/admin/users/requests"
-              aria-current={adminActive ? "page" : undefined}
-              className={cn(
-                "mb-0.5 flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.3px] transition-colors",
-                adminActive
-                  ? "bg-secondary font-semibold text-white shadow-lg shadow-secondary/30"
-                  : "text-slate-300 hover:bg-white/5 hover:text-white",
-              )}
-            >
-              <ShieldCheck className="h-[18px] w-[18px] shrink-0" />
-              <span className="truncate">طلبات التسجيل والحسابات</span>
-            </Link>
-          </div>
-        )}
+        )})}
       </nav>
     </aside>
   );
