@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { navGroupsForPermissions } from "@/config/navigation";
 import {
   permissionsForPreviewPersona,
+  canPreviewPersonaAccessPath,
   previewPersonaFromSearch,
   UX_PREVIEW_PERSONAS,
   type PreviewPersonaKey,
@@ -46,5 +47,20 @@ describe("permission-aware navigation", () => {
     expect(labels).toEqual(["لوحة العمل", "الحلول الابتكارية", "الجاهزية والامتثال", "المهام والتنبيهات", "التقارير"]);
     expect(labels).not.toContain("بنك الابتكار");
     expect(labels).not.toContain("المستخدمون والصلاحيات");
+  });
+});
+
+describe("preview route guard", () => {
+  it("redirects internal, partner, and viewer personas away from administration", () => {
+    expect(canPreviewPersonaAccessPath("internal", "/admin/users/requests")).toBe(false);
+    expect(canPreviewPersonaAccessPath("partner", "/admin/users")).toBe(false);
+    expect(canPreviewPersonaAccessPath("viewer", "/audit")).toBe(false);
+  });
+
+  it("allows each persona's intended destinations", () => {
+    expect(canPreviewPersonaAccessPath("admin", "/admin/users/requests")).toBe(true);
+    expect(canPreviewPersonaAccessPath("internal", "/activities")).toBe(true);
+    expect(canPreviewPersonaAccessPath("partner", "/solutions/preview-solution")).toBe(true);
+    expect(canPreviewPersonaAccessPath("viewer", "/reports")).toBe(true);
   });
 });
