@@ -13,9 +13,11 @@ export default function middleware(request: NextRequest) {
     if (url.pathname === "/" || url.pathname.startsWith("/login") || url.pathname.startsWith("/register")) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
+    const previewRole = request.nextUrl.searchParams.get("previewRole");
     url.pathname = "/ux-preview";
     url.search = "";
     url.searchParams.set("path", request.nextUrl.pathname);
+    if (previewRole) url.searchParams.set("role", previewRole);
     return NextResponse.rewrite(url);
   }
   return authMiddleware(request as never);

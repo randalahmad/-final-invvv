@@ -1,13 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Eye, FolderCheck, LogOut } from "lucide-react";
 
 import { InitialsAvatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { logoutAction } from "@/modules/auth/actions";
+import { PreviewRoleSwitcher } from "@/components/layout/preview-role-switcher";
+import { permissionsForPreviewPersona, previewPersonaFromSearch } from "@/lib/ux-preview";
 
-export function Topbar({ userName, preview = false }: { userName: string; preview?: boolean }) {
+export function Topbar({ userName, preview = false, canViewCompliance = false }: { userName: string; preview?: boolean; canViewCompliance?: boolean }) {
+  const searchParams = useSearchParams();
+  const showCompliance = preview
+    ? permissionsForPreviewPersona(previewPersonaFromSearch(searchParams.get("previewRole"))).includes("compliance.view")
+    : canViewCompliance;
   return (
     <header className="sticky top-0 z-10 flex items-center justify-end border-b border-border bg-surface px-4 py-3.5 dark:border-border-dark dark:bg-surface-dark sm:px-6 print:hidden">
       <div className="flex min-w-0 items-center gap-2.5">
@@ -17,19 +24,19 @@ export function Topbar({ userName, preview = false }: { userName: string; previe
             وضع معاينة الواجهات
           </div>
         )}
-        <Button asChild variant="outline" size="sm">
+        {showCompliance && <Button asChild variant="outline" size="sm">
           <Link href="/compliance" className="hidden sm:flex">
             <FolderCheck className="h-4 w-4" />
             الجاهزية والامتثال
           </Link>
-        </Button>
+        </Button>}
 
-        <div className="flex items-center gap-2 ps-1">
+        {preview ? <PreviewRoleSwitcher /> : <div className="flex items-center gap-2 ps-1">
           <InitialsAvatar name={userName} className="h-9 w-9" />
           <span className="hidden text-sm font-semibold text-slate-700 sm:block dark:text-slate-200">
             {userName}
           </span>
-        </div>
+        </div>}
 
         {!preview && <form action={logoutAction}>
           <Button type="submit" variant="ghost" size="icon" aria-label="تسجيل الخروج">

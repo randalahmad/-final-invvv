@@ -4,17 +4,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
-import { navGroups } from "@/config/navigation";
+import { navGroupsForPermissions } from "@/config/navigation";
 import { site } from "@/config/site";
+import type { PermissionKey } from "@/modules/auth/permissions";
+import { permissionsForPreviewPersona, previewPersonaFromSearch } from "@/lib/ux-preview";
+import { useSearchParams } from "next/navigation";
 
 export function AppSidebar({
-  isAdmin = false,
-  canViewIdeas = false,
+  permissions = [],
+  preview = false,
 }: {
-  isAdmin?: boolean;
-  canViewIdeas?: boolean;
+  permissions?: PermissionKey[];
+  preview?: boolean;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const effectivePermissions = preview
+    ? permissionsForPreviewPersona(previewPersonaFromSearch(searchParams.get("previewRole")))
+    : permissions;
+  const visibleGroups = navGroupsForPermissions(effectivePermissions);
   return (
     <aside className="sticky top-0 flex h-screen w-16 shrink-0 flex-col overflow-y-auto overflow-x-hidden bg-gradient-sidebar px-2 py-4 text-slate-200 print:hidden md:w-64 md:px-3.5">
       {/* Brand — temporary text-based identity */}
@@ -28,15 +36,11 @@ export function AppSidebar({
       </div>
 
       <nav className="flex flex-col gap-1">
-        {navGroups.map((group) => {
-          const visibleItems = group.items.filter(
-            (item) => (!item.adminOnly || isAdmin) && (!item.ideaAccessOnly || canViewIdeas),
-          );
-          if (!visibleItems.length) return null;
+        {visibleGroups.map((group) => {
           return (
           <div key={group.label}>
             <div className="hidden px-2.5 pb-1.5 pt-3.5 text-[10.5px] text-slate-400 md:block">{group.label}</div>
-            {visibleItems.map((item) => {
+            {group.items.map((item) => {
               const exactOnly = item.href === "/governance" || item.href === "/admin/users";
               const active = pathname === item.href || (!exactOnly && pathname.startsWith(item.href + "/"));
               const Icon = item.icon;
