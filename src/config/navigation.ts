@@ -11,9 +11,15 @@ import {
   FileBarChart,
   Bell,
   ClipboardList,
+  Building2,
+  FileText,
+  Handshake,
+  Settings,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 import type { PermissionKey } from "@/modules/auth/permissions";
+import { PREVIEW_PERSONA_PATHS, type PreviewPersonaKey } from "@/lib/ux-preview";
 
 export interface NavItem {
   href: string;
@@ -82,6 +88,30 @@ export function navGroupsForPermissions(permissions: Iterable<PermissionKey>): N
     .filter((group) => group.items.length > 0);
 }
 
+const previewOnlyGroups: NavGroup[] = [
+  { label: "المتابعة والتقييم", items: [
+    { href: "/impact", label: "قياس الأثر", icon: TrendingUp },
+    { href: "/evidence", label: "الأدلة والوثائق", icon: FileText },
+  ] },
+  { label: "العلاقات والتعاون", items: [
+    { href: "/partners", label: "الجهات والشركاء", icon: Building2 },
+    { href: "/agreements", label: "الاتفاقيات والتعاون", icon: Handshake },
+  ] },
+  { label: "إدارة النظام", items: [
+    { href: "/settings", label: "الإعدادات", icon: Settings },
+  ] },
+];
+
+export function navGroupsForPreviewPersona(persona: PreviewPersonaKey): NavGroup[] {
+  const allowed = new Set(PREVIEW_PERSONA_PATHS[persona]);
+  const groups = [...navGroups, ...previewOnlyGroups];
+  const order = ["الرئيسية", "إدارة الابتكار", "المتابعة والتقييم", "العلاقات والتعاون", "المتابعة الإدارية", "إدارة النظام"];
+  return order.map((label) => ({
+    label,
+    items: groups.filter((group) => group.label === label).flatMap((group) => group.items).filter((item) => allowed.has(item.href)),
+  })).filter((group) => group.items.length > 0);
+}
+
 /** Human-readable Arabic titles per route, for the topbar. */
 export const routeTitles: Record<string, string> = {
   "/dashboard": "لوحة العمل",
@@ -92,11 +122,14 @@ export const routeTitles: Record<string, string> = {
   "/challenges": "التحديات",
   "/solutions": "الحلول الابتكارية",
   "/impact": "قياس أثر الحلول",
+  "/evidence": "الأدلة والوثائق",
   "/partners": "سجل الجهات والشراكات",
+  "/agreements": "الاتفاقيات والتعاون",
   "/compliance": "الجاهزية والامتثال",
   "/alerts": "المهام والتنبيهات",
   "/admin/users/requests": "طلبات التسجيل",
   "/admin/users": "المستخدمون والصلاحيات",
   "/audit": "سجل التدقيق",
   "/reports": "التقارير",
+  "/settings": "الإعدادات",
 };

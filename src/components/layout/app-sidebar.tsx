@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
-import { navGroupsForPermissions } from "@/config/navigation";
+import { navGroupsForPermissions, navGroupsForPreviewPersona } from "@/config/navigation";
 import { site } from "@/config/site";
 import type { PermissionKey } from "@/modules/auth/permissions";
-import { permissionsForPreviewPersona, previewPersonaFromSearch } from "@/lib/ux-preview";
+import { previewPersonaFromSearch } from "@/lib/ux-preview";
 import { useSearchParams } from "next/navigation";
 
 export function AppSidebar({
@@ -19,10 +19,10 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const effectivePermissions = preview
-    ? permissionsForPreviewPersona(previewPersonaFromSearch(searchParams.get("previewRole")))
-    : permissions;
-  const visibleGroups = navGroupsForPermissions(effectivePermissions);
+  const persona = previewPersonaFromSearch(searchParams.get("previewRole"));
+  const visibleGroups = preview
+    ? navGroupsForPreviewPersona(persona)
+    : navGroupsForPermissions(permissions);
   return (
     <aside className="sticky top-0 flex h-screen w-16 shrink-0 flex-col overflow-y-auto overflow-x-hidden bg-gradient-sidebar px-2 py-4 text-slate-200 print:hidden md:w-64 md:px-3.5">
       {/* Brand — temporary text-based identity */}
