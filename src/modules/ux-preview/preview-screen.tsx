@@ -1,0 +1,65 @@
+import Link from "next/link";
+import { ArrowLeft, Clock3, Eye, FileCheck2, Plus, TriangleAlert } from "lucide-react";
+
+import { PageHeader } from "@/components/shared/page-header";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+
+const strategies = [["SO-01","رفع كفاءة تبني الحلول الابتكارية","إدارة الابتكار","نشط","72%"],["SO-02","تعزيز الشراكات البحثية والتقنية","مركز الشراكات","نشط","58%"],["SO-03","بناء ثقافة الابتكار المؤسسي","الموارد البشرية","مسودة","35%"]];
+const programs = [["هاكاثون المدن المستدامة 2026","هاكاثون","جارٍ","مركز الابتكار","15 أغسطس 2026"],["برنامج مسرعة الحلول الحكومية","برنامج","مخطط","إدارة التحول المؤسسي","1 سبتمبر 2026"],["ورشة تصميم الخدمات حول المستفيد","ورشة عمل","مكتمل","إدارة تجربة المستفيد","28 يوليو 2026"]];
+const challenges = [["خفض زمن معالجة طلبات المستفيدين","إدارة تجربة المستفيد","قيد الدراسة","تحسين الخدمات"],["تحسين كفاءة استهلاك الطاقة","إدارة المرافق","حل مقترح","الاستدامة"],["أتمتة فرز الوثائق الواردة","إدارة الوثائق","قيد التنفيذ","التحول الرقمي"]];
+const ideas = [["مساعد ذكي لتوجيه المستفيد","مقدمة","تجربة المستفيد","سارة القحطاني","إجراء تقييم أولي"],["نظام تنبؤ باستهلاك الطاقة","قيد المراجعة","إدارة المرافق","خالد الحربي","استكمال البيانات"],["منصة مشاركة المعدات البحثية","معتمدة للتجربة","مركز الأبحاث","ريم الشهري","إعداد خطة التجربة"],["لوحة متابعة المبادرات الداخلية","مسودة","إدارة الابتكار","نورة العتيبي","إكمال المسودة"]];
+const solutions = [["المساعد الرقمي لخدمات المستفيدين","إدارة تجربة المستفيد","نسخة تجريبية","قيد التنفيذ","74%"],["نظام إدارة الطاقة التنبؤي","إدارة المرافق","إثبات مفهوم","تخطيط","52%"],["بوابة مشاركة الأصول البحثية","مركز الأبحاث","تشغيل فعلي","تشغيل","91%"]];
+
+function PreviewAction({ children }: { children: string }) {
+  return <Button disabled title="غير متاح في وضع المعاينة"><Plus className="h-4 w-4" />{children}</Button>;
+}
+
+function Table({ headers, rows, firstLink }: { headers: string[]; rows: string[][]; firstLink?: string }) {
+  return <Card className="min-w-0 max-w-full overflow-hidden"><CardContent className="min-w-0 p-0"><div className="max-w-full overflow-x-auto"><table className="w-full min-w-[720px] text-start">
+    <thead><tr className="border-b text-[11.5px] text-muted">{headers.map((h)=><th key={h} className="px-4 py-3 text-start font-medium">{h}</th>)}</tr></thead>
+    <tbody>{rows.map((row,i)=><tr key={row[0]} className="border-b border-border/60 last:border-0 hover:bg-slate-50/60">{row.map((cell,j)=><td key={`${i}-${j}`} className="px-4 py-3 text-[12.5px] text-slate-600">{j===0&&firstLink&&i===0?<Link href={firstLink} className="font-semibold text-primary hover:underline">{cell}</Link>:<span className={j===0?"font-semibold text-slate-800":""}>{cell}</span>}</td>)}</tr>)}</tbody>
+  </table></div></CardContent></Card>;
+}
+
+function Collection(p:{title:string;description:string;action:string;headers:string[];rows:string[][];firstLink?:string}) {
+  return <div className="flex flex-col gap-5"><PageHeader title={p.title} description={p.description} action={<PreviewAction>{p.action}</PreviewAction>}/><Table headers={p.headers} rows={p.rows} firstLink={p.firstLink}/></div>;
+}
+
+function Dashboard(){return <div className="flex flex-col gap-5"><PageHeader title="لوحة العمل" description="نقطة البداية لمتابعة الأعمال والبرامج والحلول ضمن نطاق مسؤوليتك."/>
+  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[["إجراءات تحتاج متابعة","5"],["برامج جارية","2"],["حلول ابتكارية","3"],["الجاهزية التقديرية","68%"]].map(([l,v])=><Card key={l}><CardContent className="p-5"><p className="text-[12px] text-muted">{l}</p><p className="mt-2 text-2xl font-bold">{v}</p></CardContent></Card>)}</div>
+  <div className="grid gap-4 lg:grid-cols-3"><Card className="lg:col-span-2"><CardHeader><CardTitle>ما يحتاج إجراء</CardTitle></CardHeader><CardContent className="space-y-3">{[["استكمال بيانات نظام إدارة الطاقة","اليوم","عاجل"],["مراجعة مخرجات هاكاثون المدن المستدامة","12 أغسطس","مراجعة"],["رفع محضر لجنة التقييم","15 أغسطس","وثيقة"]].map(([t,d,s])=><div key={t} className="flex items-center gap-3 rounded-xl border p-3"><TriangleAlert className="h-4 w-4 text-amber-600"/><div className="flex-1"><p className="text-[13px] font-semibold">{t}</p><p className="text-[11.5px] text-muted">الموعد المستهدف: {d}</p></div><Badge variant="warning">{s}</Badge></div>)}</CardContent></Card>
+  <Card><CardHeader><CardTitle>البرامج الجارية</CardTitle></CardHeader><CardContent className="space-y-3">{programs.slice(0,2).map(p=><div key={p[0]} className="border-b pb-3 last:border-0"><p className="text-[13px] font-semibold">{p[0]}</p><p className="mt-1 text-[11.5px] text-muted">{p[2]} · {p[4]}</p></div>)}</CardContent></Card></div></div>}
+
+function Solution(){return <div className="flex flex-col gap-5"><div><Link href="/solutions" className="text-[12px] text-muted">العودة إلى الحلول</Link><div className="mt-2 flex items-center gap-3"><h1 className="text-xl font-bold">المساعد الرقمي لخدمات المستفيدين</h1><Badge variant="primary">نشط</Badge></div></div>
+  <div className="flex gap-2"><Button disabled variant="outline"><Eye className="h-4 w-4"/>معاينة فقط</Button><Button asChild variant="outline"><Link href="/compliance">الجاهزية والامتثال</Link></Button></div>
+  <div className="grid gap-5 lg:grid-cols-3"><div className="space-y-5 lg:col-span-2"><Card><CardHeader><CardTitle>ملخص الحل</CardTitle></CardHeader><CardContent className="space-y-4 text-[13px]"><div><p className="text-muted">الوصف</p><p className="mt-1">مساعد رقمي يوجّه المستفيد إلى الخدمة المناسبة ويختصر خطوات البحث والتواصل.</p></div><div><p className="text-muted">المشكلة</p><p className="mt-1">تعدد قنوات الخدمة وصعوبة تحديد المسار الصحيح للطلب من المرة الأولى.</p></div></CardContent></Card>
+  <Card><CardHeader><CardTitle>بيانات التنفيذ</CardTitle></CardHeader><CardContent><dl className="grid gap-x-8 sm:grid-cols-2">{[["المسؤول","سارة القحطاني"],["الإدارة المالكة","إدارة تجربة المستفيد"],["مرحلة النضج","نسخة تجريبية"],["حالة التنفيذ","قيد التنفيذ"],["الإجراء التالي","اعتماد نتائج التجربة"],["الموعد المستهدف","30 سبتمبر 2026"]].map(([l,v])=><div key={l} className="flex justify-between border-b py-2 text-[12.5px]"><dt className="text-muted">{l}</dt><dd className="font-medium">{v}</dd></div>)}</dl></CardContent></Card></div>
+  <div className="space-y-5"><Card><CardHeader><CardTitle>اكتمال البيانات</CardTitle></CardHeader><CardContent><Progress value={74}/><p className="mt-2 text-[12px] text-muted">74% — ينقص قياس الأثر النهائي ووثيقة الاعتماد.</p></CardContent></Card><Card><CardHeader><CardTitle>السجلات المرتبطة</CardTitle></CardHeader><CardContent className="space-y-2 text-[12.5px]"><p>3 أدلة ووثائق</p><p>1 تحدٍ مرتبط</p><p>2 جهة مشاركة</p></CardContent></Card></div></div></div>}
+
+function Governance(){return <div className="flex flex-col gap-5"><PageHeader title="اللجان والتقييمات" description="متابعة اللجان ومسارات التقييم والقرارات التي تنتظر الإجراء." action={<PreviewAction>تشكيل لجنة</PreviewAction>}/><div className="grid gap-4 lg:grid-cols-3">{[["لجنة تقييم مخرجات الهاكاثون","اجتماع قادم","12 أغسطس"],["لجنة اعتماد الحلول التجريبية","بانتظار القرار","18 أغسطس"],["لجنة حوكمة الابتكار","مفعلة","25 أغسطس"]].map(([n,s,d])=><Card key={n}><CardContent className="p-5"><Badge variant="neutral">{s}</Badge><p className="mt-3 text-[13.5px] font-semibold">{n}</p><p className="mt-2 text-[12px] text-muted">الموعد القادم: {d}</p></CardContent></Card>)}</div><Table headers={["السجل","مرحلة التقييم","المسؤول","الإجراء التالي"]} rows={ideas.slice(0,3).map(i=>[i[0],i[1],i[3],i[4]])}/></div>}
+
+function Compliance(){return <div className="flex flex-col gap-5"><PageHeader title="الجاهزية والامتثال" description="تقدير داخلي مبني على اكتمال السجلات والأدلة المتاحة في وضع المعاينة."/><div className="grid gap-4 sm:grid-cols-3">{[["التوجه الاستراتيجي","78"],["البرامج والفعاليات","66"],["الحلول وقياس الأثر","61"]].map(([l,v])=><Card key={l}><CardContent className="p-5"><p className="text-[12px] text-muted">{l}</p><p className="my-2 text-xl font-bold">{v}%</p><Progress value={Number(v)}/></CardContent></Card>)}</div><Card><CardHeader><CardTitle>الفجوات ذات الأولوية</CardTitle></CardHeader><CardContent className="space-y-3">{[["محضر اعتماد نتائج الهاكاثون","5.23.2"],["قياس أثر نظام إدارة الطاقة","5.24.2"],["وثيقة متابعة الخطة السنوية","5.23.1"]].map(([t,c])=><div key={t} className="flex items-center gap-3 border-b pb-3 last:border-0"><FileCheck2 className="h-4 w-4 text-amber-600"/><span className="flex-1 text-[13px]">{t}</span><Badge variant="warning">{c}</Badge></div>)}</CardContent></Card></div>}
+
+function Alerts(){return <div className="flex flex-col gap-5"><PageHeader title="المهام والتنبيهات" description="المواعيد والإجراءات التي تحتاج إلى انتباهك ضمن نطاق مسؤوليتك."/><Card><CardContent className="divide-y pt-5">{[["اعتماد قائمة المشاركين في الهاكاثون","اليوم","عاجل"],["مراجعة تقرير تجربة المساعد الرقمي","12 أغسطس","مراجعة"],["تحديث بيانات الشريك التقني","18 أغسطس","تحديث"],["اجتماع لجنة حوكمة الابتكار","25 أغسطس","موعد"]].map(([t,d,s])=><div key={t} className="flex items-center gap-3 py-3 first:pt-0"><Clock3 className="h-4 w-4 text-primary"/><div className="flex-1"><p className="text-[13px] font-semibold">{t}</p><p className="text-[11.5px] text-muted">الموعد المستهدف: {d}</p></div><Badge variant="neutral">{s}</Badge></div>)}</CardContent></Card></div>}
+
+function Reports(){return <div className="flex flex-col gap-5"><PageHeader title="التقارير" description="ملخصات تشغيلية من بيانات المعاينة لمراجعة طريقة عرض المعلومات."/><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[["تقرير محفظة الابتكار","4 سجلات"],["تقرير البرامج والفعاليات","3 برامج"],["تقرير الحلول الابتكارية","3 حلول"],["تقرير الجاهزية والامتثال","68%"],["تقرير التحديات","3 تحديات"],["التقرير التنفيذي","آخر تحديث اليوم"]].map(([t,s])=><Card key={t}><CardContent className="p-5"><FileCheck2 className="h-5 w-5 text-primary"/><p className="mt-3 text-[13.5px] font-semibold">{t}</p><p className="mt-1 text-[12px] text-muted">{s}</p><Button className="mt-4" size="sm" variant="outline" disabled>معاينة التقرير</Button></CardContent></Card>)}</div></div>}
+
+export function PreviewScreen({path}:{path:string}){
+  if(path==="/dashboard")return <Dashboard/>;
+  if(path==="/strategy")return <Collection title="الاستراتيجية والخطة السنوية" description="الأهداف الاستراتيجية ومؤشرات التقدم والجهات المسؤولة عنها." action="هدف استراتيجي جديد" headers={["الرمز","الهدف","المسؤول","الحالة","التقدم"]} rows={strategies}/>;
+  if(path==="/activities")return <Collection title="البرامج والفعاليات" description="البرامج والورش والهاكاثونات الجاري تنفيذها أو التخطيط لها." action="برنامج أو فعالية جديدة" headers={["البرنامج أو الفعالية","النوع","الحالة","المسؤول","الموعد المستهدف"]} rows={programs}/>;
+  if(path==="/challenges")return <Collection title="التحديات" description="التحديات المؤسسية ومسار دراستها وربطها بالحلول." action="تسجيل تحدٍ جديد" headers={["التحدي","المسؤول","الحالة","التصنيف"]} rows={challenges}/>;
+  if(path==="/governance/ideas")return <Collection title="بنك الابتكار" description="الأفكار والمخرجات الابتكارية ومراحل التقييم والإجراءات التالية." action="إضافة سجل" headers={["السجل","الحالة","الإدارة","المسؤول","الإجراء التالي"]} rows={ideas}/>;
+  if(path==="/solutions")return <Collection title="الحلول الابتكارية" description="محفظة الحلول ومراحل نضجها وتنفيذها واكتمال بياناتها." action="تسجيل حل" headers={["الحل","المسؤول","مرحلة النضج","حالة التنفيذ","اكتمال البيانات"]} rows={solutions} firstLink="/solutions/preview-solution"/>;
+  if(path.startsWith("/solutions/"))return <Solution/>;
+  if(path==="/governance"||path.startsWith("/governance/committees"))return <Governance/>;
+  if(path==="/compliance")return <Compliance/>;
+  if(path==="/alerts")return <Alerts/>;
+  if(path==="/reports")return <Reports/>;
+  if(path.startsWith("/admin/users"))return <Collection title="المستخدمون والصلاحيات" description="عرض توضيحي للمستخدمين والأدوار؛ إجراءات التعديل معطلة." action="إضافة مستخدم" headers={["المستخدم","البريد الإلكتروني","الدور","الحالة"]} rows={[["نورة العتيبي","n.alotaibi@entity.gov.sa","مسؤول ابتكار","نشط"],["سارة القحطاني","s.alqahtani@entity.gov.sa","مدير برنامج","نشط"],["خالد الحربي","k.alharbi@entity.gov.sa","مسؤول حل","نشط"],["مها الدوسري","m.aldosari@partner.sa","شريك خارجي","نشط"]]}/>;
+  if(path==="/audit")return <Collection title="سجل التدقيق" description="سجل توضيحي للعمليات — للقراءة فقط." action="تصدير" headers={["التاريخ","المستخدم","العملية","السجل"]} rows={[["اليوم 10:30","نورة العتيبي","تحديث بيانات","المساعد الرقمي"],["أمس 14:15","سارة القحطاني","إضافة وثيقة","هاكاثون المدن المستدامة"]]}/>;
+  return <div className="py-20 text-center"><h1 className="text-lg font-bold">هذه الشاشة غير مشمولة في المعاينة الحالية</h1><Button asChild className="mt-4" variant="outline"><Link href="/dashboard">العودة إلى لوحة العمل <ArrowLeft className="h-4 w-4"/></Link></Button></div>;
+}
