@@ -75,6 +75,10 @@ describe("preview route guard", () => {
     expect(buildPreviewHref("/solutions/preview-solution?tab=impact", persona)).toBe(`/solutions/preview-solution?tab=impact&previewRole=${persona}`);
   });
 
+  it("overwrites a stale persona in an internal href with the active persona", () => {
+    expect(buildPreviewHref("/reports?previewRole=admin", "viewer")).toBe("/reports?previewRole=viewer");
+  });
+
   it("keeps the viewer persona through the reported dashboard to reports regression", () => {
     const reportHref = buildPreviewHref("/reports", "viewer");
     expect(previewPersonaFromSearch(new URL(`https://preview.local${reportHref}`).searchParams.get("previewRole"))).toBe("viewer");

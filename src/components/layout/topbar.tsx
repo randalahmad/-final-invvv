@@ -7,7 +7,7 @@ import { Eye, FolderCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PreviewRoleSwitcher } from "@/components/layout/preview-role-switcher";
-import { permissionsForPreviewPersona, previewPersonaFromSearch } from "@/lib/ux-preview";
+import { buildPreviewHref, permissionsForPreviewPersona, previewPersonaFromSearch } from "@/lib/ux-preview";
 
 const AuthenticatedUserControls = dynamic(() => import("@/components/layout/authenticated-user-controls"), { ssr: false });
 
@@ -26,7 +26,7 @@ export function Topbar({ userName, preview = false, canViewCompliance = false }:
           </div>
         )}
         {showCompliance && <Button asChild variant="outline" size="sm">
-          <Link href="/compliance" className="hidden sm:flex">
+          <Link href={preview ? buildPreviewHref("/compliance", previewPersonaFromSearch(searchParams.get("previewRole"))) : "/compliance"} className="hidden sm:flex">
             <FolderCheck className="h-4 w-4" />
             الجاهزية والامتثال
           </Link>

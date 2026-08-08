@@ -13,7 +13,6 @@ export const UX_PREVIEW_PERSONAS = {
 } as const;
 
 export type PreviewPersonaKey = keyof typeof UX_PREVIEW_PERSONAS;
-export const UX_PREVIEW_PERSONA_COOKIE = "ux_preview_persona";
 
 export function buildPreviewHref(path: string, persona: PreviewPersonaKey): string {
   const [pathname, query = ""] = path.split("?");

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "test:preview:e2e": "node tests/e2e/preview-persona-flows.mjs",
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PreviewLink as Link } from "@/components/layout/preview-link";
 import { FileCheck2, LockKeyhole } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/page-header";

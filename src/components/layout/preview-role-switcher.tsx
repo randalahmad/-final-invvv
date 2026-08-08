@@ -24,6 +24,8 @@ export function PreviewRoleSwitcher() {
         <p className="text-[10.5px] text-muted">{persona.email}</p>
       </div>
       <select
+        data-testid="active-preview-persona"
+        data-preview-persona={active}
         value={active}
         onChange={(event) => changeRole(event.target.value)}
         aria-label="تبديل شخصية المعاينة"

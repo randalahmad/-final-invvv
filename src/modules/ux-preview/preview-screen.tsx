@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PreviewLink as Link } from "@/components/layout/preview-link";
 import { ArrowLeft, Clock3, Eye, FileCheck2, Plus, TriangleAlert } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/page-header";

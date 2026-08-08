@@ -8,6 +8,7 @@ import { navGroupsForPermissions, navGroupsForPreviewPersona } from "@/config/na
 import { site } from "@/config/site";
 import type { PermissionKey } from "@/modules/auth/permissions";
 import { previewPersonaFromSearch } from "@/lib/ux-preview";
+import { buildPreviewHref } from "@/lib/ux-preview";
 import { useSearchParams } from "next/navigation";
 
 export function AppSidebar({
@@ -47,7 +48,7 @@ export function AppSidebar({
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={preview ? buildPreviewHref(item.href, persona) : item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "mb-0.5 flex items-center justify-center gap-2.5 rounded-lg px-2 py-2.5 text-[13.3px] transition-colors md:justify-start md:px-3",
