@@ -24,6 +24,7 @@ describe("preview persona persistence middleware", () => {
     expect(response.headers.get("set-cookie")).toContain("ux_preview_persona=viewer");
     const settled = await middleware(new NextRequest("https://preview.local/reports?previewRole=viewer", { headers: { cookie: "ux_preview_persona=viewer" } })) as NextResponse;
     expect(settled.headers.get("x-middleware-rewrite")).toContain("/ux-preview?path=%2Freports&role=viewer");
+    expect(settled.headers.get("x-middleware-rewrite")).toContain("previewRole=viewer");
   });
 
   it("preserves partner on deep links and redirects restricted links coherently", async () => {

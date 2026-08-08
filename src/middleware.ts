@@ -35,6 +35,7 @@ export default async function middleware(request: NextRequest) {
     url.search = "";
     url.searchParams.set("path", request.nextUrl.pathname);
     url.searchParams.set("role", previewRole);
+    url.searchParams.set("previewRole", previewRole);
     return NextResponse.rewrite(url);
   }
   if (request.nextUrl.pathname.startsWith("/api/auth")) return NextResponse.next();
