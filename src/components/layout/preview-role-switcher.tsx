@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 
-import { canPreviewPersonaAccessPath, UX_PREVIEW_PERSONAS, previewPersonaFromSearch } from "@/lib/ux-preview";
+import { buildPreviewHref, canPreviewPersonaAccessPath, UX_PREVIEW_PERSONAS, previewPersonaFromSearch } from "@/lib/ux-preview";
 
 export function PreviewRoleSwitcher() {
   const searchParams = useSearchParams();
@@ -14,8 +14,7 @@ export function PreviewRoleSwitcher() {
     const next = new URL(window.location.href);
     next.search = "";
     if (!canPreviewPersonaAccessPath(selected, next.pathname)) next.pathname = "/dashboard";
-    next.searchParams.set("previewRole", selected);
-    window.location.assign(next.toString());
+    window.location.assign(buildPreviewHref(next.pathname, selected));
   }
 
   return (

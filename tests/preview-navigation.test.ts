@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { navGroupsForPreviewPersona } from "@/config/navigation";
 import {
   PREVIEW_PERSONA_PATHS,
+  buildPreviewHref,
   canPreviewPersonaAccessPath,
   previewPersonaFromSearch,
   UX_PREVIEW_PERSONAS,
@@ -28,7 +29,7 @@ describe("preview persona switching", () => {
 describe("permission-aware navigation", () => {
   it("shows all implemented navigation to admin", () => {
     const labels = labelsFor("admin");
-    expect(labels).toHaveLength(PREVIEW_PERSONA_PATHS.admin.length);
+    expect(labels).toHaveLength(PREVIEW_PERSONA_PATHS.admin.filter((path) => path !== "/preview-form").length);
     expect(labels).toEqual(expect.arrayContaining(["قياس الأثر", "الأدلة والوثائق", "الجهات والشركاء", "الاتفاقيات والتعاون", "الإعدادات"]));
   });
 
@@ -67,5 +68,17 @@ describe("preview route guard", () => {
 
   it("allows admin to access every proposed preview destination", () => {
     for (const path of PREVIEW_PERSONA_PATHS.admin) expect(canPreviewPersonaAccessPath("admin", path)).toBe(true);
+  });
+
+  it.each(["admin", "internal", "partner", "viewer"] as const)("preserves %s in every generated preview link", (persona) => {
+    expect(buildPreviewHref("/reports", persona)).toBe(`/reports?previewRole=${persona}`);
+    expect(buildPreviewHref("/solutions/preview-solution?tab=impact", persona)).toBe(`/solutions/preview-solution?tab=impact&previewRole=${persona}`);
+  });
+
+  it("keeps the viewer persona through the reported dashboard to reports regression", () => {
+    const reportHref = buildPreviewHref("/reports", "viewer");
+    expect(previewPersonaFromSearch(new URL(`https://preview.local${reportHref}`).searchParams.get("previewRole"))).toBe("viewer");
+    expect(canPreviewPersonaAccessPath("viewer", "/reports")).toBe(true);
+    expect(canPreviewPersonaAccessPath("viewer", "/preview-form/report")).toBe(false);
   });
 });
