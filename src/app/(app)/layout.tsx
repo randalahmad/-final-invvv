@@ -1,7 +1,7 @@
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Topbar } from "@/components/layout/topbar";
-import { requireUser } from "@/server/authz";
 import { isUxPreviewMode, UX_PREVIEW_PERSONAS } from "@/lib/ux-preview";
+import type { AccessContext } from "@/server/access-context";
 
 /**
  * Authenticated application shell. Server Component: `requireUser()` enforces the
@@ -10,7 +10,11 @@ import { isUxPreviewMode, UX_PREVIEW_PERSONAS } from "@/lib/ux-preview";
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const preview = isUxPreviewMode();
-  const user = preview ? null : await requireUser();
+  let user: AccessContext | null = null;
+  if (!preview) {
+    const { requireUser } = await import("@/server/authz");
+    user = await requireUser();
+  }
   const permissions = user ? Array.from(user.permissions) : [];
 
   return (
