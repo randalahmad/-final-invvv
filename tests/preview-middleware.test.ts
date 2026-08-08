@@ -17,17 +17,19 @@ describe("preview persona persistence middleware", () => {
     expect(response.headers.get("location")).toBe("https://preview.local/reports?previewRole=viewer");
   });
 
-  it("records an explicit persona and rewrites without invoking product auth", async () => {
+  it("records an explicit persona through a real redirect before rewriting", async () => {
     const request = new NextRequest("https://preview.local/reports?previewRole=viewer");
     const response = await middleware(request) as NextResponse;
-    expect(response.headers.get("x-middleware-rewrite")).toContain("/ux-preview?path=%2Freports&role=viewer");
+    expect(response.status).toBe(307);
     expect(response.headers.get("set-cookie")).toContain("ux_preview_persona=viewer");
+    const settled = await middleware(new NextRequest("https://preview.local/reports?previewRole=viewer", { headers: { cookie: "ux_preview_persona=viewer" } })) as NextResponse;
+    expect(settled.headers.get("x-middleware-rewrite")).toContain("/ux-preview?path=%2Freports&role=viewer");
   });
 
   it("preserves partner on deep links and redirects restricted links coherently", async () => {
-    const allowed = await middleware(new NextRequest("https://preview.local/evidence?previewRole=partner")) as NextResponse;
+    const allowed = await middleware(new NextRequest("https://preview.local/evidence?previewRole=partner", { headers: { cookie: "ux_preview_persona=partner" } })) as NextResponse;
     expect(allowed.headers.get("x-middleware-rewrite")).toContain("role=partner");
-    const restricted = await middleware(new NextRequest("https://preview.local/reports?previewRole=partner")) as NextResponse;
+    const restricted = await middleware(new NextRequest("https://preview.local/reports?previewRole=partner", { headers: { cookie: "ux_preview_persona=partner" } })) as NextResponse;
     expect(restricted.headers.get("location")).toBe("https://preview.local/dashboard?previewRole=partner");
   });
 });

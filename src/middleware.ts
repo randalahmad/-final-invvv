@@ -17,6 +17,11 @@ export default async function middleware(request: NextRequest) {
       dashboard.searchParams.set("previewRole", previewRole);
       return NextResponse.redirect(dashboard);
     }
+    if (requestedRole && cookieRole !== previewRole) {
+      const response = NextResponse.redirect(url);
+      response.cookies.set(UX_PREVIEW_PERSONA_COOKIE, previewRole, { httpOnly: true, sameSite: "lax", secure: true, path: "/" });
+      return response;
+    }
     if (!requestedRole) {
       url.searchParams.set("previewRole", previewRole);
       return NextResponse.redirect(url);
@@ -30,9 +35,7 @@ export default async function middleware(request: NextRequest) {
     url.search = "";
     url.searchParams.set("path", request.nextUrl.pathname);
     url.searchParams.set("role", previewRole);
-    const response = NextResponse.rewrite(url);
-    response.cookies.set(UX_PREVIEW_PERSONA_COOKIE, previewRole, { httpOnly: true, sameSite: "lax", secure: true, path: "/" });
-    return response;
+    return NextResponse.rewrite(url);
   }
   if (request.nextUrl.pathname.startsWith("/api/auth")) return NextResponse.next();
   const [{ default: NextAuth }, { default: authConfig }] = await Promise.all([
