@@ -49,7 +49,10 @@ export const REVIEW_STATUS_LABELS: Record<string, string> = {
   DRAFT: "مسودة",
   SUBMITTED: "مُقدّم",
   UNDER_REVIEW: "قيد المراجعة",
+  NEEDS_AMENDMENT: "يحتاج تعديل",
+  PENDING_APPROVAL: "بانتظار الاعتماد",
   APPROVED: "معتمد",
+  NEEDS_UPDATE: "يحتاج تحديث",
   REJECTED: "مرفوض",
   ARCHIVED: "مؤرشف",
 };

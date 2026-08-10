@@ -128,7 +128,7 @@ export async function getLiveReadiness(actor: AccessContext): Promise<LiveReadin
         where: {
           entityType: "REQUIREMENT_ASSIGNMENT",
           entityId: { in: assignments.map((assignment) => assignment.id) },
-          evidence: { archivedAt: null, reviewStatus: { not: "ARCHIVED" } },
+          evidence: { archivedAt: null, reviewStatus: "APPROVED" },
         },
         select: { entityId: true, evidence: { select: { classification: true } } },
       })

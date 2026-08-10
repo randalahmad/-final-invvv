@@ -1,4 +1,4 @@
-import { Activity, BarChart3, Bell, FileCheck2, Gauge, Landmark, ScrollText, Settings, Target, TrendingUp, UserCircle, Users, type LucideIcon } from "lucide-react";
+import { Activity, BarChart3, Bell, ClipboardCheck, FileCheck2, FolderSearch, Gauge, Landmark, ListTodo, ScrollText, Settings, ShieldCheck, Target, TrendingUp, UserCircle, Users, type LucideIcon } from "lucide-react";
 import type { PermissionKey } from "@/modules/auth/permissions";
 import { PREVIEW_PERSONA_PATHS, type PreviewPersonaKey } from "@/lib/ux-preview";
 
@@ -15,6 +15,10 @@ export const navGroups: NavGroup[] = [
     { href: "/impact", label: "5.24.2 قياس أثر الحلول", icon: TrendingUp, permissions: ["impact.view"] },
   ] },
   { label: "المتابعة", items: [
+    { href: "/my-tasks", label: "مهامي", icon: ListTodo, permissions: ["compliance.view"] },
+    { href: "/reviews", label: "مركز المراجعات والاعتمادات", icon: ClipboardCheck, permissions: ["evidence.approve", "compliance.configure"] },
+    { href: "/evidence-matrix", label: "مصفوفة أدلة القياس", icon: FolderSearch, permissions: ["evidence.view"] },
+    { href: "/readiness-check", label: "فحص الجاهزية", icon: ShieldCheck, permissions: ["compliance.view"] },
     { href: "/alerts", label: "التنبيهات", icon: Bell, permissions: ["alert.view"] },
     { href: "/reports", label: "التقارير / ملف الامتثال", icon: BarChart3, permissions: ["compliance.view"] },
     { href: "/account", label: "حسابي", icon: UserCircle },
@@ -34,4 +38,4 @@ export function navGroupsForPreviewPersona(persona: PreviewPersonaKey): NavGroup
   const allowed = new Set(PREVIEW_PERSONA_PATHS[persona]);
   return navGroups.map((group) => ({ ...group, items: group.items.filter((item) => allowed.has(item.href)) })).filter((group) => group.items.length > 0);
 }
-export const routeTitles: Record<string, string> = { "/dashboard": "الرئيسية", "/strategy": "5.23.1 التوجه الاستراتيجي", "/activities": "5.23.2 منهجيات الابتكار", "/governance": "5.23.3 حوكمة وتفعيل الابتكار", "/solutions": "5.24.1 حصر الحلول الابتكارية", "/impact": "5.24.2 قياس أثر الحلول", "/alerts": "التنبيهات", "/reports": "التقارير / ملف الامتثال", "/account": "حسابي", "/admin/users": "المستخدمون والصلاحيات", "/audit": "سجل التدقيق", "/settings": "إعدادات النظام" };
+export const routeTitles: Record<string, string> = { "/dashboard": "الرئيسية", "/strategy": "5.23.1 التوجه الاستراتيجي", "/activities": "5.23.2 منهجيات الابتكار", "/governance": "5.23.3 حوكمة وتفعيل الابتكار", "/solutions": "5.24.1 حصر الحلول الابتكارية", "/impact": "5.24.2 قياس أثر الحلول", "/my-tasks": "مهامي", "/reviews": "مركز المراجعات والاعتمادات", "/evidence-matrix": "مصفوفة أدلة القياس", "/readiness-check": "فحص الجاهزية", "/alerts": "التنبيهات", "/reports": "التقارير / ملف الامتثال", "/account": "حسابي", "/admin/users": "المستخدمون والصلاحيات", "/audit": "سجل التدقيق", "/settings": "إعدادات النظام" };

@@ -222,9 +222,64 @@ enum EvidenceReviewStatus {
   DRAFT
   SUBMITTED
   UNDER_REVIEW
+  NEEDS_AMENDMENT
+  PENDING_APPROVAL
   APPROVED
+  NEEDS_UPDATE
   REJECTED
   ARCHIVED
+}
+
+enum RequirementWorkflowState {
+  DRAFT
+  IN_PROGRESS
+  SUBMITTED_FOR_REVIEW
+  UNDER_REVIEW
+  RETURNED_FOR_AMENDMENT
+  RESUBMITTED
+  PENDING_APPROVAL
+  APPROVED
+  COMPLETED
+  BLOCKED
+}
+
+enum RaciResponsibility {
+  RESPONSIBLE
+  ACCOUNTABLE
+  CONSULTED
+  INFORMED
+}
+
+enum RequirementTaskType {
+  PREPARE
+  REVIEW
+  APPROVE
+  AMEND
+  RESPOND
+  FOLLOW_UP
+}
+
+enum RequirementTaskStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING
+  COMPLETED
+  CANCELLED
+}
+
+enum WorkPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum CollaborationEntryType {
+  COMMENT
+  REVIEW_NOTE
+  INFORMATION_REQUEST
+  ASSIGNMENT
+  DUE_DATE_CHANGE
 }
 
 /// AI document-analysis job state (system worker; produces suggestions only).
@@ -659,6 +714,10 @@ model ComplianceRequirementAssignment {
   operationalStatus       RequirementOperationalStatus @default(NOT_STARTED)
   responsibleUserId       String? // soft ref → User.id
   lastSavedById           String? // soft ref → User.id
+  ownerUserId             String?
+  workflowState           RequirementWorkflowState     @default(DRAFT)
+  priority                WorkPriority                 @default(MEDIUM)
+  nextAction              String?
   requirement             ComplianceRequirement        @relation(fields: [complianceRequirementId], references: [id])
   department              Department                   @relation(fields: [departmentId], references: [id])
   strategicObjective      StrategicObjective?          @relation(fields: [strategicObjectiveId], references: [id])
@@ -667,7 +726,12 @@ model ComplianceRequirementAssignment {
   archivedAt              DateTime?
   archivedById            String?
 
-  document StrategyDocument? // 1:1 in practice — one active document per assignment
+  document        StrategyDocument? // 1:1 in practice — one active document per assignment
+  raciAssignments RequirementRaciAssignment[]
+  tasks           RequirementTask[]
+  workflowEvents  RequirementWorkflowEvent[]
+  versions        RequirementWorkspaceVersion[]
+  collaboration   RequirementCollaborationEntry[]
 
   @@index([complianceRequirementId, departmentId])
   @@index([departmentId])
@@ -685,6 +749,96 @@ model ComplianceRequirementAssignment {
 /// status (computed, never stored) requires: this document not archived,
 /// approvalStatus = APPROVED, AND at least one real Evidence linked via
 /// EvidenceLink(entityType: STRATEGY_DOCUMENT, entityId: this document).
+model RequirementRaciAssignment {
+  id                 String                          @id @default(cuid())
+  assignmentId       String
+  responsibility     RaciResponsibility
+  userId             String?
+  departmentId       String?
+  organizationalRole String?
+  assignedById       String
+  createdAt          DateTime                        @default(now())
+  updatedAt          DateTime                        @updatedAt
+  assignment         ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([assignmentId, responsibility])
+  @@index([userId])
+  @@map("requirement_raci_assignments")
+}
+
+model RequirementTask {
+  id                   String                          @id @default(cuid())
+  assignmentId         String
+  type                 RequirementTaskType
+  title                String
+  status               RequirementTaskStatus           @default(OPEN)
+  priority             WorkPriority                    @default(MEDIUM)
+  requestedById        String
+  assignedToUserId     String?
+  assignedDepartmentId String?
+  dueDate              DateTime?
+  nextAction           String?
+  completedAt          DateTime?
+  createdAt            DateTime                        @default(now())
+  updatedAt            DateTime                        @updatedAt
+  assignment           ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([assignedToUserId, status, dueDate])
+  @@index([assignmentId])
+  @@map("requirement_tasks")
+}
+
+model RequirementWorkflowEvent {
+  id             String                          @id @default(cuid())
+  assignmentId   String
+  actorUserId    String
+  previousState  RequirementWorkflowState
+  newState       RequirementWorkflowState
+  comment        String?
+  reason         String?
+  assigneeUserId String?
+  dueDate        DateTime?
+  priority       WorkPriority?
+  createdAt      DateTime                        @default(now())
+  assignment     ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([assignmentId, createdAt])
+  @@map("requirement_workflow_events")
+}
+
+model RequirementWorkspaceVersion {
+  id               String                          @id @default(cuid())
+  assignmentId     String
+  version          Int
+  workspaceData    Json
+  evidenceSnapshot Json
+  workflowState    RequirementWorkflowState
+  authorUserId     String
+  reviewComment    String?
+  approvalUserId   String?
+  approvedAt       DateTime?
+  createdAt        DateTime                        @default(now())
+  assignment       ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, version])
+  @@map("requirement_workspace_versions")
+}
+
+model RequirementCollaborationEntry {
+  id               String                          @id @default(cuid())
+  assignmentId     String
+  type             CollaborationEntryType          @default(COMMENT)
+  authorUserId     String
+  body             String
+  mentionedUserIds String[]                        @default([])
+  dueDate          DateTime?
+  createdAt        DateTime                        @default(now())
+  assignment       ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([assignmentId, createdAt])
+  @@map("requirement_collaboration_entries")
+}
+
 model StrategyDocument {
   id             String                          @id @default(cuid())
   titleAr        String
@@ -1303,6 +1457,8 @@ model Evidence {
   reviewedAt           DateTime?
   approvedById         String? // soft ref → User.id
   approvedAt           DateTime?
+  ownerUserId          String?
+  validUntil           DateTime?
   notes                String?
   uploadedBy           User?                @relation("EvidenceUploader", fields: [uploadedById], references: [id])
   createdAt            DateTime             @default(now())

@@ -11,13 +11,14 @@ import { saveWorkspaceAction, uploadWorkspaceEvidenceAction, type WorkspaceActio
 import { deriveOperationalStatus, missingEvidence, missingWorkspaceFields, type WorkspaceData, type OperationalStatus } from "../workspace-status";
 import type { RequirementWorkspaceConfig, WorkspaceSection } from "../workspace-config";
 import type { DgaRequirementDefinition, DgaUnitDefinition } from "../types";
+import { GovernancePanel, type GovernanceView } from "@/modules/governance-workflow/components/governance-panel";
 
 type EvidenceRow={id:string;title:string;classification:string|null;fileName:string|null;version:number;reviewStatus:string;uploadedAt:string;uploader:string};
 const labels:Record<OperationalStatus,string>={NOT_STARTED:"لم تبدأ",IN_PROGRESS:"قيد التنفيذ",AWAITING_EVIDENCE:"بانتظار الإثبات",COMPLETED:"مكتملة"};
 const emptyRow=(section:WorkspaceSection)=>Object.fromEntries(section.fields.map((field)=>[field.key,""]));
 const initialData=(config:RequirementWorkspaceConfig,data:WorkspaceData)=>Object.fromEntries(config.sections.map((section)=>[section.key,data[section.key]??(section.repeatable?[emptyRow(section)]:emptyRow(section))])) as WorkspaceData;
 
-export function OperationalWorkspace({unit,requirement,config,initial,initialEvidence,initialStatus,canEdit,preview=false,personaKey="admin"}:{unit:DgaUnitDefinition;requirement:DgaRequirementDefinition;config:RequirementWorkspaceConfig;initial:WorkspaceData;initialEvidence:EvidenceRow[];initialStatus:OperationalStatus;canEdit:boolean;preview?:boolean;personaKey?:string}){
+export function OperationalWorkspace({unit,requirement,config,initial,initialEvidence,initialStatus,canEdit,preview=false,personaKey="admin",governance}:{unit:DgaUnitDefinition;requirement:DgaRequirementDefinition;config:RequirementWorkspaceConfig;initial:WorkspaceData;initialEvidence:EvidenceRow[];initialStatus:OperationalStatus;canEdit:boolean;preview?:boolean;personaKey?:string;governance?:GovernanceView}){
   const storageKey=`dga-workspace:${personaKey}:${requirement.id}`;
   const [data,setData]=useState(()=>initialData(config,initial)); const [evidence,setEvidence]=useState(initialEvidence); const [notice,setNotice]=useState("");
   const [saveState,saveAction]=useFormState(saveWorkspaceAction,{} as WorkspaceActionState); const [uploadState,uploadAction]=useFormState(uploadWorkspaceEvidenceAction,{} as WorkspaceActionState);
@@ -42,5 +43,6 @@ export function OperationalWorkspace({unit,requirement,config,initial,initialEvi
       <p className="rounded-lg bg-warning-bg p-3 text-xs leading-6 text-warning">اكتمال المتطلب داخل المنصة لا يمثل اعتماداً رسمياً من هيئة الحكومة الرقمية.</p>
       {requirement.number!==String(unit.requirements.length).padStart(2,"0")&&<Button asChild variant="outline" className="w-full"><Link href={`${unit.href}/requirements/${unit.requirements[Number(requirement.number)]?.id}`}>الانتقال للمتطلب التالي</Link></Button>}
     </div></div>
+    {governance&&<GovernancePanel data={governance} path={`${unit.href}/requirements/${requirement.id}`} canEdit={canEdit} preview={preview}/>}
   </div>;
 }

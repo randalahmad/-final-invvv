@@ -10,6 +10,9 @@ import { RequirementStatusBadge } from "./status-badge";
 import { OperationalWorkspace } from "./operational-workspace";
 import { getWorkspaceConfig } from "../workspace-config";
 import { PREVIEW_WORKSPACE_DATA } from "../preview-workspace-fixtures";
+import type { GovernanceView } from "@/modules/governance-workflow/components/governance-panel";
+
+function previewGovernance(persona:PreviewPersonaKey|undefined,requirementId:string):GovernanceView|undefined{if(!persona)return undefined;const users=[{id:"admin",name:"مدير النظام",email:"admin@innovation.local"},{id:"internal",name:"محرر الابتكار الداخلي",email:"editor@innovation.local"},{id:"partner",name:"منسق الشراكة",email:"partner@innovation.local"}];return{assignmentId:`preview-${requirementId}`,workflowState:requirementId.endsWith("r3")?"RETURNED_FOR_AMENDMENT":"UNDER_REVIEW",priority:"HIGH",ownerUserId:"internal",responsibleUserId:"internal",dueDate:"2026-08-18T00:00:00.000Z",nextAction:requirementId.endsWith("r3")?"استكمال ملاحظات المراجع وإعادة الإرسال":"إتمام المراجعة وإرسال المتطلب للاعتماد",raci:[{responsibility:"RESPONSIBLE",userId:"internal",departmentId:null,organizationalRole:null},{responsibility:"ACCOUNTABLE",userId:"admin",departmentId:null,organizationalRole:null},{responsibility:"CONSULTED",userId:"partner",departmentId:null,organizationalRole:null}],events:[{id:"e2",previousState:"UNDER_REVIEW",newState:"RETURNED_FOR_AMENDMENT",comment:null,reason:"استكمال تاريخ الاتفاقية ومحضر المتابعة",actor:"مدير النظام",createdAt:"2026-08-10T09:00:00.000Z"},{id:"e1",previousState:"IN_PROGRESS",newState:"SUBMITTED_FOR_REVIEW",comment:"اكتملت المسودة الأولية",reason:null,actor:"محرر الابتكار الداخلي",createdAt:"2026-08-09T12:00:00.000Z"}],versions:[{id:"v1",version:1,workflowState:"SUBMITTED_FOR_REVIEW",author:"محرر الابتكار الداخلي",createdAt:"2026-08-09T12:00:00.000Z",reviewComment:"المسودة الأولى"}],comments:[{id:"c1",type:"REVIEW_NOTE",body:"يرجى استكمال المستندات قبل إعادة الإرسال.",author:"مدير النظام",createdAt:"2026-08-10T09:05:00.000Z"}],users,canConfigure:persona==="admin",canReview:persona==="admin"};}
 
 const reviewLabels = { NOT_REVIEWED: "لم يتم الفحص", READY_FOR_REVIEW: "جاهز للفحص", HAS_NOTES: "توجد ملاحظات", HUMAN_REVIEWED: "تمت المراجعة البشرية" } as const;
 function href(path: string, persona?: PreviewPersonaKey) { return persona ? buildPreviewHref(path, persona) : path; }
@@ -28,7 +31,7 @@ function RequirementWorkspace({ unit, requirement, persona, canEdit }: { unit: D
 export function DgaUnitPage({ unit, requirement, persona, canEdit = true }: { unit: DgaUnitDefinition; requirement?: DgaRequirementDefinition; persona?: PreviewPersonaKey; canEdit?: boolean }) {
   if (requirement) {
     const config = getWorkspaceConfig(requirement.id);
-    if (config) return <OperationalWorkspace unit={unit} requirement={requirement} config={config} initial={PREVIEW_WORKSPACE_DATA[requirement.id]??{}} initialEvidence={[]} initialStatus="IN_PROGRESS" canEdit={canEdit} preview={Boolean(persona)} personaKey={persona} />;
+    if (config) return <OperationalWorkspace unit={unit} requirement={requirement} config={config} initial={PREVIEW_WORKSPACE_DATA[requirement.id]??{}} initialEvidence={[]} initialStatus="IN_PROGRESS" canEdit={canEdit} preview={Boolean(persona)} personaKey={persona} governance={previewGovernance(persona,requirement.id)} />;
     return <RequirementWorkspace unit={unit} requirement={requirement} persona={persona} canEdit={canEdit} />;
   }
   const completed = unit.requirements.filter((item) => item.status === "COMPLETED").length;
