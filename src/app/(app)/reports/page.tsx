@@ -1,58 +1,10 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { FileDown } from "lucide-react";
-
-import { requirePermission, getAccessContext } from "@/server/authz";
-import { getPlatformSummary } from "@/modules/reports/service";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
-
-export const metadata: Metadata = { title: "التقارير" };
-
-export default async function ReportsPage() {
-  await requirePermission("compliance.view");
-  const ctx = (await getAccessContext())!;
-  const summary = await getPlatformSummary(ctx);
-
-  const cards: { label: string; value: number }[] = [
-    { label: "الحلول الابتكارية", value: summary.solutions },
-    { label: "الأفكار النشطة", value: summary.ideas },
-    { label: "الأهداف الاستراتيجية", value: summary.strategicObjectives },
-    { label: "الأنشطة الموثَّقة هذه السنة", value: summary.activitiesThisYear },
-    { label: "التحديات المسجَّلة", value: summary.challenges },
-    { label: "لجان الحوكمة", value: summary.committees },
-  ];
-
-  return (
-    <div className="flex flex-col gap-5">
-      <PageHeader title="التقارير" description="ملخص حي من البيانات الفعلية ضمن نطاقك، مع الوصول إلى التقارير التفصيلية المتاحة." />
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((c) => (
-          <Card key={c.label}>
-            <CardContent className="flex flex-col gap-1 px-5 py-5">
-              <p className="text-[12px] text-muted">{c.label}</p>
-              <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{c.value}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card>
-        <CardContent className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-          <div>
-            <p className="text-[13px] font-semibold text-slate-800 dark:text-slate-100">تقرير امتثال حل محدَّد</p>
-            <p className="mt-1 text-[12px] text-muted">افتح صفحة أي حل ابتكاري لتصدير تقرير امتثاله التفصيلي.</p>
-          </div>
-          <Button asChild size="sm" variant="outline">
-            <Link href="/solutions">
-              <FileDown className="h-4 w-4" />
-              الانتقال إلى الحلول
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { getLiveReadiness } from "@/modules/dga/live-readiness";
+import { getPlatformSummary } from "@/modules/reports/service";
+import { can, getAccessContext, requirePermission } from "@/server/authz";
+export const metadata={title:"التقارير"};
+export default async function ReportsPage(){await requirePermission("compliance.view");const actor=(await getAccessContext())!;const [summary,readiness]=await Promise.all([getPlatformSummary(actor),getLiveReadiness(actor)]);const cards=[["تقرير الجاهزية العام",`${readiness.overall}% جاهزية تشغيلية`,"/compliance"],["تقرير الحلول",`${summary.solutions} حل ضمن النطاق`,"/solutions"],["تقرير قياس الأثر",`${readiness.units.find(x=>x.code==="5.24.2")?.total ?? 0} مؤشر مسجل`,"/impact"],["تقرير الأدلة الناقصة",`${readiness.missingEvidence} نقص يحتاج متابعة`,"/compliance"]];return <div className="flex flex-col gap-5 print:p-0"><PageHeader title="التقارير" description="تقارير تشغيلية حية ضمن نطاق صلاحيات المستخدم، مناسبة للعرض والطباعة." action={can(actor,"compliance.export")?<Button asChild variant="outline"><Link href="/reports/export/readiness"><Download className="h-4 w-4"/>تصدير CSV</Link></Button>:undefined}/><div className="grid gap-4 md:grid-cols-2">{cards.map(([title,detail,href])=><Link key={title} href={href}><Card className="h-full hover:border-primary/40"><CardContent className="p-5"><h2 className="font-bold">{title}</h2><p className="mt-2 text-sm text-muted">{detail}</p></CardContent></Card></Link>)}</div><Card><CardContent className="p-5"><h2 className="font-bold">ملخص الوحدات الخمس</h2><table className="mt-3 w-full text-xs"><tbody>{readiness.units.map(unit=><tr key={unit.code} className="border-b"><td className="py-2">{unit.code}</td><td>{unit.name}</td><td>{unit.readiness}%</td><td>{unit.missingEvidence} أدلة ناقصة</td></tr>)}</tbody></table></CardContent></Card><p className="text-xs text-muted">هذه التقارير تشغيلية داخلية ولا تمثل اعتماداً رسمياً من الهيئة. يمكن طباعة الصفحة من المتصفح.</p></div>}

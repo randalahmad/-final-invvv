@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import type { AlertItemData } from "@/modules/alerts/types";
 
 export function AlertItem({ alert }: { alert: AlertItemData }) {
@@ -16,6 +17,8 @@ export function AlertItem({ alert }: { alert: AlertItemData }) {
       </div>
       <p className="text-[11px] text-slate-600">{alert.detail}</p>
       <p className="mt-1.5 text-[10px] text-muted">{alert.tag}</p>
+      {alert.dueDate && <p className="mt-1 text-[10px] text-muted">الموعد: {new Date(alert.dueDate).toLocaleDateString("ar-SA")}</p>}
+      {alert.href && <Link className="mt-2 inline-block text-[11px] font-semibold text-primary" href={alert.href}>فتح السجل</Link>}
     </div>
   );
 }

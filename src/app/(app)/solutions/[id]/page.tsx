@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, FolderCheck, ShieldCheck } from "lucide-react";
+import { ArrowRight, BarChart3, FolderCheck, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -54,6 +54,7 @@ export default async function SolutionDetailsPage({ params }: { params: { id: st
   const completeness = computeSolutionCompleteness(solution as unknown as Record<string, unknown>);
   const canViewEvidence = can(ctx, "evidence.view");
   const canViewCompliance = can(ctx, "compliance.view");
+  const canViewImpact = can(ctx, "impact.view");
   const canEdit = can(ctx, "solution.update") && solution.status === "DRAFT";
   const canArchive = can(ctx, "solution.archive") && solution.status !== "ARCHIVED";
   // Partners edit only through an active share's allowedFields.
@@ -116,6 +117,14 @@ export default async function SolutionDetailsPage({ params }: { params: { id: st
             <Link href={`/solutions/${solution.id}/compliance`}>
               <ShieldCheck className="h-4 w-4" />
               ملف الامتثال (تقديري)
+            </Link>
+          </Button>
+        )}
+        {canViewImpact && (
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/impact/${solution.id}`}>
+              <BarChart3 className="h-4 w-4" />
+              قياس الأثر
             </Link>
           </Button>
         )}

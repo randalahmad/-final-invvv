@@ -6,4 +6,7 @@ export interface AlertItemData {
   detail: string;
   tag: string;
   severity: AlertSeverityLabel;
+  href?: string;
+  dueDate?: string;
+  responsible?: string;
 }

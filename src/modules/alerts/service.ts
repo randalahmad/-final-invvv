@@ -1,7 +1,8 @@
 import { prisma } from "@/server/db";
 import type { AccessContext } from "@/server/access-context";
-import { requirePermission, effectiveScopes } from "@/server/authorization";
+import { requirePermission, effectiveScopes, solutionScopeWhere } from "@/server/authorization";
 import type { AlertItemData } from "./types";
+import { getRequirementByCode } from "@/modules/dga/workspace-config";
 
 const VIEW = "alert.view" as const;
 
@@ -29,21 +30,32 @@ const ALERT_TYPE_LABELS: Record<string, string> = {
 export async function listAlertsInScope(actor: AccessContext): Promise<AlertItemData[]> {
   requirePermission(actor, VIEW);
   const es = effectiveScopes(actor);
+  const solutionScope = await solutionScopeWhere(actor);
 
-  const rows = await prisma.alert.findMany({
+  const [rows, assignments, measurements] = await Promise.all([prisma.alert.findMany({
     where: {
       status: { in: ["OPEN", "ACKNOWLEDGED"] },
       ...(es.platform ? {} : { assignedToUserId: actor.userId }),
     },
     orderBy: [{ severity: "desc" }, { openedAt: "desc" }],
     select: { id: true, type: true, severity: true, title: true, message: true, source: true, dueDate: true },
-  });
+  }), prisma.complianceRequirementAssignment.findMany({
+    where:{archivedAt:null,operationalStatus:{not:"COMPLETED"},dueDate:{not:null},...(es.platform?{}:{responsibleUserId:actor.userId})},
+    select:{id:true,dueDate:true,responsibleUserId:true,requirement:{select:{code:true,titleAr:true}}},take:20,
+  }), prisma.impactMeasurement.findMany({
+    where:{supersededBy:{none:{}},verificationStatus:"UNVERIFIED",periodEnd:{lt:new Date()},indicator:{solution:{is:{AND:[solutionScope,{archivedAt:null}]}}}},
+    select:{id:true,periodEnd:true,indicator:{select:{solutionId:true,nameAr:true,solution:{select:{nameAr:true}}}}},take:20,
+  })]);
 
-  return rows.map((r) => ({
+  const stored: AlertItemData[] = rows.map((r) => ({
     id: r.id,
     title: r.title,
     detail: r.message ?? "—",
     tag: ALERT_TYPE_LABELS[r.type] ?? r.type,
     severity: r.severity === "CRITICAL" ? "urgent" : "reminder",
+    dueDate: r.dueDate?.toISOString(),
   }));
+  const requirementAlerts: AlertItemData[] = assignments.map((row)=>({id:`requirement-${row.id}`,title:row.requirement.titleAr,detail:`المتطلب ${row.requirement.code} لم يكتمل قبل الموعد المحدد.`,tag:"متطلب متأخر",severity:row.dueDate! < new Date()?"urgent":"reminder",href:`/${row.requirement.code.startsWith("5.23.1")?"strategy":row.requirement.code.startsWith("5.23.2")?"activities":"governance"}/requirements/${getRequirementByCode(row.requirement.code)?.requirementId ?? ""}`,dueDate:row.dueDate?.toISOString()}));
+  const impactAlerts: AlertItemData[] = measurements.map((row)=>({id:`impact-${row.id}`,title:`قياس أثر متأخر: ${row.indicator.solution.nameAr}`,detail:`انتهت فترة مؤشر «${row.indicator.nameAr}» ولم يتم التحقق من القياس.`,tag:"نافذة قياس أثر",severity:"urgent",href:`/impact/${row.indicator.solutionId}`,dueDate:row.periodEnd?.toISOString()}));
+  return [...requirementAlerts,...impactAlerts,...stored];
 }

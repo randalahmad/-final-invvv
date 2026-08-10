@@ -330,8 +330,8 @@ export async function listSolutionsInScope(actor: AccessContext, filters: Soluti
     orderBy: { updatedAt: "desc" },
     select: {
       id: true, nameAr: true, source: true, maturityStage: true, implementationStatus: true,
-      status: true, completionPct: true, updatedAt: true, ideaId: true,
-      owningDepartment: { select: { nameAr: true } },
+      status: true, completionPct: true, evidenceReadinessPct: true, updatedAt: true, ideaId: true,
+      owningDepartment: { select: { nameAr: true, organization: { select: { nameAr: true } } } },
       owner: { select: { name: true } },
     },
   });
