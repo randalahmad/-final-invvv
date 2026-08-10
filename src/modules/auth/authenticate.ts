@@ -4,6 +4,7 @@ import { prisma } from "@/server/db";
 import { writeAudit, AUDIT } from "@/server/audit";
 import { checkRateLimit, clearRateLimit, consumeRateLimit } from "@/server/rate-limit";
 import type { RequestMetadata } from "@/server/request-context";
+import { DEMO_MODE, DEMO_PASSWORD, demoUserByEmail, demoRoleAssignments } from "@/server/demo-data";
 
 export type AuthPrincipal = {
   id: string;
@@ -55,6 +56,17 @@ export async function authenticateCredentials(
   request: RequestMetadata = { ipAddress: null, userAgent: null },
 ): Promise<AuthResult> {
   const email = emailRaw.trim().toLowerCase();
+
+  // DEMO_MODE: no database at all. Match against the fixed local demo
+  // accounts (src/server/demo-data.ts) with a single shared password —
+  // no Prisma, no bcrypt, no rate-limit/audit writes.
+  if (DEMO_MODE) {
+    const demoUser = demoUserByEmail(email);
+    if (!demoUser || password !== DEMO_PASSWORD) return { ok: false, reason: "INVALID_CREDENTIALS" };
+    const roleKeys = demoRoleAssignments(demoUser).map((a) => a.role.key);
+    return { ok: true, user: { id: demoUser.id, name: demoUser.name, email: demoUser.email, registrationStatus: demoUser.registrationStatus, status: demoUser.status, roleKeys } };
+  }
+
   const subject = { email, ipAddress: request.ipAddress };
   const preflight = await checkRateLimit("LOGIN", subject);
   if (!preflight.allowed) {

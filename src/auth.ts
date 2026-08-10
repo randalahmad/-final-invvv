@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 
 import authConfig from "@/auth.config";
 import { prisma } from "@/server/db";
+import { DEMO_MODE } from "@/server/demo-data";
 import { loginSchema } from "@/modules/auth/schema";
 import { authenticateCredentials } from "@/modules/auth/authenticate";
 import { requestMetadataFromHeaders } from "@/server/request-context";
@@ -17,11 +18,16 @@ import { requestMetadataFromHeaders } from "@/server/request-context";
  *   (User-facing reasons + blocked-login audit are handled in the login action,
  *   which also has request headers for IP/user-agent.)
  * - The Prisma adapter is wired so Microsoft Entra ID (OAuth) can be added later.
+ *   Skipped entirely in DEMO_MODE (requirement: login must not depend on a
+ *   database adapter) — the Credentials/JWT flow below never needs it anyway.
  * - JWT session strategy is required by the Credentials provider.
+ * - DEMO_MODE gets a fixed local-only secret so `npm run dev` works with zero
+ *   `.env` setup; a real deployment must still set AUTH_SECRET (unchanged).
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  adapter: PrismaAdapter(prisma),
+  ...(DEMO_MODE ? {} : { adapter: PrismaAdapter(prisma) }),
+  secret: process.env.AUTH_SECRET ?? (DEMO_MODE ? "demo-mode-local-only-insecure-secret" : undefined),
   session: { strategy: "jwt" },
   providers: [
     Credentials({

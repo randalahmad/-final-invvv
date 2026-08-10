@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { canPreviewPersonaAccessPath, isUxPreviewMode, previewPersonaFromSearch } from "@/lib/ux-preview";
+import { DEMO_MODE } from "@/server/demo-data";
 
 // Edge-safe middleware: protects every route except static assets and the
 // Auth.js API handler. Uses only the edge-safe config (no Prisma / bcrypt).
@@ -40,7 +41,10 @@ export default async function middleware(request: NextRequest) {
     import("next-auth"),
     import("@/auth.config"),
   ]);
-  return NextAuth(authConfig).auth(request as never);
+  return NextAuth({
+    ...authConfig,
+    secret: process.env.AUTH_SECRET ?? (DEMO_MODE ? "demo-mode-local-only-insecure-secret" : undefined),
+  }).auth(request as never);
 }
 
 export const config = {
