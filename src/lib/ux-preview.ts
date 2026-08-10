@@ -10,10 +10,10 @@ export const UX_PREVIEW_PERSONAS = {
 export type PreviewPersonaKey = keyof typeof UX_PREVIEW_PERSONAS;
 export function buildPreviewHref(path: string, persona: PreviewPersonaKey): string { const [pathname, query = ""] = path.split("?"); const params = new URLSearchParams(query); params.set("previewRole", persona); return `${pathname}?${params.toString()}`; }
 export const PREVIEW_PERSONA_PATHS: Record<PreviewPersonaKey, readonly string[]> = {
-  admin: ["/dashboard", "/strategy", "/activities", "/governance", "/solutions", "/impact", "/alerts", "/reports", "/account", "/admin/users", "/audit", "/settings"],
-  internal: ["/dashboard", "/strategy", "/activities", "/governance", "/solutions", "/impact", "/alerts", "/reports", "/account"],
+  admin: ["/dashboard", "/strategy", "/activities", "/governance", "/solutions", "/impact", "/compliance", "/alerts", "/reports", "/account", "/admin/users", "/audit", "/settings"],
+  internal: ["/dashboard", "/strategy", "/activities", "/governance", "/solutions", "/impact", "/compliance", "/alerts", "/reports", "/account"],
   partner: ["/dashboard", "/strategy", "/activities", "/solutions", "/impact", "/account"],
-  viewer: ["/dashboard", "/solutions", "/impact", "/reports", "/account"],
+  viewer: ["/dashboard", "/solutions", "/impact", "/compliance", "/reports", "/account"],
 };
 export function previewPersonaFromSearch(value: string | null | undefined): PreviewPersonaKey { return value && value in UX_PREVIEW_PERSONAS ? (value as PreviewPersonaKey) : "internal"; }
 export function permissionsForPreviewPersona(key: PreviewPersonaKey): PermissionKey[] { return DEFAULT_ROLE_PERMISSIONS[UX_PREVIEW_PERSONAS[key].role]; }
