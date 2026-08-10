@@ -17,5 +17,9 @@ export async function saveImpactAction(_: ImpactActionState, formData: FormData)
     });
     revalidatePath(`/impact/${formData.get("solutionId")}`); revalidatePath("/impact"); revalidatePath("/dashboard"); revalidatePath("/compliance");
     return { success: "تم حفظ المؤشر والقياس" };
-  } catch (error) { return { error: error instanceof Error && error.message === "INVALID_PERIOD" ? "نهاية الفترة يجب أن تكون بعد بدايتها" : "تعذر حفظ القياس" }; }
+  } catch (error) {
+    if (error instanceof Error && error.message === "INVALID_PERIOD") return { error: "نهاية الفترة يجب أن تكون بعد بدايتها" };
+    if (error instanceof Error && error.message.startsWith("NOT_ELIGIBLE_FOR_MEASUREMENT:")) return { error: `الحل غير مؤهل رسميًا لقياس الأثر بعد وفق معيار 5.24.1: ${error.message.replace("NOT_ELIGIBLE_FOR_MEASUREMENT: ", "")}` };
+    return { error: "تعذر حفظ القياس" };
+  }
 }

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { getAccessContext } from "@/server/authz";
 import { isAuthorizationError } from "@/server/authorization";
-import { createSolution, updateDraftSolution, archiveSolution, updateSharedSolutionFields, SolutionError } from "./service";
+import { createSolution, updateDraftSolution, archiveSolution, updateSharedSolutionFields, addSolutionAward, removeSolutionAward, SolutionError } from "./service";
 
 export interface SolutionFormState {
   error?: string;
@@ -61,6 +61,17 @@ function payload(fd: FormData) {
     technologies: fd.get("technologies"),
     risks: fd.get("risks"),
     notes: fd.get("notes"),
+    launchDate: fd.get("launchDate"),
+    beneficiaryCount: fd.get("beneficiaryCount"),
+    achievedOrExpectedImpact: fd.get("achievedOrExpectedImpact"),
+    beneficiarySatisfactionPct: fd.get("beneficiarySatisfactionPct"),
+    previouslySubmittedForMeasurement: fd.get("previouslySubmittedForMeasurement") ?? undefined,
+    significantChangeNote: fd.get("significantChangeNote"),
+    innovationMethodologySource: fd.get("innovationMethodologySource"),
+    digitalTransformationPlanLink: fd.get("digitalTransformationPlanLink"),
+    isSustained: fd.get("isSustained") ?? undefined,
+    sustainabilityOwner: fd.get("sustainabilityOwner"),
+    sustainabilityPlan: fd.get("sustainabilityPlan"),
   };
 }
 
@@ -122,4 +133,39 @@ export async function updateSharedFieldsAction(_prev: SolutionActionState, formD
   }
   revalidatePath(`/solutions/${id}`);
   return { success: "تم حفظ التعديلات المسموح بها" };
+}
+
+export async function addSolutionAwardAction(_prev: SolutionActionState, formData: FormData): Promise<SolutionActionState> {
+  const ctx = await getAccessContext();
+  if (!ctx) return { error: "غير مصرّح" };
+  const solutionId = String(formData.get("solutionId") ?? "");
+  const level = String(formData.get("level") ?? "LOCAL") as "LOCAL" | "REGIONAL" | "INTERNATIONAL";
+  const awardedAtRaw = String(formData.get("awardedAt") ?? "");
+  try {
+    await addSolutionAward(ctx, {
+      solutionId,
+      nameAr: String(formData.get("nameAr") ?? ""),
+      level,
+      awardedAt: awardedAtRaw ? new Date(awardedAtRaw) : null,
+      evidenceNote: String(formData.get("evidenceNote") ?? "") || null,
+    });
+  } catch (e) {
+    return toActionState(e);
+  }
+  revalidatePath(`/solutions/${solutionId}`);
+  return { success: "أُضيفت الجائزة" };
+}
+
+export async function removeSolutionAwardAction(_prev: SolutionActionState, formData: FormData): Promise<SolutionActionState> {
+  const ctx = await getAccessContext();
+  if (!ctx) return { error: "غير مصرّح" };
+  const solutionId = String(formData.get("solutionId") ?? "");
+  const awardId = String(formData.get("awardId") ?? "");
+  try {
+    await removeSolutionAward(ctx, solutionId, awardId);
+  } catch (e) {
+    return toActionState(e);
+  }
+  revalidatePath(`/solutions/${solutionId}`);
+  return { success: "أُزيلت الجائزة" };
 }

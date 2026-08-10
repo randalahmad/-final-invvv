@@ -78,6 +78,17 @@ export default async function EditSolutionPage({ params }: { params: { id: strin
               technologies: solution.technologies,
               risks: solution.risks,
               notes: solution.notes,
+              launchDate: day(solution.launchDate),
+              beneficiaryCount: solution.beneficiaryCount,
+              achievedOrExpectedImpact: solution.achievedOrExpectedImpact,
+              beneficiarySatisfactionPct: solution.beneficiarySatisfactionPct,
+              previouslySubmittedForMeasurement: solution.previouslySubmittedForMeasurement,
+              significantChangeNote: solution.significantChangeNote,
+              innovationMethodologySource: solution.innovationMethodologySource,
+              digitalTransformationPlanLink: solution.digitalTransformationPlanLink,
+              isSustained: solution.isSustained,
+              sustainabilityOwner: solution.sustainabilityOwner,
+              sustainabilityPlan: solution.sustainabilityPlan,
             }}
           />
         </CardContent>

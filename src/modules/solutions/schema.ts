@@ -53,6 +53,17 @@ export const solutionSchema = z
     technologies: optionalText(500),
     risks: optionalText(2000),
     notes: optionalText(2000),
+    launchDate: optionalDate,
+    beneficiaryCount: optionalNumber,
+    achievedOrExpectedImpact: optionalText(2000),
+    beneficiarySatisfactionPct: optionalNumber,
+    previouslySubmittedForMeasurement: z.union([z.boolean(), z.string(), z.undefined()]).transform((v) => v === true || v === "on" || v === "true"),
+    significantChangeNote: optionalText(2000),
+    innovationMethodologySource: optionalText(500),
+    digitalTransformationPlanLink: optionalText(500),
+    isSustained: z.union([z.boolean(), z.string(), z.undefined()]).transform((v) => v === true || v === "on" || v === "true"),
+    sustainabilityOwner: optionalText(200),
+    sustainabilityPlan: optionalText(2000),
   })
   .refine((d) => !d.startDate || !d.targetEndDate || d.targetEndDate >= d.startDate, {
     path: ["targetEndDate"],

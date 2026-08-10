@@ -14,13 +14,16 @@ export interface AuditLogRow {
   createdAt: Date;
 }
 
-/** Most recent audit entries, platform-wide — SYSTEM_ADMIN only (audit.view). No department scoping: the audit trail is a platform-level governance record. */
-export async function listAuditLog(actor: AccessContext, opts?: { q?: string; action?: string }): Promise<AuditLogRow[]> {
+/** Most recent audit entries, platform-wide — SYSTEM_ADMIN only (audit.view). No department scoping: the audit trail is a platform-level governance record.
+ * entityTypes/entityIds (optional) scope the log to specific records — used by the per-requirement Audit Trail card so it reuses this exact service instead of a parallel query. */
+export async function listAuditLog(actor: AccessContext, opts?: { q?: string; action?: string; entityTypes?: string[]; entityIds?: string[] }): Promise<AuditLogRow[]> {
   requirePermission(actor, VIEW);
   const rows = await prisma.auditLog.findMany({
     where: {
       ...(opts?.action ? { action: opts.action } : {}),
       ...(opts?.q?.trim() ? { summary: { contains: opts.q.trim(), mode: "insensitive" } } : {}),
+      ...(opts?.entityTypes?.length ? { entityType: { in: opts.entityTypes } } : {}),
+      ...(opts?.entityIds?.length ? { entityId: { in: opts.entityIds } } : {}),
     },
     orderBy: { createdAt: "desc" },
     take: 200,

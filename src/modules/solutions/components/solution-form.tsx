@@ -44,6 +44,17 @@ export interface SolutionInitial {
   technologies: string | null;
   risks: string | null;
   notes: string | null;
+  launchDate: string | null;
+  beneficiaryCount: number | null;
+  achievedOrExpectedImpact: string | null;
+  beneficiarySatisfactionPct: number | null;
+  previouslySubmittedForMeasurement: boolean;
+  significantChangeNote: string | null;
+  innovationMethodologySource: string | null;
+  digitalTransformationPlanLink: string | null;
+  isSustained: boolean | null;
+  sustainabilityOwner: string | null;
+  sustainabilityPlan: string | null;
 }
 
 function FieldError({ errors }: { errors?: string[] }) {
@@ -195,6 +206,58 @@ export function SolutionForm({
         <div className="flex flex-col gap-2">
           <Label htmlFor="notes">ملاحظات</Label>
           <textarea id="notes" name="notes" rows={2} className={fieldClass} defaultValue={initial?.notes ?? ""} />
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-dashed p-4">
+        <p className="mb-3 text-sm font-semibold">حقول متطلبات معيار 5.24.1/5.24.2 الرسمية</p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="launchDate">تاريخ الإطلاق</Label>
+            <Input id="launchDate" name="launchDate" type="date" defaultValue={initial?.launchDate ?? ""} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="beneficiaryCount">عدد المستفيدين</Label>
+            <Input id="beneficiaryCount" name="beneficiaryCount" type="number" min={0} defaultValue={initial?.beneficiaryCount ?? ""} />
+            <FieldError errors={fe.beneficiaryCount} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="beneficiarySatisfactionPct">نسبة رضا المستفيدين (%)</Label>
+            <Input id="beneficiarySatisfactionPct" name="beneficiarySatisfactionPct" type="number" min={0} max={100} defaultValue={initial?.beneficiarySatisfactionPct ?? ""} />
+            <FieldError errors={fe.beneficiarySatisfactionPct} />
+          </div>
+          <div className="flex flex-col gap-2 lg:col-span-2">
+            <Label htmlFor="achievedOrExpectedImpact">الأثر المحقق أو المتوقع (يشمل تخفيض التكاليف)</Label>
+            <textarea id="achievedOrExpectedImpact" name="achievedOrExpectedImpact" rows={2} className={fieldClass} defaultValue={initial?.achievedOrExpectedImpact ?? ""} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="innovationMethodologySource">مصدر منهجية الابتكار</Label>
+            <Input id="innovationMethodologySource" name="innovationMethodologySource" defaultValue={initial?.innovationMethodologySource ?? ""} />
+          </div>
+          <div className="flex flex-col gap-2 lg:col-span-2">
+            <Label htmlFor="digitalTransformationPlanLink">الارتباط بخطط التحول الرقمي للجهة</Label>
+            <Input id="digitalTransformationPlanLink" name="digitalTransformationPlanLink" defaultValue={initial?.digitalTransformationPlanLink ?? ""} />
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="previouslySubmittedForMeasurement" defaultChecked={initial?.previouslySubmittedForMeasurement ?? false} />
+            قُدّم هذا الحل في دورة قياس سابقة
+          </label>
+          <div className="flex flex-col gap-2 lg:col-span-2">
+            <Label htmlFor="significantChangeNote">وصف التطور الكبير منذ آخر تقديم (إن وُجد)</Label>
+            <textarea id="significantChangeNote" name="significantChangeNote" rows={2} className={fieldClass} defaultValue={initial?.significantChangeNote ?? ""} />
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="isSustained" defaultChecked={initial?.isSustained ?? false} />
+            الحل مستمر ومستدام تشغيليًا
+          </label>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="sustainabilityOwner">مالك استمرارية التشغيل</Label>
+            <Input id="sustainabilityOwner" name="sustainabilityOwner" defaultValue={initial?.sustainabilityOwner ?? ""} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="sustainabilityPlan">خطة الاستدامة</Label>
+            <textarea id="sustainabilityPlan" name="sustainabilityPlan" rows={2} className={fieldClass} defaultValue={initial?.sustainabilityPlan ?? ""} />
+          </div>
         </div>
       </div>
 

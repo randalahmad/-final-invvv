@@ -35,7 +35,7 @@ export default async function SolutionsPage({ searchParams }: { searchParams: Re
   const [solutions, options] = await Promise.all([listSolutionsInScope(actor, filters), listSolutionFilters(actor)]);
 
   return <div className="flex flex-col gap-5">
-    <PageHeader title="سجل الحلول الابتكارية (5.24.1)" description="سجل تشغيلي موحّد للحلول ومصادرها وملكيتها ونضجها وتنفيذها. حقول الوحدة منتج داخلي ولا تمثل متطلبات تفصيلية رسمية للهيئة." action={can(actor, "solution.create") ? <Button asChild><Link href="/solutions/new"><Plus className="h-4 w-4" />تسجيل حل</Link></Button> : undefined} />
+    <PageHeader title="سجل الحلول الابتكارية (5.24.1)" description="سجل تشغيلي موحّد للحلول ومصادرها وملكيتها ونضجها وتنفيذها وفق متطلبات تطبيق معيار 5.24.1 (حصر الحلول وتصميمها وتنفيذها)." action={can(actor, "solution.create") ? <Button asChild><Link href="/solutions/new"><Plus className="h-4 w-4" />تسجيل حل</Link></Button> : undefined} />
     <form method="GET" className="flex flex-wrap items-end gap-2 rounded-2xl border border-border bg-surface p-3 dark:border-border-dark dark:bg-surface-dark">
       <div className="relative min-w-52 flex-1"><Search className="absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"/><input className={`${control} w-full pe-9`} name="q" defaultValue={searchParams.q} placeholder="ابحث عن حل…" /></div>
       <select className={control} name="maturityStage" defaultValue={searchParams.maturityStage}><option value="">كل مراحل النضج</option>{MATURITY_STAGES.map((x)=><option key={x} value={x}>{MATURITY_LABELS[x]}</option>)}</select>

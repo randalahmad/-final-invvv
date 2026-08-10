@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { requirePermission, getAccessContext, can } from "@/server/authz";
 import { isAuthorizationError, findActiveShareForEntity } from "@/server/authorization";
 import { prisma } from "@/server/db";
-import { getSolutionById, computeSolutionCompleteness } from "@/modules/solutions/service";
+import { getSolutionById, computeSolutionCompleteness, listSolutionAwards } from "@/modules/solutions/service";
 import { listChallengesForSolution } from "@/modules/challenges/service";
 import { CHALLENGE_STATUS_LABELS } from "@/modules/challenges/schema";
 import { computeLifecycleFlags } from "@/modules/solutions/lifecycle-service";
@@ -16,6 +16,7 @@ import { listSolutionShares, listParticipatingOrganizations } from "@/modules/so
 import { getSolutionHistory } from "@/modules/solutions/history-service";
 import { LifecyclePanel } from "@/modules/solutions/components/lifecycle-panel";
 import { SharingPanel, OrganizationsPanel } from "@/modules/solutions/components/sharing-panel";
+import { AwardsPanel } from "@/modules/solutions/components/awards-panel";
 import { HistoryTimeline } from "@/modules/solutions/components/history-timeline";
 import {
   MATURITY_LABELS,
@@ -56,7 +57,9 @@ export default async function SolutionDetailsPage({ params }: { params: { id: st
   const canViewCompliance = can(ctx, "compliance.view");
   const canViewImpact = can(ctx, "impact.view");
   const canEdit = can(ctx, "solution.update") && solution.status === "DRAFT";
+  const canEditAwards = can(ctx, "solution.update");
   const canArchive = can(ctx, "solution.archive") && solution.status !== "ARCHIVED";
+  const awards = await listSolutionAwards(ctx, solution.id);
   // Partners edit only through an active share's allowedFields.
   const share = await findActiveShareForEntity(ctx.userId, "INNOVATION_SOLUTION", solution.id);
 
@@ -171,7 +174,18 @@ export default async function SolutionDetailsPage({ params }: { params: { id: st
                 <Row label="المدة (أشهر)" value={solution.durationMonths} />
                 <Row label="التكلفة التقديرية" value={solution.cost ? `${solution.cost} ر.س` : null} />
                 <Row label="الفئة المستفيدة" value={solution.targetBeneficiaries} />
+                <Row label="عدد المستفيدين" value={solution.beneficiaryCount} />
                 <Row label="التقنيات المستخدمة" value={solution.technologies} />
+                <Row label="تاريخ الإطلاق" value={solution.launchDate ? new Date(solution.launchDate).toLocaleDateString("ar") : null} />
+                <Row label="نسبة رضا المستفيدين" value={solution.beneficiarySatisfactionPct != null ? `${solution.beneficiarySatisfactionPct}%` : null} />
+                <Row label="الأثر المحقق/المتوقع" value={solution.achievedOrExpectedImpact} />
+                <Row label="مصدر منهجية الابتكار" value={solution.innovationMethodologySource} />
+                <Row label="الارتباط بخطط التحول الرقمي" value={solution.digitalTransformationPlanLink} />
+                <Row label="قُدّم في دورة قياس سابقة" value={solution.previouslySubmittedForMeasurement ? "نعم" : "لا"} />
+                <Row label="وصف التطور الكبير" value={solution.significantChangeNote} />
+                <Row label="مستمر ومستدام" value={solution.isSustained == null ? null : solution.isSustained ? "نعم" : "لا"} />
+                <Row label="مالك استمرارية التشغيل" value={solution.sustainabilityOwner} />
+                <Row label="خطة الاستدامة" value={solution.sustainabilityPlan} />
                 <Row label="المخاطر" value={solution.risks} />
                 <Row label="ملاحظات" value={solution.notes} />
               </dl>
@@ -220,6 +234,8 @@ export default async function SolutionDetailsPage({ params }: { params: { id: st
               partners={partnerUsers.map((u) => ({ id: u.id, label: `${u.name} — ${u.email}` }))}
             />
           )}
+
+          <AwardsPanel solutionId={solution.id} awards={awards} canEdit={canEditAwards} />
 
           <HistoryTimeline events={history} />
         </div>

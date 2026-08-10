@@ -1,4 +1,4 @@
-import { Activity, BarChart3, Bell, ClipboardCheck, FileCheck2, FolderSearch, Gauge, Landmark, ListTodo, ScrollText, Settings, ShieldCheck, Target, TrendingUp, UserCircle, Users, type LucideIcon } from "lucide-react";
+import { Activity, BarChart3, Bell, ClipboardCheck, FileCheck2, FolderSearch, Gauge, Handshake, Landmark, ListTodo, Puzzle, ScrollText, Settings, ShieldCheck, Target, TrendingUp, UserCircle, Users, type LucideIcon } from "lucide-react";
 import type { PermissionKey } from "@/modules/auth/permissions";
 import { PREVIEW_PERSONA_PATHS, type PreviewPersonaKey } from "@/lib/ux-preview";
 
@@ -13,11 +13,14 @@ export const navGroups: NavGroup[] = [
     { href: "/governance", label: "5.23.3 حوكمة وتفعيل الابتكار", icon: Landmark, permissions: ["committee.view", "idea.view"] },
     { href: "/solutions", label: "5.24.1 حصر الحلول الابتكارية", icon: FileCheck2, permissions: ["solution.view"] },
     { href: "/impact", label: "5.24.2 قياس أثر الحلول", icon: TrendingUp, permissions: ["impact.view"] },
+    { href: "/partners", label: "الجهات والشراكات", icon: Handshake, permissions: ["agreement.view"] },
+    { href: "/challenges", label: "التحديات", icon: Puzzle, permissions: ["challenge.view"] },
   ] },
   { label: "المتابعة", items: [
     { href: "/my-tasks", label: "مهامي", icon: ListTodo, permissions: ["compliance.view"] },
     { href: "/reviews", label: "مركز المراجعات والاعتمادات", icon: ClipboardCheck, permissions: ["evidence.approve", "compliance.configure"] },
     { href: "/evidence-matrix", label: "مصفوفة أدلة القياس", icon: FolderSearch, permissions: ["evidence.view"] },
+    { href: "/evidence-repository", label: "مستودع الأدلة", icon: FolderSearch, permissions: ["evidence.view"] },
     { href: "/readiness-check", label: "فحص الجاهزية", icon: ShieldCheck, permissions: ["compliance.view"] },
     { href: "/alerts", label: "التنبيهات", icon: Bell, permissions: ["alert.view"] },
     { href: "/reports", label: "التقارير / ملف الامتثال", icon: BarChart3, permissions: ["compliance.view"] },
@@ -38,4 +41,4 @@ export function navGroupsForPreviewPersona(persona: PreviewPersonaKey): NavGroup
   const allowed = new Set(PREVIEW_PERSONA_PATHS[persona]);
   return navGroups.map((group) => ({ ...group, items: group.items.filter((item) => allowed.has(item.href)) })).filter((group) => group.items.length > 0);
 }
-export const routeTitles: Record<string, string> = { "/dashboard": "الرئيسية", "/strategy": "5.23.1 التوجه الاستراتيجي", "/activities": "5.23.2 منهجيات الابتكار", "/governance": "5.23.3 حوكمة وتفعيل الابتكار", "/solutions": "5.24.1 حصر الحلول الابتكارية", "/impact": "5.24.2 قياس أثر الحلول", "/my-tasks": "مهامي", "/reviews": "مركز المراجعات والاعتمادات", "/evidence-matrix": "مصفوفة أدلة القياس", "/readiness-check": "فحص الجاهزية", "/alerts": "التنبيهات", "/reports": "التقارير / ملف الامتثال", "/account": "حسابي", "/admin/users": "المستخدمون والصلاحيات", "/audit": "سجل التدقيق", "/settings": "إعدادات النظام" };
+export const routeTitles: Record<string, string> = { "/dashboard": "الرئيسية", "/strategy": "5.23.1 التوجه الاستراتيجي", "/activities": "5.23.2 منهجيات الابتكار", "/governance": "5.23.3 حوكمة وتفعيل الابتكار", "/solutions": "5.24.1 حصر الحلول الابتكارية", "/impact": "5.24.2 قياس أثر الحلول", "/partners": "الجهات والشراكات", "/challenges": "التحديات", "/my-tasks": "مهامي", "/reviews": "مركز المراجعات والاعتمادات", "/evidence-matrix": "مصفوفة أدلة القياس", "/evidence-repository": "مستودع الأدلة", "/readiness-check": "فحص الجاهزية", "/alerts": "التنبيهات", "/reports": "التقارير / ملف الامتثال", "/account": "حسابي", "/admin/users": "المستخدمون والصلاحيات", "/audit": "سجل التدقيق", "/settings": "إعدادات النظام" };

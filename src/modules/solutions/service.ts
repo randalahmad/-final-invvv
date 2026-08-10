@@ -121,6 +121,17 @@ function writableData(input: Awaited<ReturnType<typeof solutionSchema.parseAsync
     technologies: input.technologies,
     risks: input.risks,
     notes: input.notes,
+    launchDate: input.launchDate,
+    beneficiaryCount: input.beneficiaryCount,
+    achievedOrExpectedImpact: input.achievedOrExpectedImpact,
+    beneficiarySatisfactionPct: input.beneficiarySatisfactionPct,
+    previouslySubmittedForMeasurement: input.previouslySubmittedForMeasurement,
+    significantChangeNote: input.significantChangeNote,
+    innovationMethodologySource: input.innovationMethodologySource,
+    digitalTransformationPlanLink: input.digitalTransformationPlanLink,
+    isSustained: input.isSustained,
+    sustainabilityOwner: input.sustainabilityOwner,
+    sustainabilityPlan: input.sustainabilityPlan,
   };
 }
 
@@ -203,6 +214,41 @@ export const PARTNER_UPDATABLE_FIELDS = ["notes", "description", "technologies",
 const PARTNER_UPDATABLE = new Set<string>(PARTNER_UPDATABLE_FIELDS);
 
 /**
+ * 5.24.1 (متطلبات التطبيق، البند الثاني، ب+ت): شروط أهلية الحل لتقديمه لقياس الأثر —
+ * (1) مستخدَم فعليًا (ليس في التخطيط/التصميم/التجريب)، (2) منذ 6 أشهر إلى 5 سنوات،
+ * (3) لم يُقدَّم في دورة قياس سابقة إلا مع توضيح تطور كبير. تُستخدم كتحقق فعلي وليس
+ * مجرد حقل بيانات — انظر استدعاءها في src/modules/impact/service.ts.
+ */
+export interface MeasurementEligibility {
+  eligible: boolean;
+  reasons: string[];
+}
+export function checkMeasurementEligibility(solution: {
+  maturityStage: string;
+  launchDate: Date | null;
+  startDate: Date | null;
+  previouslySubmittedForMeasurement: boolean;
+  significantChangeNote: string | null;
+}): MeasurementEligibility {
+  const reasons: string[] = [];
+  if (solution.maturityStage !== "OPERATIONAL") {
+    reasons.push("الحل ما زال في مرحلة التخطيط أو التصميم أو التجريب (ليس التشغيل الفعلي)، ولا يجوز تقديمه لقياس الأثر بعد.");
+  }
+  const usageStart = solution.launchDate ?? solution.startDate;
+  if (!usageStart) {
+    reasons.push("لا يوجد تاريخ إطلاق أو تاريخ بدء مسجَّل لاحتساب مدة الاستخدام.");
+  } else {
+    const months = (Date.now() - usageStart.getTime()) / (1000 * 60 * 60 * 24 * 30.44);
+    if (months < 6) reasons.push(`مدة استخدام الحل أقل من 6 أشهر (${months.toFixed(1)} شهرًا تقريبًا)، ولم تُستوفَ المدة الدنيا المطلوبة.`);
+    if (months > 60) reasons.push(`مدة استخدام الحل تجاوزت 5 سنوات (${(months / 12).toFixed(1)} سنة تقريبًا)، وهو خارج النافذة المسموحة إلا بحل بديل أحدث.`);
+  }
+  if (solution.previouslySubmittedForMeasurement && !solution.significantChangeNote?.trim()) {
+    reasons.push("قُدّم هذا الحل في دورة قياس سابقة، ويلزم توضيح التطور الكبير الذي طرأ عليه قبل إعادة تقديمه.");
+  }
+  return { eligible: reasons.length === 0, reasons };
+}
+
+/**
  * Partner write path: gated by an ACTIVE ResourceShare whose allowedActions
  * include `update_fields` and whose allowedFields cover every touched field
  * (Phase 2C `requirePartnerFieldWrite`). Audited with the originating share id.
@@ -282,6 +328,9 @@ export async function getSolutionById(actor: AccessContext, solutionId: string) 
       maturityStage: true, implementationStatus: true, status: true, publishedAt: true,
       startDate: true, targetEndDate: true, actualEndDate: true, durationMonths: true,
       cost: true, targetBeneficiaries: true, technologies: true, risks: true, notes: true,
+      launchDate: true, beneficiaryCount: true, achievedOrExpectedImpact: true, beneficiarySatisfactionPct: true,
+      previouslySubmittedForMeasurement: true, significantChangeNote: true, innovationMethodologySource: true,
+      digitalTransformationPlanLink: true, isSustained: true, sustainabilityOwner: true, sustainabilityPlan: true,
       completionPct: true, owningDepartmentId: true, ownerUserId: true,
       strategicObjectiveId: true, activityId: true, ideaId: true,
       createdAt: true, updatedAt: true, archivedAt: true,
@@ -360,5 +409,32 @@ export async function listOwnableDepartments(actor: AccessContext) {
     where: { OR: [{ id: { in: es.departmentIds } }, { organizationId: { in: es.organizationIds } }] },
     orderBy: { nameAr: "asc" },
     select: { id: true, nameAr: true },
+  });
+}
+
+// ── 5.24.2 (بند 4): جوائز الحل الابتكاري ────────────────────────────────────
+export async function listSolutionAwards(actor: AccessContext, solutionId: string) {
+  requirePermission(actor, VIEW);
+  await requireScope(actor, "INNOVATION_SOLUTION", solutionId);
+  return prisma.solutionAward.findMany({ where: { solutionId, archivedAt: null }, orderBy: { awardedAt: "desc" } });
+}
+
+export async function addSolutionAward(actor: AccessContext, input: { solutionId: string; nameAr: string; level: "LOCAL" | "REGIONAL" | "INTERNATIONAL"; awardedAt: Date | null; evidenceNote: string | null }) {
+  requirePermission(actor, UPDATE);
+  await requireScope(actor, "INNOVATION_SOLUTION", input.solutionId);
+  if (!input.nameAr.trim()) throw new SolutionError("VALIDATION", "اسم الجائزة مطلوب");
+  return prisma.$transaction(async (tx) => {
+    const created = await tx.solutionAward.create({ data: { solutionId: input.solutionId, nameAr: input.nameAr.trim(), level: input.level, awardedAt: input.awardedAt, evidenceNote: input.evidenceNote } });
+    await writeAudit({ actorUserId: actor.userId, action: AUDIT.SOLUTION_AWARD_ADDED, entityType: "INNOVATION_SOLUTION", entityId: input.solutionId, summary: "إضافة جائزة للحل الابتكاري", metadata: { awardId: created.id, level: input.level } }, tx);
+    return created;
+  });
+}
+
+export async function removeSolutionAward(actor: AccessContext, solutionId: string, awardId: string) {
+  requirePermission(actor, UPDATE);
+  await requireScope(actor, "INNOVATION_SOLUTION", solutionId);
+  await prisma.$transaction(async (tx) => {
+    await tx.solutionAward.update({ where: { id: awardId, solutionId }, data: { archivedAt: new Date() } });
+    await writeAudit({ actorUserId: actor.userId, action: AUDIT.SOLUTION_AWARD_REMOVED, entityType: "INNOVATION_SOLUTION", entityId: solutionId, summary: "إزالة جائزة من الحل الابتكاري", metadata: { awardId } }, tx);
   });
 }

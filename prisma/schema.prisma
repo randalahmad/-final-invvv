@@ -1108,6 +1108,27 @@ model InnovationSolution {
   archivedAt           DateTime?
   archivedById         String? // soft ref → User.id
 
+  /// 5.24.1 (بند أ): تاريخ إطلاق الحل — منفصل عن actualEndDate (تاريخ إنهاء التطوير).
+  launchDate DateTime?
+  /// 5.24.1 (بند ب): عدد المستفيدين الفعلي (رقمي)، منفصل عن targetBeneficiaries (الفئات نصًا).
+  beneficiaryCount Int?
+  /// 5.24.1 (بند ث): الأثر المحقق أو المتوقع على الجهة والمستفيدين، بما يشمل تخفيض التكاليف.
+  achievedOrExpectedImpact String?
+  /// 5.24.1 (بند ح): نسبة رضا المستفيدين (0-100).
+  beneficiarySatisfactionPct Int?
+  /// 5.24.1 (شرط ت بالمتطلب الثاني): هل قُدّم هذا الحل في دورة قياس سابقة؟
+  previouslySubmittedForMeasurement Boolean @default(false)
+  /// ملاحظة التطور الكبير المطلوبة إذا كان الحل قُدّم سابقًا (بند ت).
+  significantChangeNote String?
+  /// 5.24.1 (بند ث بالمتطلب الثاني): مصدر منهجية الابتكار التي بُنيت عليها فكرة الحل.
+  innovationMethodologySource String?
+  /// 5.24.1 (بند ج بالمتطلب الثاني): الارتباط بخطط الجهة للتحول الرقمي (إضافة إلى الهدف الاستراتيجي).
+  digitalTransformationPlanLink String?
+  /// 5.24.2 (استدامة الحل): هل الحل مستمر؟ ومالك التشغيل وخطة الاستدامة.
+  isSustained         Boolean?
+  sustainabilityOwner String?
+  sustainabilityPlan  String?
+
   activity           InnovationActivity? @relation(fields: [activityId], references: [id])
   idea               Idea?               @relation("SolutionFromIdea", fields: [ideaId], references: [id])
   owningDepartment   Department?         @relation(fields: [owningDepartmentId], references: [id])
@@ -1119,10 +1140,36 @@ model InnovationSolution {
   shares                     ResourceShare[]
   agreementLinks             AgreementSolution[]
   challengeLinks             ChallengeSolution[]
+  awards                     SolutionAward[]
 
   @@index([owningDepartmentId])
   @@index([maturityStage])
   @@map("innovation_solutions")
+}
+
+/// 5.24.2 (بند 4): الجوائز التي حصل عليها الحل الابتكاري — محلية/إقليمية/دولية. سجل متكرر
+/// لأن حلًا واحدًا قد يحصل على أكثر من جائزة.
+model SolutionAward {
+  id           String     @id @default(cuid())
+  solutionId   String
+  nameAr       String
+  level        AwardLevel
+  awardedAt    DateTime?
+  evidenceNote String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  archivedAt   DateTime?
+
+  solution InnovationSolution @relation(fields: [solutionId], references: [id], onDelete: Cascade)
+
+  @@index([solutionId])
+  @@map("solution_awards")
+}
+
+enum AwardLevel {
+  LOCAL
+  REGIONAL
+  INTERNATIONAL
 }
 
 model SolutionOrganization {

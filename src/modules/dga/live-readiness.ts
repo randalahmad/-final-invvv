@@ -23,6 +23,15 @@ export interface LiveReadiness {
   missingEvidence: number;
   overdue: number;
   units: UnitReadiness[];
+  /** 5.23 الابتكار المؤسسي / 5.24 الحلول الابتكارية — رول-أب مطلوب صراحة في ملف الدكتور. */
+  groups: { code: "5.23" | "5.24"; name: string; readiness: number }[];
+  solutionsSummary: {
+    total: number;
+    operational: number;
+    inPipeline: number;
+    totalBeneficiaries: number;
+    awards: number;
+  };
 }
 
 const UNITS: Record<string, { name: string; href: string }> = {
@@ -39,6 +48,21 @@ const STATUS_SCORE: Record<RequirementOperationalStatus, number> = {
   AWAITING_EVIDENCE: 75,
   COMPLETED: 100,
 };
+
+/**
+ * Readiness must reflect Review + Approval, not just data/evidence completion
+ * (per official requirement + doctor-file "لا تجعل الجاهزية رقمًا ثابتًا أو
+ * تجميليًا"). A requirement whose data and evidence are COMPLETED but whose
+ * governance workflow never reached approval is not fully ready yet.
+ */
+function combinedScore(operationalStatus: RequirementOperationalStatus, workflowState: string): number {
+  const base = STATUS_SCORE[operationalStatus];
+  if (operationalStatus !== "COMPLETED") return base; // data/evidence gaps dominate regardless of workflow
+  if (workflowState === "APPROVED" || workflowState === "COMPLETED") return 100;
+  if (workflowState === "PENDING_APPROVAL" || workflowState === "RESUBMITTED") return 90;
+  if (workflowState === "UNDER_REVIEW" || workflowState === "SUBMITTED_FOR_REVIEW") return 85;
+  return 80; // data ready but not yet sent for review/approval (DRAFT/IN_PROGRESS/RETURNED_FOR_AMENDMENT/BLOCKED)
+}
 
 function percentage(done: number, total: number) {
   return total > 0 ? Math.round((done / total) * 100) : 0;
@@ -63,7 +87,7 @@ export async function getLiveReadiness(actor: AccessContext): Promise<LiveReadin
       };
   const scopedSolutions = await solutionScopeWhere(actor);
 
-  const [assignments, solutions, indicators] = await Promise.all([
+  const [assignments, solutions, indicators, awardsCount] = await Promise.all([
     prisma.complianceRequirementAssignment.findMany({
       where: {
         archivedAt: null,
@@ -73,6 +97,7 @@ export async function getLiveReadiness(actor: AccessContext): Promise<LiveReadin
       select: {
         id: true,
         operationalStatus: true,
+        workflowState: true,
         dueDate: true,
         updatedAt: true,
         requirement: { select: { code: true, evidenceRules: true } },
@@ -95,6 +120,7 @@ export async function getLiveReadiness(actor: AccessContext): Promise<LiveReadin
         implementationStatus: true,
         updatedAt: true,
         evidenceReadinessPct: true,
+        beneficiaryCount: true,
       },
     }),
     prisma.impactIndicator.findMany({
@@ -121,6 +147,7 @@ export async function getLiveReadiness(actor: AccessContext): Promise<LiveReadin
         },
       },
     }),
+    prisma.solutionAward.count({ where: { archivedAt: null, solution: { is: { AND: [scopedSolutions, { archivedAt: null }] } } } }),
   ]);
 
   const assignmentLinks = assignments.length
@@ -151,15 +178,15 @@ export async function getLiveReadiness(actor: AccessContext): Promise<LiveReadin
         0,
       );
     }, 0);
-    const completed = rows.filter((row) => row.operationalStatus === "COMPLETED").length;
+    const completed = rows.filter((row) => row.operationalStatus === "COMPLETED" && (row.workflowState === "APPROVED" || row.workflowState === "COMPLETED")).length;
     units.push({
       code,
       ...UNITS[code],
-      readiness: percentage(rows.reduce((sum, row) => sum + STATUS_SCORE[row.operationalStatus], 0), rows.length * 100),
+      readiness: percentage(rows.reduce((sum, row) => sum + combinedScore(row.operationalStatus, row.workflowState), 0), rows.length * 100),
       completed,
       total: rows.length,
       missingEvidence,
-      overdue: rows.filter((row) => row.dueDate && row.dueDate < now && row.operationalStatus !== "COMPLETED").length,
+      overdue: rows.filter((row) => row.dueDate && row.dueDate < now && !(row.operationalStatus === "COMPLETED" && (row.workflowState === "APPROVED" || row.workflowState === "COMPLETED"))).length,
       latestUpdate: latest(rows.map((row) => row.updatedAt)),
     });
   }
@@ -208,6 +235,11 @@ export async function getLiveReadiness(actor: AccessContext): Promise<LiveReadin
     latestUpdate: latest(indicators.flatMap((indicator) => [indicator.updatedAt, ...indicator.measurements.map((m) => m.updatedAt)])),
   });
 
+  const rollup = (prefix: "5.23" | "5.24") => {
+    const rows = units.filter((u) => u.code.startsWith(prefix));
+    return { code: prefix, name: prefix === "5.23" ? "الابتكار المؤسسي" : "الحلول الابتكارية", readiness: rows.length ? Math.round(rows.reduce((s, u) => s + u.readiness, 0) / rows.length) : 0 };
+  };
+
   return {
     overall: units.length ? Math.round(units.reduce((sum, unit) => sum + unit.readiness, 0) / units.length) : 0,
     completed: units.reduce((sum, unit) => sum + unit.completed, 0),
@@ -215,5 +247,13 @@ export async function getLiveReadiness(actor: AccessContext): Promise<LiveReadin
     missingEvidence: units.reduce((sum, unit) => sum + unit.missingEvidence, 0),
     overdue: units.reduce((sum, unit) => sum + unit.overdue, 0),
     units,
+    groups: [rollup("5.23"), rollup("5.24")],
+    solutionsSummary: {
+      total: solutions.length,
+      operational: solutions.filter((s) => s.implementationStatus === "OPERATING" || s.implementationStatus === "COMPLETED").length,
+      inPipeline: solutions.filter((s) => s.implementationStatus === "PLANNING" || s.implementationStatus === "IN_PROGRESS").length,
+      totalBeneficiaries: solutions.reduce((sum, s) => sum + (s.beneficiaryCount ?? 0), 0),
+      awards: awardsCount,
+    },
   };
 }

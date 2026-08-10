@@ -3,6 +3,8 @@ import { AUDIT, writeAudit } from "@/server/audit";
 import { requirePermission, requireScope, solutionScopeWhere } from "@/server/authorization";
 import { prisma } from "@/server/db";
 import { impactEntrySchema } from "./schema";
+import { checkMeasurementEligibility } from "@/modules/solutions/service";
+export { checkMeasurementEligibility };
 
 export async function listImpactSolutions(actor: AccessContext) {
   requirePermission(actor, "impact.view");
@@ -21,6 +23,7 @@ export async function getImpactWorkspace(actor: AccessContext, solutionId: strin
   await requireScope(actor, "INNOVATION_SOLUTION", solutionId);
   return prisma.innovationSolution.findUniqueOrThrow({ where: { id: solutionId }, select: {
     id: true, nameAr: true, description: true, maturityStage: true, implementationStatus: true,
+    launchDate: true, startDate: true, previouslySubmittedForMeasurement: true, significantChangeNote: true,
     owningDepartment: { select: { nameAr: true, organization: { select: { nameAr: true } } } },
     impactIndicators: { orderBy: { createdAt: "asc" }, include: { measurements: { where: { supersededBy: { none: {} } }, orderBy: { measuredAt: "desc" } } } },
   }});
@@ -31,6 +34,20 @@ export async function saveImpactEntry(actor: AccessContext, raw: unknown) {
   const input = impactEntrySchema.parse(raw);
   await requireScope(actor, "INNOVATION_SOLUTION", input.solutionId);
   if (input.periodStart && input.periodEnd && input.periodEnd < input.periodStart) throw new Error("INVALID_PERIOD");
+  if (!input.indicatorId) {
+    // Starting impact measurement on this solution for the first time — enforce 5.24.1's
+    // eligibility rule (maturity stage + 6-60 month usage window + no unexplained resubmission)
+    // before allowing any indicator to be created for it.
+    const solution = await prisma.innovationSolution.findUniqueOrThrow({
+      where: { id: input.solutionId },
+      select: { maturityStage: true, launchDate: true, startDate: true, previouslySubmittedForMeasurement: true, significantChangeNote: true },
+    });
+    const existingIndicators = await prisma.impactIndicator.count({ where: { solutionId: input.solutionId } });
+    if (existingIndicators === 0) {
+      const eligibility = checkMeasurementEligibility(solution);
+      if (!eligibility.eligible) throw new Error(`NOT_ELIGIBLE_FOR_MEASUREMENT: ${eligibility.reasons.join(" ")}`);
+    }
+  }
   return prisma.$transaction(async (tx) => {
     const indicator = input.indicatorId
       ? await tx.impactIndicator.update({ where: { id: input.indicatorId, solutionId: input.solutionId }, data: { nameAr: input.nameAr, type: input.type, unit: input.unit, baselineValue: input.baselineValue, targetValue: input.targetValue, measurementMethod: input.measurementMethod } })
