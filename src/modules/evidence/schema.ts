@@ -14,6 +14,7 @@ export const ALLOWED_EXTENSIONS = ["pdf", "docx", "xlsx"] as const;
 /** Entity types evidence may be linked to (subset of the LinkedEntityType whitelist). */
 export const LINKABLE_ENTITY_TYPES = [
   "COMPLIANCE_REQUIREMENT",
+  "REQUIREMENT_ASSIGNMENT",
   "INNOVATION_SOLUTION",
   "STRATEGIC_OBJECTIVE",
   "INNOVATION_ACTIVITY",
@@ -62,6 +63,7 @@ export const FILE_STATUS_LABELS: Record<string, string> = {
 
 export const ENTITY_TYPE_LABELS: Record<string, string> = {
   COMPLIANCE_REQUIREMENT: "متطلب امتثال",
+  REQUIREMENT_ASSIGNMENT: "مساحة عمل متطلب",
   INNOVATION_SOLUTION: "حل ابتكاري",
   STRATEGIC_OBJECTIVE: "هدف استراتيجي",
   INNOVATION_ACTIVITY: "نشاط ابتكاري",

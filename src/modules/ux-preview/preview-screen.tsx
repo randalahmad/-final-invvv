@@ -63,7 +63,8 @@ export function PreviewScreen({path,persona}:{path:string;persona:PreviewPersona
   if (dgaUnit) {
     const requirementId = path.includes("/requirements/") ? path.split("/requirements/")[1] : undefined;
     const selectedRequirement = getDgaRequirement(dgaUnit, requirementId);
-    return <DgaUnitPage unit={dgaUnit} requirement={selectedRequirement} persona={persona} canEdit={persona !== "viewer"} />;
+    const partnerCanEdit = selectedRequirement?.id === "5-23-1-r3" || selectedRequirement?.id === "5-23-2-r4";
+    return <DgaUnitPage unit={dgaUnit} requirement={selectedRequirement} persona={persona} canEdit={persona === "admin" || persona === "internal" || (persona === "partner" && partnerCanEdit)} />;
   }
   if (path === "/account") return <Collection title="حسابي" description="بيانات المستخدم الحالي ودوره ونطاق وصوله في منصة الجاهزية المؤسسية." headers={["المستخدم","الدور","نطاق البيانات","الصلاحية"]} rows={[[UX_PREVIEW_PERSONAS[persona].name,UX_PREVIEW_PERSONAS[persona].label,persona === "admin" ? "كامل المنصة" : persona === "partner" ? "الاتفاقيات والحلول المشتركة" : persona === "viewer" ? "المؤشرات والتقارير المنشورة" : "الجهة والإدارات المسندة","نشط"]]} />;
   const unavailable=()=> <div className="py-20 text-center"><Badge variant="neutral">{UX_PREVIEW_PERSONAS[persona].label}</Badge><h1 className="mt-3 text-lg font-bold">هذه الوجهة غير متاحة لهذه الشخصية</h1><p className="mt-1 text-[13px] text-muted">يعكس ذلك صلاحيات الدور الحالية في وضع المعاينة.</p><Button asChild className="mt-4" variant="outline"><Link href="/dashboard">العودة إلى لوحة العمل</Link></Button></div>;

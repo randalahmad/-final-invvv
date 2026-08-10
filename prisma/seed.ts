@@ -8,6 +8,7 @@ import {
   PERMISSIONS,
   ROLE_KEYS,
 } from "../src/modules/auth/permissions";
+import { REQUIREMENT_WORKSPACES } from "../src/modules/dga/workspace-config";
 
 const prisma = new PrismaClient();
 
@@ -488,6 +489,35 @@ async function main() {
         version: 1,
       },
     });
+  }
+
+  // Phase 2: operational application requirements under the three 5.23 units.
+  // Upserts keep this safe to run repeatedly and preserve any saved workspace data.
+  for (const workspace of REQUIREMENT_WORKSPACES) {
+    const unitCode = workspace.code.split(".").slice(0, 3).join(".");
+    const parent = await prisma.complianceRequirement.findUnique({ where: { code: unitCode } });
+    if (!parent) continue;
+    const definition = workspace.sections.map((section) => section.title).join("، ");
+    const child = await prisma.complianceRequirement.upsert({
+      where: { code: workspace.code },
+      update: { titleAr: workspace.explanation, description: definition, parentId: parent.id, sectionId: parent.sectionId, sectionCode: parent.sectionCode, isActive: true },
+      create: { code: workspace.code, titleAr: workspace.explanation, description: definition, parentId: parent.id, sectionId: parent.sectionId, sectionCode: parent.sectionCode, isActive: true, isEstimated: false },
+    });
+    let order = 0;
+    for (const section of workspace.sections) for (const field of section.fields) {
+      await prisma.requirementFieldRule.upsert({
+        where: { requirementId_fieldKey: { requirementId: child.id, fieldKey: `${section.key}.${field.key}` } },
+        update: { labelAr: field.label, rule: section.repeatable ? `required;repeatable;minItems:${section.minItems ?? 1}` : "required", optional: field.required === false, orderIndex: order++ },
+        create: { requirementId: child.id, fieldKey: `${section.key}.${field.key}`, labelAr: field.label, rule: section.repeatable ? `required;repeatable;minItems:${section.minItems ?? 1}` : "required", optional: field.required === false, orderIndex: order++ },
+      });
+    }
+    for (const rule of workspace.evidence) await prisma.requirementEvidenceRule.upsert({
+      where: { requirementId_evidenceTypeKey: { requirementId: child.id, evidenceTypeKey: rule.key } },
+      update: { labelAr: rule.title, minCount: rule.minCount, mandatoryGate: true },
+      create: { requirementId: child.id, evidenceTypeKey: rule.key, labelAr: rule.title, minCount: rule.minCount, mandatoryGate: true },
+    });
+    const existingAssignment = await prisma.complianceRequirementAssignment.findFirst({ where: { complianceRequirementId: child.id, departmentId: deptStrategy.id, archivedAt: null } });
+    if (!existingAssignment) await prisma.complianceRequirementAssignment.create({ data: { complianceRequirementId: child.id, departmentId: deptStrategy.id, assignedById: admin.id, responsibleUserId: editor?.id ?? admin.id } });
   }
 
   // Example scoring config (demonstrates configurable weights/gates/optional

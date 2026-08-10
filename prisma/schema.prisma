@@ -267,6 +267,7 @@ enum ComplianceNAState {
 /// target can point to (application-validated; see EvidenceLink docs).
 enum LinkedEntityType {
   COMPLIANCE_REQUIREMENT
+  REQUIREMENT_ASSIGNMENT
   STRATEGIC_OBJECTIVE
   INNOVATION_ACTIVITY
   IDEA
@@ -280,6 +281,13 @@ enum LinkedEntityType {
   COMMITTEE
   COMMITTEE_MEETING
   STRATEGY_DOCUMENT
+}
+
+enum RequirementOperationalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  AWAITING_EVIDENCE
+  COMPLETED
 }
 
 /// Challenge lifecycle (5.24.x — challenge intake). Archival is tracked
@@ -565,13 +573,13 @@ model Department {
   archivedAt     DateTime?
   archivedById   String? // soft ref → User.id
 
-  memberships           UserMembership[]
-  solutions             InnovationSolution[]
-  activities            InnovationActivity[]
-  strategicObjectives   StrategicObjective[]
-  ideas                 Idea[]
+  memberships            UserMembership[]
+  solutions              InnovationSolution[]
+  activities             InnovationActivity[]
+  strategicObjectives    StrategicObjective[]
+  ideas                  Idea[]
   requirementAssignments ComplianceRequirementAssignment[]
-  challenges            Challenge[]
+  challenges             Challenge[]
 
   @@index([organizationId])
   @@map("departments")
@@ -640,18 +648,22 @@ model StrategicObjective {
 /// any) already carry the planning-cycle timeframe — no separate "cycle"
 /// field is added here.
 model ComplianceRequirementAssignment {
-  id                      String                @id @default(cuid())
+  id                      String                       @id @default(cuid())
   complianceRequirementId String
   departmentId            String
   strategicObjectiveId    String?
-  assignedAt              DateTime              @default(now())
+  assignedAt              DateTime                     @default(now())
   assignedById            String? // soft ref → User.id
   dueDate                 DateTime?
-  requirement             ComplianceRequirement @relation(fields: [complianceRequirementId], references: [id])
-  department              Department            @relation(fields: [departmentId], references: [id])
-  strategicObjective      StrategicObjective?   @relation(fields: [strategicObjectiveId], references: [id])
-  createdAt               DateTime              @default(now())
-  updatedAt               DateTime              @updatedAt
+  workspaceData           Json                         @default("{}")
+  operationalStatus       RequirementOperationalStatus @default(NOT_STARTED)
+  responsibleUserId       String? // soft ref → User.id
+  lastSavedById           String? // soft ref → User.id
+  requirement             ComplianceRequirement        @relation(fields: [complianceRequirementId], references: [id])
+  department              Department                   @relation(fields: [departmentId], references: [id])
+  strategicObjective      StrategicObjective?          @relation(fields: [strategicObjectiveId], references: [id])
+  createdAt               DateTime                     @default(now())
+  updatedAt               DateTime                     @updatedAt
   archivedAt              DateTime?
   archivedById            String?
 
