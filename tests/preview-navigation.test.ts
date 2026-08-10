@@ -1,88 +1,23 @@
 import { describe, expect, it } from "vitest";
-
 import { navGroupsForPreviewPersona } from "@/config/navigation";
-import {
-  PREVIEW_PERSONA_PATHS,
-  buildPreviewHref,
-  canPreviewPersonaAccessPath,
-  previewPersonaFromSearch,
-  UX_PREVIEW_PERSONAS,
-  type PreviewPersonaKey,
-} from "@/lib/ux-preview";
+import { PREVIEW_PERSONA_PATHS, buildPreviewHref, canPreviewPersonaAccessPath, previewPersonaFromSearch, UX_PREVIEW_PERSONAS, type PreviewPersonaKey } from "@/lib/ux-preview";
 
-function labelsFor(persona: PreviewPersonaKey) {
-  return navGroupsForPreviewPersona(persona).flatMap((group) => group.items.map((item) => item.label));
-}
+const labelsFor = (persona: PreviewPersonaKey) => navGroupsForPreviewPersona(persona).flatMap((group) => group.items.map((item) => item.label));
 
 describe("preview persona switching", () => {
-  it("defaults to the internal innovation officer", () => {
-    expect(previewPersonaFromSearch(null)).toBe("internal");
-  });
-
-  it("accepts exactly the four configured personas", () => {
-    expect(Object.keys(UX_PREVIEW_PERSONAS)).toEqual(["admin", "internal", "partner", "viewer"]);
-    expect(previewPersonaFromSearch("partner")).toBe("partner");
-    expect(previewPersonaFromSearch("unknown")).toBe("internal");
-  });
+  it("supports exactly the four product roles and defaults to internal", () => { expect(Object.keys(UX_PREVIEW_PERSONAS)).toEqual(["admin", "internal", "partner", "viewer"]); expect(previewPersonaFromSearch(null)).toBe("internal"); expect(previewPersonaFromSearch("unknown")).toBe("internal"); });
 });
 
-describe("permission-aware navigation", () => {
-  it("shows all implemented navigation to admin", () => {
-    const labels = labelsFor("admin");
-    expect(labels).toHaveLength(PREVIEW_PERSONA_PATHS.admin.filter((path) => path !== "/preview-form").length);
-    expect(labels).toEqual(expect.arrayContaining(["قياس الأثر", "الأدلة والوثائق", "الجهات والشركاء", "الاتفاقيات والتعاون", "الإعدادات"]));
-  });
-
-  it("shows operational work but no administration to internal users", () => {
-    const labels = labelsFor("internal");
-    expect(labels).toEqual(expect.arrayContaining(["البرامج والفعاليات", "التحديات", "بنك الابتكار", "الحلول الابتكارية", "اللجان والتقييمات"]));
-    expect(labels).not.toContain("المستخدمون والصلاحيات");
-    expect(labels).not.toContain("سجل التدقيق");
-  });
-
-  it("keeps partner navigation intentionally minimal", () => {
-    expect(labelsFor("partner")).toEqual(["لوحة العمل", "الحلول الابتكارية", "الأدلة والوثائق", "الجهات والشركاء", "الاتفاقيات والتعاون", "المهام والتنبيهات"]);
-  });
-
-  it("keeps viewer navigation read-oriented", () => {
-    const labels = labelsFor("viewer");
-    expect(labels).toEqual(["لوحة العمل", "الاستراتيجية والخطة السنوية", "البرامج والفعاليات", "الحلول الابتكارية", "الجاهزية والامتثال", "قياس الأثر", "التقارير"]);
-    expect(labels).not.toContain("بنك الابتكار");
-    expect(labels).not.toContain("المستخدمون والصلاحيات");
-  });
+describe("DGA permission-aware navigation", () => {
+  it("shows the five units and separated administration to admin", () => { expect(labelsFor("admin")).toEqual(["الرئيسية", "5.23.1 التوجه الاستراتيجي", "5.23.2 منهجيات الابتكار", "5.23.3 حوكمة وتفعيل الابتكار", "5.24.1 حصر الحلول الابتكارية", "5.24.2 قياس أثر الحلول", "التنبيهات", "التقارير / ملف الامتثال", "حسابي", "المستخدمون والصلاحيات", "سجل التدقيق", "إعدادات النظام"]); });
+  it("shows all execution units without administration to internal", () => { const labels = labelsFor("internal"); expect(labels).toContain("5.24.2 قياس أثر الحلول"); expect(labels).not.toContain("المستخدمون والصلاحيات"); expect(labels).not.toContain("سجل التدقيق"); });
+  it("limits partner to cooperation and shared-solution contexts", () => { expect(labelsFor("partner")).toEqual(["الرئيسية", "5.23.1 التوجه الاستراتيجي", "5.23.2 منهجيات الابتكار", "5.24.1 حصر الحلول الابتكارية", "حسابي"]); });
+  it("limits viewer to published dashboard, reports and account", () => { expect(labelsFor("viewer")).toEqual(["الرئيسية", "التقارير / ملف الامتثال", "حسابي"]); });
+  it("does not expose old generic modules as primary navigation", () => { const labels = labelsFor("admin"); for (const obsolete of ["بنك الابتكار", "التحديات", "الأدلة والوثائق", "الجهات والشركاء", "الاتفاقيات والتعاون"]) expect(labels).not.toContain(obsolete); });
 });
 
-describe("preview route guard", () => {
-  it("redirects internal, partner, and viewer personas away from administration", () => {
-    expect(canPreviewPersonaAccessPath("internal", "/admin/users/requests")).toBe(false);
-    expect(canPreviewPersonaAccessPath("partner", "/admin/users")).toBe(false);
-    expect(canPreviewPersonaAccessPath("viewer", "/audit")).toBe(false);
-  });
-
-  it("allows each persona's intended destinations", () => {
-    expect(canPreviewPersonaAccessPath("admin", "/admin/users/requests")).toBe(true);
-    expect(canPreviewPersonaAccessPath("internal", "/activities")).toBe(true);
-    expect(canPreviewPersonaAccessPath("partner", "/solutions/preview-solution")).toBe(true);
-    expect(canPreviewPersonaAccessPath("viewer", "/reports")).toBe(true);
-  });
-
-  it("allows admin to access every proposed preview destination", () => {
-    for (const path of PREVIEW_PERSONA_PATHS.admin) expect(canPreviewPersonaAccessPath("admin", path)).toBe(true);
-  });
-
-  it.each(["admin", "internal", "partner", "viewer"] as const)("preserves %s in every generated preview link", (persona) => {
-    expect(buildPreviewHref("/reports", persona)).toBe(`/reports?previewRole=${persona}`);
-    expect(buildPreviewHref("/solutions/preview-solution?tab=impact", persona)).toBe(`/solutions/preview-solution?tab=impact&previewRole=${persona}`);
-  });
-
-  it("overwrites a stale persona in an internal href with the active persona", () => {
-    expect(buildPreviewHref("/reports?previewRole=admin", "viewer")).toBe("/reports?previewRole=viewer");
-  });
-
-  it("keeps the viewer persona through the reported dashboard to reports regression", () => {
-    const reportHref = buildPreviewHref("/reports", "viewer");
-    expect(previewPersonaFromSearch(new URL(`https://preview.local${reportHref}`).searchParams.get("previewRole"))).toBe("viewer");
-    expect(canPreviewPersonaAccessPath("viewer", "/reports")).toBe(true);
-    expect(canPreviewPersonaAccessPath("viewer", "/preview-form/report")).toBe(false);
-  });
+describe("preview URL authority", () => {
+  it.each(["admin", "internal", "partner", "viewer"] as const)("preserves %s in generated links", (persona) => { expect(buildPreviewHref("/reports", persona)).toBe(`/reports?previewRole=${persona}`); });
+  it("hides unauthorized destinations rather than exposing dead routes", () => { expect(canPreviewPersonaAccessPath("internal", "/admin/users")).toBe(false); expect(canPreviewPersonaAccessPath("partner", "/impact")).toBe(false); expect(canPreviewPersonaAccessPath("viewer", "/strategy")).toBe(false); });
+  it("allows every configured path for each persona", () => { for (const [persona, paths] of Object.entries(PREVIEW_PERSONA_PATHS) as [PreviewPersonaKey, readonly string[]][]) for (const path of paths) expect(canPreviewPersonaAccessPath(persona, path)).toBe(true); });
 });

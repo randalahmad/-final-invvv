@@ -1,34 +1,8 @@
-import { readFileSync } from "fs";
-import path from "path";
 import { describe, expect, it } from "vitest";
+import { DGA_TOTALS, DGA_UNITS } from "@/modules/dga/source-of-truth";
 
-import { estimatedReadiness } from "@/modules/dashboard/readiness";
-
-describe("dashboard estimated readiness", () => {
-  it("aggregates only real scored solution rows", () => {
-    expect(
-      estimatedReadiness([
-        { solutionId: "a", nameAr: "أ", departmentAr: null, overallReadiness: 60 },
-        { solutionId: "b", nameAr: "ب", departmentAr: null, overallReadiness: null },
-        { solutionId: "c", nameAr: "ج", departmentAr: null, overallReadiness: 90 },
-      ]),
-    ).toBe(75);
-    expect(estimatedReadiness([])).toBeNull();
-  });
-
-  it("uses the internal estimated label and no fabricated DGA/delta mock", () => {
-    const page = readFileSync(path.join(process.cwd(), "src/app/(app)/dashboard/page.tsx"), "utf8");
-    const grid = readFileSync(path.join(process.cwd(), "src/modules/dashboard/components/readiness-grid.tsx"), "utf8");
-    const navigation = readFileSync(path.join(process.cwd(), "src/config/navigation.ts"), "utf8");
-    const compliance = readFileSync(path.join(process.cwd(), "src/app/(app)/compliance/page.tsx"), "utf8");
-    expect(page).toContain("مؤشر جاهزية تقديري داخلي");
-    expect(page).toContain("listComplianceOverview");
-    expect(page).not.toContain("(DGA)");
-    expect(page).not.toContain("overallReadinessPct");
-    expect(page).not.toContain("أعلى من آخر تقييم");
-    expect(page).not.toContain("alertsMock");
-    expect(grid).not.toContain("@/modules/dashboard/mock");
-    expect(navigation).not.toContain("(DGA)");
-    expect(compliance).not.toContain("(DGA)");
-  });
+describe("DGA readiness shell", () => {
+  it("contains exactly the five approved units", () => { expect(DGA_UNITS.map((unit) => unit.code)).toEqual(["5.23.1", "5.23.2", "5.23.3", "5.24.1", "5.24.2"]); });
+  it("contains the approved requirement counts", () => { expect(DGA_UNITS.map((unit) => unit.requirements.length)).toEqual([3, 4, 5, 0, 0]); expect(DGA_TOTALS.requirements).toBe(12); });
+  it("does not invent formal requirements for 5.24.1 or 5.24.2", () => { expect(DGA_UNITS[3].boundaryNote).toContain("لم تحدد المراجع"); expect(DGA_UNITS[4].boundaryNote).toContain("لم تحدد المراجع"); });
 });

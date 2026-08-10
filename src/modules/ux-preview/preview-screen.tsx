@@ -10,6 +10,9 @@ import { permissionsForPreviewPersona, UX_PREVIEW_PERSONAS, type PreviewPersonaK
 import type { PermissionKey } from "@/modules/auth/permissions";
 import { ExtraPreviewScreen } from "./preview-extra-screens";
 import { PreviewForm } from "./preview-form";
+import { DgaReadinessDashboard } from "@/modules/dga/components/readiness-dashboard";
+import { DgaUnitPage } from "@/modules/dga/components/unit-page";
+import { getDgaRequirement, getDgaUnitByPath } from "@/modules/dga/source-of-truth";
 
 const strategies = [["SO-01","رفع كفاءة تبني الحلول الابتكارية","إدارة الابتكار","نشط","72%"],["SO-02","تعزيز الشراكات البحثية والتقنية","مركز الشراكات","نشط","58%"],["SO-03","بناء ثقافة الابتكار المؤسسي","الموارد البشرية","مسودة","35%"]];
 const programs = [["هاكاثون المدن المستدامة 2026","هاكاثون","جارٍ","مركز الابتكار","15 أغسطس 2026"],["برنامج مسرعة الحلول الحكومية","برنامج","مخطط","إدارة التحول المؤسسي","1 سبتمبر 2026"],["ورشة تصميم الخدمات حول المستفيد","ورشة عمل","مكتمل","إدارة تجربة المستفيد","28 يوليو 2026"]];
@@ -55,6 +58,14 @@ function Reports(){return <div className="flex flex-col gap-5"><PageHeader title
 export function PreviewScreen({path,persona}:{path:string;persona:PreviewPersonaKey}){
   const permissions=new Set(permissionsForPreviewPersona(persona));
   const can=(permission:PermissionKey)=>permissions.has(permission);
+  const dgaUnit = getDgaUnitByPath(path);
+  if (path === "/dashboard") return <DgaReadinessDashboard persona={persona} />;
+  if (dgaUnit) {
+    const requirementId = path.includes("/requirements/") ? path.split("/requirements/")[1] : undefined;
+    const selectedRequirement = getDgaRequirement(dgaUnit, requirementId);
+    return <DgaUnitPage unit={dgaUnit} requirement={selectedRequirement} persona={persona} canEdit={persona !== "viewer"} />;
+  }
+  if (path === "/account") return <Collection title="حسابي" description="بيانات المستخدم الحالي ودوره ونطاق وصوله في منصة الجاهزية المؤسسية." headers={["المستخدم","الدور","نطاق البيانات","الصلاحية"]} rows={[[UX_PREVIEW_PERSONAS[persona].name,UX_PREVIEW_PERSONAS[persona].label,persona === "admin" ? "كامل المنصة" : persona === "partner" ? "الاتفاقيات والحلول المشتركة" : persona === "viewer" ? "المؤشرات والتقارير المنشورة" : "الجهة والإدارات المسندة","نشط"]]} />;
   const unavailable=()=> <div className="py-20 text-center"><Badge variant="neutral">{UX_PREVIEW_PERSONAS[persona].label}</Badge><h1 className="mt-3 text-lg font-bold">هذه الوجهة غير متاحة لهذه الشخصية</h1><p className="mt-1 text-[13px] text-muted">يعكس ذلك صلاحيات الدور الحالية في وضع المعاينة.</p><Button asChild className="mt-4" variant="outline"><Link href="/dashboard">العودة إلى لوحة العمل</Link></Button></div>;
   if(path==="/dashboard")return <Dashboard persona={persona}/>;
   if(path.startsWith("/preview-form/"))return persona==="viewer"?unavailable():<PreviewForm kind={path.split("/").pop()??"activity"}/>;

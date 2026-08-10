@@ -5,6 +5,9 @@ import { canPreviewPersonaAccessPath, isUxPreviewMode, previewPersonaFromSearch 
 // Auth.js API handler. Uses only the edge-safe config (no Prisma / bcrypt).
 export default async function middleware(request: NextRequest) {
   if (isUxPreviewMode()) {
+    // Internal rewrite target: render it once instead of feeding it back into
+    // the public preview routing layer.
+    if (request.nextUrl.pathname === "/ux-preview") return NextResponse.next();
     if (request.nextUrl.pathname.startsWith("/api/auth")) {
       return NextResponse.json({ message: "Authentication is disabled in UX Preview Mode" }, { status: 404 });
     }

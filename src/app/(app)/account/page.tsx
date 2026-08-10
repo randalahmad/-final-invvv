@@ -1,0 +1,3 @@
+import { UserCircle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+export default function AccountPage() { return <div className="mx-auto max-w-3xl space-y-5"><div><h1 className="text-2xl font-bold">حسابي</h1><p className="mt-1 text-sm text-muted">بيانات الحساب والدور ونطاق الوصول.</p></div><Card><CardHeader><CardTitle className="flex items-center gap-2"><UserCircle className="h-5 w-5 text-primary"/>سياق المستخدم</CardTitle></CardHeader><CardContent><p className="text-sm text-muted">تعرض هذه المساحة بيانات المستخدم المعتمدة في جلسة الدخول ونطاق الجهة المسند إليه.</p></CardContent></Card></div>; }

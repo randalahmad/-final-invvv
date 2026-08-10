@@ -20,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen w-screen max-w-[100vw] overflow-x-hidden bg-bg dark:bg-bg-dark">
       <AppSidebar permissions={permissions} preview={preview} />
-      <div className="flex min-h-screen w-[calc(100vw-4rem)] min-w-0 max-w-[calc(100vw-4rem)] flex-1 flex-col md:w-[calc(100vw-16rem)] md:max-w-[calc(100vw-16rem)]">
+      <div className="flex min-h-screen w-full min-w-0 max-w-full flex-1 flex-col pb-16 md:w-[calc(100vw-16rem)] md:max-w-[calc(100vw-16rem)] md:pb-0">
         <Topbar
           userName={preview ? UX_PREVIEW_PERSONAS.internal.name : user!.name}
           preview={preview}

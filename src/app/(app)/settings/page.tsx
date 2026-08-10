@@ -1,0 +1,2 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+export default function SettingsPage() { return <div className="space-y-5"><div><h1 className="text-2xl font-bold">إعدادات النظام</h1><p className="mt-1 text-sm text-muted">إعدادات إدارية منفصلة عن مسار الجاهزية المعياري.</p></div><Card><CardHeader><CardTitle>إدارة النظام</CardTitle></CardHeader><CardContent><p className="text-sm text-muted">تظل إعدادات المستخدمين والصلاحيات والتدقيق متاحة لمدير النظام فقط.</p></CardContent></Card></div>; }

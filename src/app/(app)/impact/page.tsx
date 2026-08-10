@@ -1,11 +1,3 @@
-import { ModulePlaceholder } from "@/components/shared/module-placeholder";
-
-export default function ImpactPage() {
-  return (
-    <ModulePlaceholder
-      code="5.24.2"
-      title="قياس أثر الحلول"
-      description="مؤشرات الأثر (المالي، التشغيلي، المستفيدون) والقياسات المتكرّرة عبر الزمن مع التحقّق — ضمن المراحل القادمة."
-    />
-  );
-}
+import { DgaUnitPage } from "@/modules/dga/components/unit-page";
+import { DGA_UNITS } from "@/modules/dga/source-of-truth";
+export default function ImpactPage() { return <DgaUnitPage unit={DGA_UNITS[4]} />; }
