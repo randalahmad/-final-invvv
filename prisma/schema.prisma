@@ -632,12 +632,13 @@ model Organization {
   archivedAt   DateTime?
   archivedById String? // soft ref → User.id
 
-  departments    Department[]
-  memberships    UserMembership[]
-  agreements     CooperationAgreement[]
-  participations SolutionOrganization[]
-  activityRoles  ActivityOrganization[]
-  committees     Committee[]
+  departments         Department[]
+  memberships         UserMembership[]
+  agreements          CooperationAgreement[]
+  cooperationContacts CooperationContact[]
+  participations      SolutionOrganization[]
+  activityRoles       ActivityOrganization[]
+  committees          Committee[]
 
   @@map("organizations")
 }
@@ -751,12 +752,12 @@ model ComplianceRequirementAssignment {
   archivedAt              DateTime?
   archivedById            String?
 
-  document        StrategyDocument? // 1:1 in practice — one active document per assignment
-  raciAssignments RequirementRaciAssignment[]
-  tasks           RequirementTask[]
-  workflowEvents  RequirementWorkflowEvent[]
-  versions        RequirementWorkspaceVersion[]
-  collaboration   RequirementCollaborationEntry[]
+  document             StrategyDocument? // 1:1 in practice — one active document per assignment
+  raciAssignments      RequirementRaciAssignment[]
+  tasks                RequirementTask[]
+  workflowEvents       RequirementWorkflowEvent[]
+  versions             RequirementWorkspaceVersion[]
+  collaboration        RequirementCollaborationEntry[]
   sectionContributions RequirementSectionContribution[]
 
   @@index([complianceRequirementId, departmentId])
@@ -816,37 +817,37 @@ model RequirementTask {
 }
 
 model RequirementSectionContribution {
-  id                    String                    @id @default(cuid())
-  assignmentId          String
-  sectionKey            String
-  contributorRole       SectionContributorRole    @default(RESPONSIBLE)
-  contributorUserId     String?
-  contributorName       String
-  contributorEmail      String
-  jobTitle               String?
-  departmentName        String?
-  assignedById           String
-  reviewerUserId         String?
-  dueDate                DateTime?
-  priority               WorkPriority              @default(MEDIUM)
-  requesterNote          String?
-  status                 SectionContributionStatus  @default(NOT_SENT)
-  invitationDelivery    InvitationDeliveryStatus    @default(PREPARED)
-  invitationTokenHash   String?                     @unique
-  invitationTokenLast4  String?
-  assignedAt             DateTime                    @default(now())
-  invitationSentAt       DateTime?
-  openedAt               DateTime?
-  submittedAt            DateTime?
-  reviewedAt             DateTime?
-  completedAt            DateTime?
-  cancelledAt            DateTime?
-  taskId                  String?                     @unique
-  createdAt               DateTime                    @default(now())
-  updatedAt               DateTime                    @updatedAt
-  assignment              ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  task                    RequirementTask?            @relation(fields: [taskId], references: [id], onDelete: SetNull)
-  submissions             RequirementSectionSubmission[]
+  id                   String                          @id @default(cuid())
+  assignmentId         String
+  sectionKey           String
+  contributorRole      SectionContributorRole          @default(RESPONSIBLE)
+  contributorUserId    String?
+  contributorName      String
+  contributorEmail     String
+  jobTitle             String?
+  departmentName       String?
+  assignedById         String
+  reviewerUserId       String?
+  dueDate              DateTime?
+  priority             WorkPriority                    @default(MEDIUM)
+  requesterNote        String?
+  status               SectionContributionStatus       @default(NOT_SENT)
+  invitationDelivery   InvitationDeliveryStatus        @default(PREPARED)
+  invitationTokenHash  String?                         @unique
+  invitationTokenLast4 String?
+  assignedAt           DateTime                        @default(now())
+  invitationSentAt     DateTime?
+  openedAt             DateTime?
+  submittedAt          DateTime?
+  reviewedAt           DateTime?
+  completedAt          DateTime?
+  cancelledAt          DateTime?
+  taskId               String?                         @unique
+  createdAt            DateTime                        @default(now())
+  updatedAt            DateTime                        @updatedAt
+  assignment           ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  task                 RequirementTask?                @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  submissions          RequirementSectionSubmission[]
 
   @@index([assignmentId, sectionKey, status])
   @@index([contributorUserId, status, dueDate])
@@ -855,18 +856,18 @@ model RequirementSectionContribution {
 }
 
 model RequirementSectionSubmission {
-  id              String                         @id @default(cuid())
-  contributionId  String
-  version         Int
-  data            Json
-  submittedById   String?
-  submitterEmail  String?
-  submittedAt     DateTime                       @default(now())
-  reviewDecision  String?
-  reviewNotes     String?
-  reviewedById    String?
-  reviewedAt      DateTime?
-  contribution    RequirementSectionContribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  id             String                         @id @default(cuid())
+  contributionId String
+  version        Int
+  data           Json
+  submittedById  String?
+  submitterEmail String?
+  submittedAt    DateTime                       @default(now())
+  reviewDecision String?
+  reviewNotes    String?
+  reviewedById   String?
+  reviewedAt     DateTime?
+  contribution   RequirementSectionContribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
 
   @@unique([contributionId, version])
   @@map("requirement_section_submissions")
@@ -1193,25 +1194,25 @@ model InnovationSolution {
   archivedById         String? // soft ref → User.id
 
   /// 5.24.1 (بند أ): تاريخ إطلاق الحل — منفصل عن actualEndDate (تاريخ إنهاء التطوير).
-  launchDate DateTime?
+  launchDate                        DateTime?
   /// 5.24.1 (بند ب): عدد المستفيدين الفعلي (رقمي)، منفصل عن targetBeneficiaries (الفئات نصًا).
-  beneficiaryCount Int?
+  beneficiaryCount                  Int?
   /// 5.24.1 (بند ث): الأثر المحقق أو المتوقع على الجهة والمستفيدين، بما يشمل تخفيض التكاليف.
-  achievedOrExpectedImpact String?
+  achievedOrExpectedImpact          String?
   /// 5.24.1 (بند ح): نسبة رضا المستفيدين (0-100).
-  beneficiarySatisfactionPct Int?
+  beneficiarySatisfactionPct        Int?
   /// 5.24.1 (شرط ت بالمتطلب الثاني): هل قُدّم هذا الحل في دورة قياس سابقة؟
-  previouslySubmittedForMeasurement Boolean @default(false)
+  previouslySubmittedForMeasurement Boolean   @default(false)
   /// ملاحظة التطور الكبير المطلوبة إذا كان الحل قُدّم سابقًا (بند ت).
-  significantChangeNote String?
+  significantChangeNote             String?
   /// 5.24.1 (بند ث بالمتطلب الثاني): مصدر منهجية الابتكار التي بُنيت عليها فكرة الحل.
-  innovationMethodologySource String?
+  innovationMethodologySource       String?
   /// 5.24.1 (بند ج بالمتطلب الثاني): الارتباط بخطط الجهة للتحول الرقمي (إضافة إلى الهدف الاستراتيجي).
-  digitalTransformationPlanLink String?
+  digitalTransformationPlanLink     String?
   /// 5.24.2 (استدامة الحل): هل الحل مستمر؟ ومالك التشغيل وخطة الاستدامة.
-  isSustained         Boolean?
-  sustainabilityOwner String?
-  sustainabilityPlan  String?
+  isSustained                       Boolean?
+  sustainabilityOwner               String?
+  sustainabilityPlan                String?
 
   activity           InnovationActivity? @relation(fields: [activityId], references: [id])
   idea               Idea?               @relation("SolutionFromIdea", fields: [ideaId], references: [id])
@@ -1390,9 +1391,40 @@ model CooperationAgreement {
   shares        ResourceShare[]
   solutionLinks AgreementSolution[]
   activityLinks AgreementActivity[]
+  contacts      CooperationContact[]
 
   @@index([partnerOrgId])
   @@map("cooperation_agreements")
+}
+
+/// Contact metadata for an institutional partner/cooperation. A contact is
+/// deliberately not a platform User; scoped access is granted only through
+/// the existing RequirementSectionContribution invitation lifecycle.
+model CooperationContact {
+  id              String                @id @default(cuid())
+  organizationId  String
+  agreementId     String?
+  name            String
+  jobTitle        String?
+  departmentName  String?
+  email           String
+  phone           String?
+  cooperationRole String?
+  isPrimary       Boolean               @default(false)
+  notes           String?
+  status          RecordStatus          @default(ACTIVE)
+  createdById     String?
+  archivedAt      DateTime?
+  archivedById    String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  organization    Organization          @relation(fields: [organizationId], references: [id])
+  agreement       CooperationAgreement? @relation(fields: [agreementId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@index([agreementId])
+  @@index([email])
+  @@map("cooperation_contacts")
 }
 
 model AgreementMeeting {

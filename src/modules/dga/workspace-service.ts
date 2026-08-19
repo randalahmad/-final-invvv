@@ -15,6 +15,27 @@ export class WorkspaceError extends Error { constructor(public code: "FORBIDDEN"
 
 async function syncCooperationRecords(tx:Prisma.TransactionClient,data:WorkspaceData){const cooperations=Array.isArray(data.cooperations)?data.cooperations:[];const agreements=Array.isArray(data.agreements)?data.agreements:[];const contacts=Array.isArray(data.partnerContacts)?data.partnerContacts:[];for(const agreementRow of agreements){const partnerName=String(agreementRow.cooperationName??"").trim();const title=String(agreementRow.title??"").trim();if(!partnerName||!title)continue;const cooperation=cooperations.find(row=>String(row.partnerName??"").trim()===partnerName);let partner=await tx.organization.findFirst({where:{nameAr:partnerName,archivedAt:null}});if(!partner)partner=await tx.organization.create({data:{nameAr:partnerName,type:String(cooperation?.partnerType??"").includes("جامعة")?"UNIVERSITY":"PARTNER",status:"ACTIVE"}});const statusText=String(agreementRow.status??"");const status=statusText.includes("منته")?"EXPIRED":statusText.includes("سارية")?"ACTIVE":"DRAFT";const contact=contacts.find(row=>String(row.cooperationName??"")===partnerName);let agreement=await tx.cooperationAgreement.findFirst({where:{partnerOrgId:partner.id,titleAr:title,archivedAt:null}});if(agreement)agreement=await tx.cooperationAgreement.update({where:{id:agreement.id},data:{effectiveDate:agreementRow.startDate?new Date(String(agreementRow.startDate)):null,expiryDate:agreementRow.endDate?new Date(String(agreementRow.endDate)):null,status,externalContact:contact?`${String(contact.name??"")} | ${String(contact.email??"")}`:null}});else agreement=await tx.cooperationAgreement.create({data:{partnerOrgId:partner.id,titleAr:title,type:"RESEARCH",effectiveDate:agreementRow.startDate?new Date(String(agreementRow.startDate)):null,expiryDate:agreementRow.endDate?new Date(String(agreementRow.endDate)):null,status,externalContact:contact?`${String(contact.name??"")} | ${String(contact.email??"")}`:null}});agreementRow.agreementId=agreement.id;agreementRow.partnerOrgId=partner.id;}}
 
+async function syncCooperationContacts(tx:Prisma.TransactionClient,data:WorkspaceData,actorUserId:string){
+  const cooperations=Array.isArray(data.cooperations)?data.cooperations:[];
+  const agreements=Array.isArray(data.agreements)?data.agreements:[];
+  const contacts=Array.isArray(data.partnerContacts)?data.partnerContacts:[];
+  for(const cooperation of cooperations){
+    const partnerName=String(cooperation.partnerName??"").trim();if(!partnerName)continue;
+    let organization=await tx.organization.findFirst({where:{nameAr:partnerName,archivedAt:null}});
+    if(!organization)organization=await tx.organization.create({data:{nameAr:partnerName,type:String(cooperation.partnerType??"").includes("جامعة")?"UNIVERSITY":"PARTNER",status:"ACTIVE"}});
+    const agreementRow=agreements.find(row=>String(row.cooperationName??"").trim()===partnerName);
+    const agreementId=agreementRow?.agreementId?String(agreementRow.agreementId):null;
+    const partnerContacts=contacts.filter(row=>String(row.cooperationName??"").trim()===partnerName&&String(row.name??"").trim()&&String(row.email??"").trim());
+    for(const contact of partnerContacts){
+      const email=String(contact.email).trim().toLowerCase();const archived=String(contact.status??"").includes("مؤرشف");const primary=String(contact.isPrimary??"")==="نعم"&&!archived;
+      if(primary)await tx.cooperationContact.updateMany({where:{organizationId:organization.id,status:"ACTIVE",email:{not:email}},data:{isPrimary:false}});
+      const existing=await tx.cooperationContact.findFirst({where:{organizationId:organization.id,email}});
+      const record={agreementId,name:String(contact.name).trim(),jobTitle:String(contact.title??"").trim()||null,departmentName:String(contact.departmentName??"").trim()||null,email,phone:String(contact.phone??"").trim()||null,cooperationRole:String(contact.role??"").trim()||null,isPrimary:primary,notes:String(contact.notes??"").trim()||null,status:archived?"ARCHIVED" as const:"ACTIVE" as const,archivedAt:archived?new Date():null,archivedById:archived?actorUserId:null};
+      if(existing)await tx.cooperationContact.update({where:{id:existing.id},data:record});else await tx.cooperationContact.create({data:{...record,organizationId:organization.id,createdById:actorUserId}});
+    }
+  }
+}
+
 // 5.23.1.3 (اتفاقية تعاون) و5.23.2.4 (تفعيل اتفاقية) هما المتطلبان الوحيدان التي
 // يمكن أن يصل إليهما شريك خارجي عبر منح اتفاقية فقط (بلا نطاق قسم/منظمة).
 // المنح تأتي من مصدرين ولا يجوز الاكتفاء بأحدهما فقط:
@@ -91,7 +112,7 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
   }
   const status=deriveOperationalStatus(config,data,loaded.approvedCounts);
   await prisma.$transaction(async(tx)=>{
-    if(requirementId==="5-23-1-r3")await syncCooperationRecords(tx,data);
+    if(requirementId==="5-23-1-r3"){await syncCooperationRecords(tx,data);await syncCooperationContacts(tx,data,actor.userId);}
     await tx.complianceRequirementAssignment.update({where:{id:loaded.assignment.id},data:{workspaceData:data as Prisma.InputJsonValue,operationalStatus:status,lastSavedById:actor.userId}});
     await writeAudit({actorUserId:actor.userId,action:AUDIT.COMPLIANCE_ASSIGNMENT_UPDATED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"تحديث مساحة عمل متطلب",after:{status,requirementCode:config.code}},tx);
     if(requirementId==="5-23-1-r2"){
@@ -107,7 +128,11 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
       const previous=loaded.assignment.workspaceData as WorkspaceData;const before=Array.isArray(previous.cooperations)?previous.cooperations:[];const after=Array.isArray(data.cooperations)?data.cooperations:[];
       if(after.length>before.length)await writeAudit({actorUserId:actor.userId,action:AUDIT.COOPERATION_RECORD_CREATED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"إنشاء سجل تعاون مؤسسي",metadata:{count:after.length-before.length}},tx);
       else if(JSON.stringify(before)!==JSON.stringify(after))await writeAudit({actorUserId:actor.userId,action:AUDIT.COOPERATION_RECORD_UPDATED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"تحديث سجل تعاون مؤسسي"},tx);
-      if(JSON.stringify(previous.partnerContacts)!==JSON.stringify(data.partnerContacts))await writeAudit({actorUserId:actor.userId,action:AUDIT.COOPERATION_CONTACT_ADDED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"تحديث جهات اتصال الشريك"},tx);
+      const beforeContacts=Array.isArray(previous.partnerContacts)?previous.partnerContacts:[];const afterContacts=Array.isArray(data.partnerContacts)?data.partnerContacts:[];
+      if(afterContacts.length>beforeContacts.length)await writeAudit({actorUserId:actor.userId,action:AUDIT.COOPERATION_CONTACT_ADDED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"إضافة جهة اتصال للشريك"},tx);
+      else if(JSON.stringify(beforeContacts)!==JSON.stringify(afterContacts))await writeAudit({actorUserId:actor.userId,action:AUDIT.COOPERATION_CONTACT_UPDATED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"تحديث جهة اتصال للشريك"},tx);
+      if(beforeContacts.some((item,index)=>String(item.isPrimary)!==String(afterContacts[index]?.isPrimary)))await writeAudit({actorUserId:actor.userId,action:AUDIT.COOPERATION_PRIMARY_CONTACT_CHANGED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"تغيير جهة الاتصال الرئيسية"},tx);
+      if(afterContacts.some((item,index)=>item.status==="مؤرشف"&&beforeContacts[index]?.status!=="مؤرشف"))await writeAudit({actorUserId:actor.userId,action:AUDIT.COOPERATION_CONTACT_ARCHIVED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"أرشفة جهة اتصال مع حفظ سجلها التاريخي"},tx);
       if(JSON.stringify(previous.agreements)!==JSON.stringify(data.agreements))await writeAudit({actorUserId:actor.userId,action:AUDIT.COOPERATION_AGREEMENT_LINKED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"ربط اتفاقية بسجل التعاون"},tx);
     }
   });

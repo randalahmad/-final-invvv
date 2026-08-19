@@ -80,5 +80,28 @@ describe("5.23.1 Requirement 03 institutional cooperation",()=>{
   it("presents cooperation audit events in Arabic",()=>{
     expect(auditActionLabel("COOPERATION_RECORD_CREATED")).toBe("إنشاء سجل تعاون");
     expect(auditActionLabel("COOPERATION_AGREEMENT_LINKED")).toBe("ربط اتفاقية بسجل التعاون");
+    expect(auditActionLabel("COOPERATION_PRIMARY_CONTACT_CHANGED")).toBe("تغيير جهة الاتصال الرئيسية");
+    expect(auditActionLabel("COOPERATION_CONTACT_ARCHIVED")).toBe("أرشفة جهة اتصال للشريك");
+  });
+  it("stores contacts separately from users with an additive migration",()=>{
+    const schema=readFileSync("prisma/schema.prisma","utf8");
+    const sql=readFileSync("prisma/migrations/20260819190000_cooperation_contacts/migration.sql","utf8");
+    expect(schema).toContain("model CooperationContact");
+    expect(schema).toMatch(/organization\s+Organization\s+@relation/);
+    expect(schema.match(/model CooperationContact \{([\s\S]*?)\n\}/)?.[1]).not.toMatch(/\buser\s+User\b/);
+    expect(sql).toContain('CREATE TABLE "cooperation_contacts"');
+    expect(sql).not.toMatch(/DROP\s+(TABLE|COLUMN|TYPE)/i);
+  });
+  it("captures complete contact management fields without hard-coded roles",()=>{
+    const contacts=getWorkspaceConfig(REQUIREMENT_03_ID)!.sections.find(section=>section.key==="partnerContacts")!;
+    expect(contacts.fields.map(field=>field.key)).toEqual(["cooperationName","name","title","departmentName","organization","email","phone","role","isPrimary","notes","status"]);
+    expect(contacts.fields.find(field=>field.key==="role")?.options).toBeUndefined();
+    expect(contacts.fields.find(field=>field.key==="isPrimary")?.options).toEqual(["نعم","لا"]);
+  });
+  it("exposes explicit creation and invitation actions",()=>{
+    const manager=readFileSync("src/modules/dga/components/cooperation-manager.tsx","utf8");
+    expect(manager).toContain("إضافة جهة / علاقة تعاون");
+    expect(manager).toContain("دعوة للمساهمة");
+    expect(manager).toContain("لا يحصل الاتصال على وصول");
   });
 });
