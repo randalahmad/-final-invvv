@@ -1,4 +1,4 @@
-import { Activity, BarChart3, Bell, ClipboardCheck, FileCheck2, FolderSearch, Gauge, Handshake, Landmark, ListTodo, Puzzle, ScrollText, Settings, ShieldCheck, Target, TrendingUp, UserCircle, Users, type LucideIcon } from "lucide-react";
+import { Activity, BarChart3, Bell, ClipboardCheck, FileCheck2, FolderSearch, Gauge, Landmark, ListTodo, ScrollText, Settings, ShieldCheck, Target, TrendingUp, UserCircle, Users, type LucideIcon } from "lucide-react";
 import type { PermissionKey } from "@/modules/auth/permissions";
 import { PREVIEW_PERSONA_PATHS, type PreviewPersonaKey } from "@/lib/ux-preview";
 
@@ -13,8 +13,6 @@ export const navGroups: NavGroup[] = [
     { href: "/governance", label: "5.23.3 حوكمة وتفعيل الابتكار", icon: Landmark, permissions: ["committee.view", "idea.view"] },
     { href: "/solutions", label: "5.24.1 حصر الحلول الابتكارية", icon: FileCheck2, permissions: ["solution.view"] },
     { href: "/impact", label: "5.24.2 قياس أثر الحلول", icon: TrendingUp, permissions: ["impact.view"] },
-    { href: "/partners", label: "الجهات والشراكات", icon: Handshake, permissions: ["agreement.view"] },
-    { href: "/challenges", label: "التحديات", icon: Puzzle, permissions: ["challenge.view"] },
   ] },
   { label: "المتابعة", items: [
     { href: "/my-tasks", label: "مهامي", icon: ListTodo, permissions: ["compliance.view"] },

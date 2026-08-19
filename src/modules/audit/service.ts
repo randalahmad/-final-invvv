@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db";
+import type { LinkedEntityType } from "@prisma/client";
 import type { AccessContext } from "@/server/access-context";
 import { requirePermission } from "@/server/authorization";
 
@@ -16,7 +17,7 @@ export interface AuditLogRow {
 
 /** Most recent audit entries, platform-wide — SYSTEM_ADMIN only (audit.view). No department scoping: the audit trail is a platform-level governance record.
  * entityTypes/entityIds (optional) scope the log to specific records — used by the per-requirement Audit Trail card so it reuses this exact service instead of a parallel query. */
-export async function listAuditLog(actor: AccessContext, opts?: { q?: string; action?: string; entityTypes?: string[]; entityIds?: string[] }): Promise<AuditLogRow[]> {
+export async function listAuditLog(actor: AccessContext, opts?: { q?: string; action?: string; entityTypes?: LinkedEntityType[]; entityIds?: string[] }): Promise<AuditLogRow[]> {
   requirePermission(actor, VIEW);
   const rows = await prisma.auditLog.findMany({
     where: {

@@ -7,8 +7,9 @@
  * the same access shape as the real seeded roles.
  */
 import { DEFAULT_ROLE_PERMISSIONS, ROLE_KEYS, type RoleKey } from "@/modules/auth/permissions";
+import { resolveRuntimeModes } from "@/lib/ux-preview";
 
-export const DEMO_MODE = !process.env.DATABASE_URL || process.env.DEMO_MODE === "true";
+export const DEMO_MODE = resolveRuntimeModes().demo;
 
 export interface DemoUser {
   id: string;

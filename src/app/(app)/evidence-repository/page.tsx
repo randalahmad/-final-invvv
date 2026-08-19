@@ -27,7 +27,7 @@ export default async function EvidenceRepositoryPage({ searchParams }: { searchP
   if (searchParams.unit) rows = rows.filter((r) => r.code.startsWith(searchParams.unit!));
   if (searchParams.needsUpdate === "1") rows = rows.filter((r) => r.needsUpdate);
 
-  const statuses = [...new Set(allRows.map((r) => r.reviewStatus))].filter((s) => s !== "MISSING");
+  const statuses = [...new Set(rows.map((r) => r.reviewStatus))];
 
   return (
     <div className="flex flex-col gap-5">
