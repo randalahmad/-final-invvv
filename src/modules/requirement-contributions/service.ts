@@ -25,7 +25,7 @@ export async function createContribution(actor:AccessContext,input:{requirementI
 }
 
 async function rowWithContext(where:{id?:string;invitationTokenHash?:string}){return prisma.requirementSectionContribution.findFirst({where,include:{assignment:{include:{requirement:true,department:{include:{organization:true}}}},submissions:{orderBy:{version:"desc"}}}});}
-function requirementIdForCode(code:string){const def=["5-23-1-r1","5-23-1-r2","5-23-1-r3"].map(getContributionDefinition).find(item=>item?.code===code);if(!def)throw new Error("UNSUPPORTED_REQUIREMENT");return def.requirementId;}
+function requirementIdForCode(code:string){const def=["5-23-1-r1","5-23-1-r2","5-23-1-r3","5-23-2-r1"].map(getContributionDefinition).find(item=>item?.code===code);if(!def)throw new Error("UNSUPPORTED_REQUIREMENT");return def.requirementId;}
 async function contributionForActor(actor:AccessContext,id:string){const row=await rowWithContext({id});if(!row||row.contributorUserId!==actor.userId)throw new Error("FORBIDDEN");requirementIdForCode(row.assignment.requirement.code);return row;}
 async function contributionForToken(token:string){const row=await rowWithContext({invitationTokenHash:hashToken(token)});if(!row||row.status==="CANCELLED")throw new Error("NOT_FOUND");requirementIdForCode(row.assignment.requirement.code);return row;}
 

@@ -796,6 +796,8 @@ model RequirementRaciAssignment {
 model RequirementTask {
   id                   String                          @id @default(cuid())
   assignmentId         String
+  activityId           String?
+  sourceKey            String?                           @unique
   type                 RequirementTaskType
   title                String
   status               RequirementTaskStatus           @default(OPEN)
@@ -809,10 +811,12 @@ model RequirementTask {
   createdAt            DateTime                        @default(now())
   updatedAt            DateTime                        @updatedAt
   assignment           ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  activity             InnovationActivity?              @relation(fields: [activityId], references: [id], onDelete: SetNull)
   sectionContribution  RequirementSectionContribution?
 
   @@index([assignedToUserId, status, dueDate])
   @@index([assignmentId])
+  @@index([activityId, status, dueDate])
   @@map("requirement_tasks")
 }
 
@@ -971,6 +975,7 @@ model InnovationActivity {
   solutions                  InnovationSolution[]
   participatingOrganizations ActivityOrganization[]
   agreementLinks             AgreementActivity[]
+  requirementTasks           RequirementTask[]
 
   @@map("innovation_activities")
 }
