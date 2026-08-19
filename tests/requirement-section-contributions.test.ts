@@ -3,7 +3,7 @@ import {describe,expect,it} from "vitest";
 import {getWorkspaceConfig} from "../src/modules/dga/workspace-config";
 import {PREVIEW_WORKSPACE_DATA} from "../src/modules/dga/preview-workspace-fixtures";
 import {auditActionLabel} from "../src/modules/audit/service";
-import {CONTRIBUTION_SECTIONS,getContributionDefinition,REQUIREMENT_01_ID,REQUIREMENT_02_ID,SECTION_LABELS} from "../src/modules/requirement-contributions/types";
+import {CONTRIBUTION_SECTIONS,getContributionDefinition,REQUIREMENT_01_ID,REQUIREMENT_02_ID,REQUIREMENT_03_ID,SECTION_LABELS} from "../src/modules/requirement-contributions/types";
 
 describe("5.23.1 Requirement 01 section collaboration",()=>{
   it("limits delegation to the four approved institutional sections",()=>{
@@ -53,5 +53,32 @@ describe("5.23.1 Requirement 02 initiative collaboration",()=>{
     expect((requirement02.initiatives as unknown[])).toHaveLength(3);
     expect((requirement02.strategicAlignment as Array<Record<string,unknown>>).some(row=>row.strategicObjective===objective)).toBe(true);
     expect((requirement02.initiativeKpis as Array<Record<string,unknown>>).some(row=>row.kpiName===kpi)).toBe(true);
+  });
+});
+
+describe("5.23.1 Requirement 03 institutional cooperation",()=>{
+  it("models cooperation as records with agreement, contacts and outputs",()=>{
+    const config=getWorkspaceConfig(REQUIREMENT_03_ID)!;
+    expect(config.sections.map(section=>section.key)).toEqual(["cooperations","partnerContacts","agreements","cooperationOutputs"]);
+    expect(config.evidence[0].key).toBe("APPROVED_COOPERATION_AGREEMENT");
+  });
+  it("reuses scoped contributions for the four cooperation areas",()=>{
+    expect(getContributionDefinition(REQUIREMENT_03_ID)?.sections).toEqual(["cooperations","partnerContacts","agreements","cooperationOutputs"]);
+  });
+  it("keeps preview cooperation connected to its agreement and evidence target",()=>{
+    const preview=PREVIEW_WORKSPACE_DATA[REQUIREMENT_03_ID];
+    expect((preview.cooperations as Array<Record<string,unknown>>)[0].partnerName).toBe("جامعة المجمعة");
+    expect((preview.agreements as Array<Record<string,unknown>>)[0].cooperationName).toBe("جامعة المجمعة");
+    expect((preview.cooperationOutputs as Array<Record<string,unknown>>).length).toBeGreaterThanOrEqual(2);
+  });
+  it("reuses CooperationAgreement and links the same evidence record",()=>{
+    const service=readFileSync("src/modules/dga/workspace-service.ts","utf8");
+    expect(service).toContain("tx.cooperationAgreement");
+    expect(service).toContain('entityType:"COOPERATION_AGREEMENT"');
+    expect(service).not.toContain("AI agreement");
+  });
+  it("presents cooperation audit events in Arabic",()=>{
+    expect(auditActionLabel("COOPERATION_RECORD_CREATED")).toBe("إنشاء سجل تعاون");
+    expect(auditActionLabel("COOPERATION_AGREEMENT_LINKED")).toBe("ربط اتفاقية بسجل التعاون");
   });
 });
