@@ -12,7 +12,7 @@ export interface ContributionDefinition {
 export const CONTRIBUTION_DEFINITIONS:readonly ContributionDefinition[]=[
   {requirementId:"5-23-1-r1",code:"5.23.1.1",unit:"5.23.1",number:"01",sections:["innovationAreas","strategicGoals","kpis","alignment"],labels:{innovationAreas:"مجالات الابتكار",strategicGoals:"الأهداف الاستراتيجية للبحث والابتكار",kpis:"المؤشرات KPIs",alignment:"المواءمة مع أهداف الجهة"}},
   {requirementId:"5-23-1-r2",code:"5.23.1.2",unit:"5.23.1",number:"02",sections:["initiatives","strategicAlignment","initiativeKpis"],labels:{initiatives:"بيانات المبادرات والمشروعات",strategicAlignment:"المواءمة الاستراتيجية",initiativeKpis:"مؤشرات أداء المبادرات"}},
-  {requirementId:"5-23-1-r3",code:"5.23.1.3",unit:"5.23.1",number:"03",sections:["cooperations","partnerContacts","agreements","cooperationOutputs"],labels:{cooperations:"بيانات الجهة ونطاق التعاون",partnerContacts:"جهات اتصال الشريك",agreements:"بيانات الاتفاقية",cooperationOutputs:"المخرجات"}},
+  {requirementId:"5-23-1-r3",code:"5.23.1.3",unit:"5.23.1",number:"03",sections:["cooperations","partnerContacts","agreements","cooperationOutputs"],labels:{cooperations:"بيانات الجهة ونطاق التعاون",partnerContacts:"جهات الاتصال والمسؤولون",agreements:"بيانات الاتفاقية",cooperationOutputs:"المخرجات"}},
 ] as const;
 
 export const REQUIREMENT_01_ID="5-23-1-r1";
