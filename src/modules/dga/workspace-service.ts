@@ -80,6 +80,10 @@ async function syncOpenInnovationTasks(tx:Prisma.TransactionClient,data:Workspac
   }
 }
 
+async function syncCooperationActivationTasks(tx:Prisma.TransactionClient,data:WorkspaceData,assignmentId:string,actorUserId:string){
+  for(const activation of Array.isArray(data.cooperationActivations)?data.cooperationActivations:[]){const activationId=String(activation.id??"");const partner=String(activation.cooperationName??"");if(!activationId)continue;for(const task of Array.isArray(activation.tasks)?activation.tasks:[]){const title=String(task.title??"").trim();const assignedToUserId=String(task.assignedUserId??"").trim()||null;if(!title||!assignedToUserId)continue;const sourceKey=`cooperation-activation:${activationId}:${String(task.section??"overview")}:${String(task.id??title)}`;const status=task.status==="COMPLETED"?"COMPLETED" as const:task.status==="CANCELLED"?"CANCELLED" as const:task.status==="WAITING"?"WAITING" as const:task.status==="IN_PROGRESS"?"IN_PROGRESS" as const:"OPEN" as const;const priority=["LOW","MEDIUM","HIGH","URGENT"].includes(String(task.priority))?String(task.priority) as "LOW"|"MEDIUM"|"HIGH"|"URGENT":"MEDIUM";await tx.requirementTask.upsert({where:{sourceKey},create:{sourceKey,assignmentId,type:"FOLLOW_UP",title,status,priority,requestedById:actorUserId,assignedToUserId,dueDate:task.dueDate?new Date(String(task.dueDate)):null,nextAction:String(task.nextAction??`فتح تفعيل التعاون مع «${partner}»`),completedAt:status==="COMPLETED"?new Date(String(task.completedAt??new Date().toISOString())):null},update:{title,status,priority,assignedToUserId,dueDate:task.dueDate?new Date(String(task.dueDate)):null,nextAction:String(task.nextAction??`فتح تفعيل التعاون مع «${partner}»`),completedAt:status==="COMPLETED"?new Date(String(task.completedAt??new Date().toISOString())):null}});}}
+}
+
 // 5.23.1.3 (اتفاقية تعاون) و5.23.2.4 (تفعيل اتفاقية) هما المتطلبان الوحيدان التي
 // يمكن أن يصل إليهما شريك خارجي عبر منح اتفاقية فقط (بلا نطاق قسم/منظمة).
 // المنح تأتي من مصدرين ولا يجوز الاكتفاء بأحدهما فقط:
@@ -160,6 +164,7 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
     if(requirementId==="5-23-2-r1")await syncAnnualPlanActivities(tx,data,loaded.assignment.id,loaded.assignment.departmentId,actor.userId);
     if(requirementId==="5-23-2-r2")await syncMethodologyApplications(tx,data,loaded.assignment.id,loaded.assignment.departmentId,actor.userId);
     if(requirementId==="5-23-2-r3")await syncOpenInnovationTasks(tx,data,loaded.assignment.id,actor.userId);
+    if(requirementId==="5-23-2-r4")await syncCooperationActivationTasks(tx,data,loaded.assignment.id,actor.userId);
     await tx.complianceRequirementAssignment.update({where:{id:loaded.assignment.id},data:{workspaceData:data as Prisma.InputJsonValue,operationalStatus:status,lastSavedById:actor.userId}});
     await writeAudit({actorUserId:actor.userId,action:AUDIT.COMPLIANCE_ASSIGNMENT_UPDATED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"تحديث مساحة عمل متطلب",after:{status,requirementCode:config.code}},tx);
     if(requirementId==="5-23-2-r1"){
@@ -192,6 +197,10 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
       if(changed("projects"))await record(AUDIT.OPEN_INNOVATION_PROJECT_LINKED,"توثيق مشروع ناتج وربطه بالحل المصدر");
       if(changed("tasks"))await record(AUDIT.OPEN_INNOVATION_TASK_UPDATED,"إنشاء أو تحديث مهمة فعالية");
       if(after.some((item,index)=>item.status==="مغلقة تشغيليًا"&&before[index]?.status!=="مغلقة تشغيليًا"))await record(AUDIT.OPEN_INNOVATION_EVENT_CLOSED,"إغلاق فعالية ابتكار مفتوح تشغيليًا");
+    }
+    if(requirementId==="5-23-2-r4"){
+      const previous=loaded.assignment.workspaceData as WorkspaceData;const before=Array.isArray(previous.cooperationActivations)?previous.cooperationActivations:[];const after=Array.isArray(data.cooperationActivations)?data.cooperationActivations:[];const record=(action:string,summary:string)=>writeAudit({actorUserId:actor.userId,action,entityType:"REQUIREMENT_ASSIGNMENT",entityId:loaded.assignment.id,departmentId:loaded.assignment.departmentId,summary,metadata:{requirementCode:"5.23.2.4"}},tx);const changed=(key:string)=>JSON.stringify(before.map(item=>item[key]))!==JSON.stringify(after.map(item=>item[key]));
+      if(after.length>before.length)await record(AUDIT.COOPERATION_ACTIVATION_LINKED,"ربط علاقة تعاون بخطة التفعيل");if(changed("plan"))await record(AUDIT.COOPERATION_ACTIVATION_PLAN_UPDATED,"إنشاء أو تحديث خطة تفعيل التعاون");if(changed("meetings"))await record(AUDIT.COOPERATION_ACTIVATION_MEETING_UPDATED,"إضافة أو تحديث اجتماع متابعة ومحضره");if(changed("commitments")||changed("tasks"))await record(AUDIT.COOPERATION_ACTIVATION_COMMITMENT_UPDATED,"تحديث التزامات ومهام التعاون");if(changed("outputs"))await record(AUDIT.COOPERATION_ACTIVATION_OUTPUT_UPDATED,"توثيق مخرج فعلي للتعاون");if(changed("reports"))await record(AUDIT.COOPERATION_ACTIVATION_REPORT_UPDATED,"إضافة أو تحديث تقرير دوري");if(changed("decisions"))await record(AUDIT.COOPERATION_ACTIVATION_DECISION_UPDATED,"تسجيل قرار متابعة");if(changed("correctiveActions"))await record(AUDIT.COOPERATION_ACTIVATION_CORRECTIVE_UPDATED,"إنشاء أو تحديث إجراء تصحيحي");
     }
     if(requirementId==="5-23-1-r2"){
       const previous=loaded.assignment.workspaceData as WorkspaceData;

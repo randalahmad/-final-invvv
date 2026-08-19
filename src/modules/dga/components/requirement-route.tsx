@@ -15,7 +15,8 @@ export async function RequirementRoute({unitIndex,requirementId,eventId}:{unitIn
   if(!requirement||!config)notFound(); const actor=await requireUser();
   try {
     const loaded=await loadRequirementWorkspace(actor,requirementId); const names=loaded.names;
-    const referenceData=requirementId==="5-23-1-r2"?(await loadRequirementWorkspace(actor,"5-23-1-r1")).assignment.workspaceData as WorkspaceData:requirementId==="5-23-2-r3"?(await loadRequirementWorkspace(actor,"5-23-2-r1")).assignment.workspaceData as WorkspaceData:{};
+    const internalScope=actor.scopes.some(scope=>["PLATFORM","ORGANIZATION","DEPARTMENT"].includes(scope.scopeType));
+    const referenceData=requirementId==="5-23-1-r2"?(await loadRequirementWorkspace(actor,"5-23-1-r1")).assignment.workspaceData as WorkspaceData:requirementId==="5-23-2-r3"?(await loadRequirementWorkspace(actor,"5-23-2-r1")).assignment.workspaceData as WorkspaceData:requirementId==="5-23-2-r4"&&internalScope?(await loadRequirementWorkspace(actor,"5-23-1-r3")).assignment.workspaceData as WorkspaceData:{};
     const contributions=getContributionDefinition(requirementId)?await listContributionsForAssignment(loaded.assignment.id):[];
     const canViewAudit=can(actor,"audit.view");
     const auditEntries=canViewAudit?await listAuditLog(actor,{entityTypes:["COMPLIANCE_REQUIREMENT","REQUIREMENT_ASSIGNMENT","EVIDENCE"],entityIds:[loaded.assignment.complianceRequirementId,loaded.assignment.id,...loaded.evidence.map(e=>e.id)]}):[];
