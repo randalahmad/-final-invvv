@@ -282,6 +282,31 @@ enum CollaborationEntryType {
   DUE_DATE_CHANGE
 }
 
+enum SectionContributionStatus {
+  NOT_SENT
+  INVITATION_SENT
+  OPENED
+  IN_PROGRESS
+  SUBMITTED
+  UNDER_REVIEW
+  NEEDS_AMENDMENT
+  COMPLETED
+  OVERDUE
+  CANCELLED
+}
+
+enum SectionContributorRole {
+  RESPONSIBLE
+  SUPPORTING
+}
+
+enum InvitationDeliveryStatus {
+  PREPARED
+  SENT
+  FAILED
+  NOT_REQUIRED
+}
+
 /// AI document-analysis job state (system worker; produces suggestions only).
 enum DocumentAnalysisStatus {
   QUEUED
@@ -732,6 +757,7 @@ model ComplianceRequirementAssignment {
   workflowEvents  RequirementWorkflowEvent[]
   versions        RequirementWorkspaceVersion[]
   collaboration   RequirementCollaborationEntry[]
+  sectionContributions RequirementSectionContribution[]
 
   @@index([complianceRequirementId, departmentId])
   @@index([departmentId])
@@ -782,10 +808,68 @@ model RequirementTask {
   createdAt            DateTime                        @default(now())
   updatedAt            DateTime                        @updatedAt
   assignment           ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  sectionContribution  RequirementSectionContribution?
 
   @@index([assignedToUserId, status, dueDate])
   @@index([assignmentId])
   @@map("requirement_tasks")
+}
+
+model RequirementSectionContribution {
+  id                    String                    @id @default(cuid())
+  assignmentId          String
+  sectionKey            String
+  contributorRole       SectionContributorRole    @default(RESPONSIBLE)
+  contributorUserId     String?
+  contributorName       String
+  contributorEmail      String
+  jobTitle               String?
+  departmentName        String?
+  assignedById           String
+  reviewerUserId         String?
+  dueDate                DateTime?
+  priority               WorkPriority              @default(MEDIUM)
+  requesterNote          String?
+  status                 SectionContributionStatus  @default(NOT_SENT)
+  invitationDelivery    InvitationDeliveryStatus    @default(PREPARED)
+  invitationTokenHash   String?                     @unique
+  invitationTokenLast4  String?
+  assignedAt             DateTime                    @default(now())
+  invitationSentAt       DateTime?
+  openedAt               DateTime?
+  submittedAt            DateTime?
+  reviewedAt             DateTime?
+  completedAt            DateTime?
+  cancelledAt            DateTime?
+  taskId                  String?                     @unique
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt
+  assignment              ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  task                    RequirementTask?            @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  submissions             RequirementSectionSubmission[]
+
+  @@index([assignmentId, sectionKey, status])
+  @@index([contributorUserId, status, dueDate])
+  @@index([contributorEmail])
+  @@map("requirement_section_contributions")
+}
+
+model RequirementSectionSubmission {
+  id              String                         @id @default(cuid())
+  contributionId  String
+  version         Int
+  data            Json
+  submittedById   String?
+  submitterEmail  String?
+  submittedAt     DateTime                       @default(now())
+  reviewDecision  String?
+  reviewNotes     String?
+  reviewedById    String?
+  reviewedAt      DateTime?
+  contribution    RequirementSectionContribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+
+  @@unique([contributionId, version])
+  @@map("requirement_section_submissions")
 }
 
 model RequirementWorkflowEvent {

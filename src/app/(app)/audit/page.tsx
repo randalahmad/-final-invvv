@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { requirePermission, getAccessContext } from "@/server/authz";
-import { listAuditLog, listDistinctAuditActions } from "@/modules/audit/service";
+import { auditActionLabel, listAuditLog, listDistinctAuditActions } from "@/modules/audit/service";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,7 @@ export default async function AuditLogPage({ searchParams }: { searchParams: { q
             <option value="">كل العمليات</option>
             {actions.map((a) => (
               <option key={a} value={a}>
-                {a}
+                {auditActionLabel(a)}
               </option>
             ))}
           </select>
@@ -72,7 +72,7 @@ export default async function AuditLogPage({ searchParams }: { searchParams: { q
                     <tr key={r.id} className="border-b border-border/60 last:border-0 dark:border-border-dark/60">
                       <td className="px-4 py-2.5 text-[12px] text-muted">{new Date(r.createdAt).toLocaleString("ar")}</td>
                       <td className="px-4 py-2.5 text-[12.5px] text-slate-700 dark:text-slate-200">{r.actorName ?? "—"}</td>
-                      <td className="px-4 py-2.5 text-[12px] text-muted">{r.action}</td>
+                      <td className="px-4 py-2.5 text-[12px] text-muted">{auditActionLabel(r.action)}</td>
                       <td className="px-4 py-2.5 text-[12px] text-muted">{r.entityType ?? "—"}</td>
                       <td className="px-4 py-2.5 text-[12.5px] text-slate-700 dark:text-slate-200">{r.summary ?? "—"}</td>
                     </tr>

@@ -80,6 +80,12 @@ export async function loadRequirementWorkspace(actor: AccessContext, requirement
 export async function saveRequirementWorkspace(actor: AccessContext, requirementId:string, data:WorkspaceData) {
   const loaded=await loadRequirementWorkspace(actor,requirementId); const config=getWorkspaceConfig(requirementId)!;
   if(!loaded.canEdit) throw new WorkspaceError("FORBIDDEN");
+  if(requirementId==="5-23-1-r1"){
+    const delegated=await prisma.requirementSectionContribution.findMany({where:{assignmentId:loaded.assignment.id,status:{in:["NOT_SENT","INVITATION_SENT","OPENED","IN_PROGRESS","SUBMITTED","UNDER_REVIEW","NEEDS_AMENDMENT","OVERDUE"]}},select:{sectionKey:true,contributorName:true}});
+    const previous=loaded.assignment.workspaceData as WorkspaceData;
+    const conflict=delegated.find(item=>JSON.stringify(previous[item.sectionKey])!==JSON.stringify(data[item.sectionKey]));
+    if(conflict)throw new WorkspaceError("VALIDATION",`القسم «${config.sections.find(section=>section.key===conflict.sectionKey)?.title??conflict.sectionKey}» مسند حاليًا إلى ${conflict.contributorName}. ألغِ الإسناد أو راجع المساهمة قبل التعديل المباشر.`);
+  }
   const status=deriveOperationalStatus(config,data,loaded.approvedCounts);
   await prisma.$transaction(async(tx)=>{ await tx.complianceRequirementAssignment.update({where:{id:loaded.assignment.id},data:{workspaceData:data as Prisma.InputJsonValue,operationalStatus:status,lastSavedById:actor.userId}}); await writeAudit({actorUserId:actor.userId,action:AUDIT.COMPLIANCE_ASSIGNMENT_UPDATED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"تحديث مساحة عمل متطلب",after:{status,requirementCode:config.code}},tx); });
   return {status};
