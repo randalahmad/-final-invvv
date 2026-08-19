@@ -60,6 +60,13 @@ async function syncAnnualPlanActivities(tx:Prisma.TransactionClient,data:Workspa
   }
 }
 
+async function syncMethodologyApplications(tx:Prisma.TransactionClient,data:WorkspaceData,assignmentId:string,departmentId:string,actorUserId:string){
+  const cases=Array.isArray(data.methodologyCases)?data.methodologyCases:[];
+  for(const row of cases){const name=String(row.name??"").trim();if(!name)continue;const sourceKey=`methodology:${assignmentId}:${String(row.id??name)}`;const record=await tx.methodologyApplication.upsert({where:{sourceKey},create:{sourceKey,assignmentId,nameAr:name,challengeAr:String(row.challengeTitle??"").trim()||null,methodologyAr:String(row.methodology??"").trim()||null,owningDepartmentName:String(row.department??"").trim()||null,responsibleUserId:String(row.responsibleUserId??"").trim()||null,status:String(row.status??"DRAFT"),startDate:row.startDate?new Date(String(row.startDate)):null,endDate:row.endDate?new Date(String(row.endDate)):null},update:{nameAr:name,challengeAr:String(row.challengeTitle??"").trim()||null,methodologyAr:String(row.methodology??"").trim()||null,owningDepartmentName:String(row.department??"").trim()||null,responsibleUserId:String(row.responsibleUserId??"").trim()||null,status:String(row.status??"DRAFT"),startDate:row.startDate?new Date(String(row.startDate)):null,endDate:row.endDate?new Date(String(row.endDate)):null}});row.methodologyApplicationId=record.id;
+    for(const task of Array.isArray(row.tasks)?row.tasks:[]){const title=String(task.title??"").trim();const assignedToUserId=String(task.assignedUserId??"").trim()||null;if(!title||!assignedToUserId)continue;const taskKey=`methodology-task:${sourceKey}:${String(task.id??title)}`;const status=task.status==="COMPLETED"?"COMPLETED" as const:task.status==="CANCELLED"?"CANCELLED" as const:task.status==="WAITING"?"WAITING" as const:task.status==="IN_PROGRESS"||task.status==="REVIEW"?"IN_PROGRESS" as const:"OPEN" as const;const priority=["LOW","MEDIUM","HIGH","URGENT"].includes(String(task.priority))?String(task.priority) as "LOW"|"MEDIUM"|"HIGH"|"URGENT":"MEDIUM";await tx.requirementTask.upsert({where:{sourceKey:taskKey},create:{sourceKey:taskKey,methodologyApplicationId:record.id,assignmentId,type:"FOLLOW_UP",title,status,priority,requestedById:actorUserId,assignedToUserId,dueDate:task.dueDate?new Date(String(task.dueDate)):null,nextAction:`فتح حالة «${name}» ومتابعة المهمة`,completedAt:status==="COMPLETED"?new Date(String(task.completedAt??new Date().toISOString())):null},update:{methodologyApplicationId:record.id,title,status,priority,assignedToUserId,dueDate:task.dueDate?new Date(String(task.dueDate)):null,nextAction:`فتح حالة «${name}» ومتابعة المهمة`,completedAt:status==="COMPLETED"?new Date(String(task.completedAt??new Date().toISOString())):null}});}
+  }
+}
+
 // 5.23.1.3 (اتفاقية تعاون) و5.23.2.4 (تفعيل اتفاقية) هما المتطلبان الوحيدان التي
 // يمكن أن يصل إليهما شريك خارجي عبر منح اتفاقية فقط (بلا نطاق قسم/منظمة).
 // المنح تأتي من مصدرين ولا يجوز الاكتفاء بأحدهما فقط:
@@ -138,6 +145,7 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
   await prisma.$transaction(async(tx)=>{
     if(requirementId==="5-23-1-r3"){await syncCooperationRecords(tx,data);await syncCooperationContacts(tx,data,actor.userId);}
     if(requirementId==="5-23-2-r1")await syncAnnualPlanActivities(tx,data,loaded.assignment.id,loaded.assignment.departmentId,actor.userId);
+    if(requirementId==="5-23-2-r2")await syncMethodologyApplications(tx,data,loaded.assignment.id,loaded.assignment.departmentId,actor.userId);
     await tx.complianceRequirementAssignment.update({where:{id:loaded.assignment.id},data:{workspaceData:data as Prisma.InputJsonValue,operationalStatus:status,lastSavedById:actor.userId}});
     await writeAudit({actorUserId:actor.userId,action:AUDIT.COMPLIANCE_ASSIGNMENT_UPDATED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"تحديث مساحة عمل متطلب",after:{status,requirementCode:config.code}},tx);
     if(requirementId==="5-23-2-r1"){
@@ -149,6 +157,11 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
       if(JSON.stringify(before.map(item=>item.deliverables))!==JSON.stringify(after.map(item=>item.deliverables)))await event(AUDIT.ACTIVITY_DELIVERABLE_REVIEWED,"تحديث مراجعة تسليم نشاط");
       if(JSON.stringify(before.map(item=>item.outputs))!==JSON.stringify(after.map(item=>item.outputs)))await event(AUDIT.ACTIVITY_OUTPUT_ADDED,"تحديث مخرجات نشاط الخطة السنوية");
       if(after.some((item,index)=>item.status==="COMPLETED"&&before[index]?.status!=="COMPLETED"))await event(AUDIT.ACTIVITY_CLOSED,"إغلاق نشاط بعد استكمال قائمة الإغلاق");
+    }
+    if(requirementId==="5-23-2-r2"){
+      const previous=loaded.assignment.workspaceData as WorkspaceData;const before=Array.isArray(previous.methodologyCases)?previous.methodologyCases:[];const after=Array.isArray(data.methodologyCases)?data.methodologyCases:[];const event=(action:string,summary:string)=>writeAudit({actorUserId:actor.userId,action,entityType:"REQUIREMENT_ASSIGNMENT",entityId:loaded.assignment.id,departmentId:loaded.assignment.departmentId,summary,metadata:{requirementCode:"5.23.2.2"}},tx);const changed=(key:string)=>JSON.stringify(before.map(x=>x[key]))!==JSON.stringify(after.map(x=>x[key]));
+      if(JSON.stringify(before)!==JSON.stringify(after))await event(AUDIT.METHODOLOGY_CASE_UPDATED,after.length>before.length?"إنشاء حالة تطبيق منهجية":"تحديث حالة تطبيق منهجية");
+      if(changed("sessions"))await event(AUDIT.METHODOLOGY_SESSION_RECORDED,"توثيق جلسة منهجية ونتائجها");if(changed("participants"))await event(AUDIT.METHODOLOGY_PARTICIPANT_ADDED,"تحديث قائمة المشاركين في تطبيق المنهجية");if(changed("solutions"))await event(AUDIT.METHODOLOGY_SOLUTION_ADDED,"توثيق حل مقترح وربطه بجلسة");if(changed("prototypes"))await event(AUDIT.METHODOLOGY_PROTOTYPE_UPDATED,"تحديث نموذج أولي أو مرحلة تطوير");if(changed("projects"))await event(AUDIT.METHODOLOGY_PROJECT_LINKED,"ربط مشروع أو مبادرة ناتجة");if(changed("indicators"))await event(AUDIT.METHODOLOGY_KPI_LINKED,"ربط مؤشر أداء وملخص أثر");if(after.some((x,i)=>x.status==="COMPLETED"&&before[i]?.status!=="COMPLETED"))await event(AUDIT.METHODOLOGY_CASE_CLOSED,"إغلاق حالة تطبيق منهجية");
     }
     if(requirementId==="5-23-1-r2"){
       const previous=loaded.assignment.workspaceData as WorkspaceData;

@@ -759,6 +759,7 @@ model ComplianceRequirementAssignment {
   versions             RequirementWorkspaceVersion[]
   collaboration        RequirementCollaborationEntry[]
   sectionContributions RequirementSectionContribution[]
+  methodologyApplications MethodologyApplication[]
 
   @@index([complianceRequirementId, departmentId])
   @@index([departmentId])
@@ -797,6 +798,7 @@ model RequirementTask {
   id                   String                          @id @default(cuid())
   assignmentId         String
   activityId           String?
+  methodologyApplicationId String?
   sourceKey            String?                           @unique
   type                 RequirementTaskType
   title                String
@@ -812,11 +814,13 @@ model RequirementTask {
   updatedAt            DateTime                        @updatedAt
   assignment           ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   activity             InnovationActivity?              @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  methodologyApplication MethodologyApplication?         @relation(fields: [methodologyApplicationId], references: [id], onDelete: SetNull)
   sectionContribution  RequirementSectionContribution?
 
   @@index([assignedToUserId, status, dueDate])
   @@index([assignmentId])
   @@index([activityId, status, dueDate])
+  @@index([methodologyApplicationId, status, dueDate])
   @@map("requirement_tasks")
 }
 
@@ -978,6 +982,31 @@ model InnovationActivity {
   requirementTasks           RequirementTask[]
 
   @@map("innovation_activities")
+}
+
+/// Stable operational parent for one documented application of a methodology.
+/// Detailed sessions, participants, outputs and prototype stages remain in the
+/// requirement workspace JSON so their flexible structure is not duplicated.
+model MethodologyApplication {
+  id                   String   @id @default(cuid())
+  assignmentId         String
+  sourceKey            String   @unique
+  nameAr               String
+  challengeAr          String?
+  methodologyAr        String?
+  owningDepartmentName String?
+  responsibleUserId    String?
+  status               String   @default("DRAFT")
+  startDate            DateTime?
+  endDate              DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  archivedAt           DateTime?
+  assignment           ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  tasks                RequirementTask[]
+
+  @@index([assignmentId, status])
+  @@map("methodology_applications")
 }
 
 /// Participating external organizations on an activity.

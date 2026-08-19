@@ -6,6 +6,14 @@ import { requirePermission } from "@/server/authorization";
 const VIEW = "audit.view" as const;
 
 const ACTION_LABELS:Record<string,string>={ACTIVITY_TASK_ASSIGNED:"إسناد مهمة نشاط",ACTIVITY_TASK_COMPLETED:"إكمال مهمة نشاط",ACTIVITY_MILESTONE_UPDATED:"تحديث محطة نشاط",ACTIVITY_MEETING_RECORDED:"توثيق لقاء نشاط",ACTIVITY_DELIVERABLE_REVIEWED:"مراجعة تسليم نشاط",ACTIVITY_OUTPUT_ADDED:"إضافة مخرج نشاط",ACTIVITY_CLOSED:"إغلاق نشاط",SECTION_CONTRIBUTION_ASSIGNED:"إسناد مساهمة قسم",SECTION_CONTRIBUTION_OPENED:"فتح دعوة مساهمة",SECTION_CONTRIBUTION_SUBMITTED:"تسليم مساهمة",SECTION_CONTRIBUTION_RETURNED:"إعادة مساهمة للتعديل",SECTION_CONTRIBUTION_ACCEPTED:"قبول مساهمة",SECTION_CONTRIBUTION_CANCELLED:"إلغاء إسناد مساهمة",INITIATIVE_RECORD_CREATED:"إنشاء سجل مبادرة",INITIATIVE_RECORD_UPDATED:"تحديث سجل مبادرة",INITIATIVE_OBJECTIVE_LINKED:"ربط مبادرة بهدف استراتيجي",INITIATIVE_KPI_LINKED:"ربط مبادرة بمؤشر أداء",COOPERATION_RECORD_CREATED:"إنشاء سجل تعاون",COOPERATION_RECORD_UPDATED:"تحديث سجل تعاون",COOPERATION_CONTACT_ADDED:"إضافة جهة اتصال للشريك",COOPERATION_CONTACT_UPDATED:"تحديث جهة اتصال للشريك",COOPERATION_PRIMARY_CONTACT_CHANGED:"تغيير جهة الاتصال الرئيسية",COOPERATION_CONTACT_ARCHIVED:"أرشفة جهة اتصال للشريك",COOPERATION_AGREEMENT_LINKED:"ربط اتفاقية بسجل التعاون",COOPERATION_STATUS_CHANGED:"تغيير حالة التعاون"};
+ACTION_LABELS.METHODOLOGY_CASE_UPDATED="تحديث حالة تطبيق منهجية";
+ACTION_LABELS.METHODOLOGY_SESSION_RECORDED="توثيق جلسة منهجية";
+ACTION_LABELS.METHODOLOGY_PARTICIPANT_ADDED="إضافة مشارك في تطبيق منهجية";
+ACTION_LABELS.METHODOLOGY_SOLUTION_ADDED="توثيق حل مقترح من جلسة";
+ACTION_LABELS.METHODOLOGY_PROTOTYPE_UPDATED="تحديث نموذج أولي أو مرحلة تطوير";
+ACTION_LABELS.METHODOLOGY_PROJECT_LINKED="ربط مشروع ناتج";
+ACTION_LABELS.METHODOLOGY_KPI_LINKED="ربط مؤشر وأثر";
+ACTION_LABELS.METHODOLOGY_CASE_CLOSED="إغلاق حالة تطبيق منهجية";
 export const auditActionLabel=(action:string)=>ACTION_LABELS[action]??action;
 
 export interface AuditLogRow {

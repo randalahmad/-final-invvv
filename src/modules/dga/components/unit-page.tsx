@@ -11,6 +11,7 @@ import { OperationalWorkspace } from "./operational-workspace";
 import { getWorkspaceConfig } from "../workspace-config";
 import { PREVIEW_WORKSPACE_DATA } from "../preview-workspace-fixtures";
 import { annualPlanForPersona } from "../preview-annual-plan-fixture";
+import { methodologyForPersona } from "../preview-methodology-fixture";
 import type { GovernanceView } from "@/modules/governance-workflow/components/governance-panel";
 import type { ContributionView } from "@/modules/requirement-contributions/types";
 
@@ -37,7 +38,7 @@ function RequirementWorkspace({ unit, requirement, persona, canEdit }: { unit: D
 export function DgaUnitPage({ unit, requirement, persona, canEdit = true }: { unit: DgaUnitDefinition; requirement?: DgaRequirementDefinition; persona?: PreviewPersonaKey; canEdit?: boolean }) {
   if (requirement) {
     const config = getWorkspaceConfig(requirement.id);
-    if (config) return <OperationalWorkspace unit={unit} requirement={requirement} config={config} initial={requirement.id==="5-23-2-r1"?annualPlanForPersona(persona):PREVIEW_WORKSPACE_DATA[requirement.id]??{}} initialEvidence={previewEvidence(requirement.id)} initialStatus="IN_PROGRESS" canEdit={canEdit} preview={Boolean(persona)} personaKey={persona} governance={scopedPreviewGovernance(persona,requirement.id)} contributions={previewContributions(requirement.id)} referenceData={requirement.id==="5-23-1-r2"?PREVIEW_WORKSPACE_DATA["5-23-1-r1"]:{}} />;
+    if (config) return <OperationalWorkspace unit={unit} requirement={requirement} config={config} initial={requirement.id==="5-23-2-r1"?annualPlanForPersona(persona):requirement.id==="5-23-2-r2"?methodologyForPersona(persona):PREVIEW_WORKSPACE_DATA[requirement.id]??{}} initialEvidence={previewEvidence(requirement.id)} initialStatus="IN_PROGRESS" canEdit={canEdit} preview={Boolean(persona)} personaKey={persona} governance={scopedPreviewGovernance(persona,requirement.id)} contributions={previewContributions(requirement.id)} referenceData={requirement.id==="5-23-1-r2"?PREVIEW_WORKSPACE_DATA["5-23-1-r1"]:{}} />;
     return <RequirementWorkspace unit={unit} requirement={requirement} persona={persona} canEdit={canEdit} />;
   }
   const completed = unit.requirements.filter((item) => item.status === "COMPLETED").length;
