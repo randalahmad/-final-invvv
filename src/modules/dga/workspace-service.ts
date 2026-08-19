@@ -67,6 +67,19 @@ async function syncMethodologyApplications(tx:Prisma.TransactionClient,data:Work
   }
 }
 
+async function syncOpenInnovationTasks(tx:Prisma.TransactionClient,data:WorkspaceData,assignmentId:string,actorUserId:string){
+  for(const event of Array.isArray(data.openInnovationEvents)?data.openInnovationEvents:[]){
+    const eventId=String(event.id??"").trim();const eventName=String(event.name??"").trim();if(!eventId||!eventName)continue;
+    for(const task of Array.isArray(event.tasks)?event.tasks:[]){
+      const title=String(task.title??"").trim();const assignedToUserId=String(task.assignedUserId??"").trim()||null;if(!title||!assignedToUserId)continue;
+      const taskId=String(task.id??title);const sourceKey=`open-innovation:${eventId}:${String(task.section??"overview")}:${taskId}`;
+      const status=task.status==="COMPLETED"?"COMPLETED" as const:task.status==="CANCELLED"?"CANCELLED" as const:task.status==="WAITING"?"WAITING" as const:task.status==="IN_PROGRESS"||task.status==="REVIEW"?"IN_PROGRESS" as const:"OPEN" as const;
+      const priority=["LOW","MEDIUM","HIGH","URGENT"].includes(String(task.priority))?String(task.priority) as "LOW"|"MEDIUM"|"HIGH"|"URGENT":"MEDIUM";
+      await tx.requirementTask.upsert({where:{sourceKey},create:{sourceKey,assignmentId,type:"FOLLOW_UP",title,status,priority,requestedById:actorUserId,assignedToUserId,dueDate:task.dueDate?new Date(String(task.dueDate)):null,nextAction:String(task.nextAction??`فتح فعالية «${eventName}»`),completedAt:status==="COMPLETED"?new Date(String(task.completedAt??new Date().toISOString())):null},update:{title,status,priority,assignedToUserId,dueDate:task.dueDate?new Date(String(task.dueDate)):null,nextAction:String(task.nextAction??`فتح فعالية «${eventName}»`),completedAt:status==="COMPLETED"?new Date(String(task.completedAt??new Date().toISOString())):null}});
+    }
+  }
+}
+
 // 5.23.1.3 (اتفاقية تعاون) و5.23.2.4 (تفعيل اتفاقية) هما المتطلبان الوحيدان التي
 // يمكن أن يصل إليهما شريك خارجي عبر منح اتفاقية فقط (بلا نطاق قسم/منظمة).
 // المنح تأتي من مصدرين ولا يجوز الاكتفاء بأحدهما فقط:
@@ -146,6 +159,7 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
     if(requirementId==="5-23-1-r3"){await syncCooperationRecords(tx,data);await syncCooperationContacts(tx,data,actor.userId);}
     if(requirementId==="5-23-2-r1")await syncAnnualPlanActivities(tx,data,loaded.assignment.id,loaded.assignment.departmentId,actor.userId);
     if(requirementId==="5-23-2-r2")await syncMethodologyApplications(tx,data,loaded.assignment.id,loaded.assignment.departmentId,actor.userId);
+    if(requirementId==="5-23-2-r3")await syncOpenInnovationTasks(tx,data,loaded.assignment.id,actor.userId);
     await tx.complianceRequirementAssignment.update({where:{id:loaded.assignment.id},data:{workspaceData:data as Prisma.InputJsonValue,operationalStatus:status,lastSavedById:actor.userId}});
     await writeAudit({actorUserId:actor.userId,action:AUDIT.COMPLIANCE_ASSIGNMENT_UPDATED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"تحديث مساحة عمل متطلب",after:{status,requirementCode:config.code}},tx);
     if(requirementId==="5-23-2-r1"){
@@ -162,6 +176,22 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
       const previous=loaded.assignment.workspaceData as WorkspaceData;const before=Array.isArray(previous.methodologyCases)?previous.methodologyCases:[];const after=Array.isArray(data.methodologyCases)?data.methodologyCases:[];const event=(action:string,summary:string)=>writeAudit({actorUserId:actor.userId,action,entityType:"REQUIREMENT_ASSIGNMENT",entityId:loaded.assignment.id,departmentId:loaded.assignment.departmentId,summary,metadata:{requirementCode:"5.23.2.2"}},tx);const changed=(key:string)=>JSON.stringify(before.map(x=>x[key]))!==JSON.stringify(after.map(x=>x[key]));
       if(JSON.stringify(before)!==JSON.stringify(after))await event(AUDIT.METHODOLOGY_CASE_UPDATED,after.length>before.length?"إنشاء حالة تطبيق منهجية":"تحديث حالة تطبيق منهجية");
       if(changed("sessions"))await event(AUDIT.METHODOLOGY_SESSION_RECORDED,"توثيق جلسة منهجية ونتائجها");if(changed("participants"))await event(AUDIT.METHODOLOGY_PARTICIPANT_ADDED,"تحديث قائمة المشاركين في تطبيق المنهجية");if(changed("solutions"))await event(AUDIT.METHODOLOGY_SOLUTION_ADDED,"توثيق حل مقترح وربطه بجلسة");if(changed("prototypes"))await event(AUDIT.METHODOLOGY_PROTOTYPE_UPDATED,"تحديث نموذج أولي أو مرحلة تطوير");if(changed("projects"))await event(AUDIT.METHODOLOGY_PROJECT_LINKED,"ربط مشروع أو مبادرة ناتجة");if(changed("indicators"))await event(AUDIT.METHODOLOGY_KPI_LINKED,"ربط مؤشر أداء وملخص أثر");if(after.some((x,i)=>x.status==="COMPLETED"&&before[i]?.status!=="COMPLETED"))await event(AUDIT.METHODOLOGY_CASE_CLOSED,"إغلاق حالة تطبيق منهجية");
+    }
+    if(requirementId==="5-23-2-r3"){
+      const previous=loaded.assignment.workspaceData as WorkspaceData;const before=Array.isArray(previous.openInnovationEvents)?previous.openInnovationEvents:[];const after=Array.isArray(data.openInnovationEvents)?data.openInnovationEvents:[];
+      const record=(action:string,summary:string,metadata?:Record<string,unknown>)=>writeAudit({actorUserId:actor.userId,action,entityType:"REQUIREMENT_ASSIGNMENT",entityId:loaded.assignment.id,departmentId:loaded.assignment.departmentId,summary,metadata:{requirementCode:"5.23.2.3",...metadata}},tx);
+      const changed=(key:string)=>JSON.stringify(before.map(item=>item[key]))!==JSON.stringify(after.map(item=>item[key]));
+      if(after.length>before.length)await record(AUDIT.OPEN_INNOVATION_EVENT_CREATED,"إنشاء فعالية ابتكار مفتوح",{count:after.length-before.length});
+      else if(JSON.stringify(before.map(item=>({name:item.name,type:item.type,status:item.status})))!==JSON.stringify(after.map(item=>({name:item.name,type:item.type,status:item.status}))))await record(AUDIT.OPEN_INNOVATION_EVENT_UPDATED,"تحديث بيانات فعالية ابتكار مفتوح");
+      if(changed("annualPlanActivityId"))await record(AUDIT.OPEN_INNOVATION_ACTIVITY_LINKED,"ربط فعالية ابتكار مفتوح بالخطة السنوية");
+      if(changed("challenges"))await record(AUDIT.OPEN_INNOVATION_CHALLENGE_UPDATED,"إضافة أو تحديث تحدٍ داخل الفعالية");
+      if(changed("participants")||changed("teams"))await record(AUDIT.OPEN_INNOVATION_PARTICIPATION_UPDATED,"تحديث المشاركين والفرق داخل الفعالية");
+      if(changed("solutions"))await record(AUDIT.OPEN_INNOVATION_SOLUTION_UPDATED,"إضافة أو تحديث حل مقدم داخل الفعالية");
+      if(changed("judging")||changed("winners"))await record(AUDIT.OPEN_INNOVATION_JUDGING_UPDATED,"تسجيل نتائج التحكيم والفائزين");
+      if(changed("prototypes"))await record(AUDIT.OPEN_INNOVATION_PROTOTYPE_UPDATED,"تحديث نموذج أولي أو إصدار تطوير");
+      if(changed("projects"))await record(AUDIT.OPEN_INNOVATION_PROJECT_LINKED,"توثيق مشروع ناتج وربطه بالحل المصدر");
+      if(changed("tasks"))await record(AUDIT.OPEN_INNOVATION_TASK_UPDATED,"إنشاء أو تحديث مهمة فعالية");
+      if(after.some((item,index)=>item.status==="مغلقة تشغيليًا"&&before[index]?.status!=="مغلقة تشغيليًا"))await record(AUDIT.OPEN_INNOVATION_EVENT_CLOSED,"إغلاق فعالية ابتكار مفتوح تشغيليًا");
     }
     if(requirementId==="5-23-1-r2"){
       const previous=loaded.assignment.workspaceData as WorkspaceData;

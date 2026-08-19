@@ -8,6 +8,7 @@ const filled = (value: unknown) => typeof value === "number" || (typeof value ==
 export function missingWorkspaceFields(config: RequirementWorkspaceConfig, data: WorkspaceData): string[] {
   const missing: string[] = [];
   for (const section of config.sections) {
+    if (section.contributionOnly) continue;
     const value = data[section.key];
     if (section.repeatable) {
       const rows = Array.isArray(value) ? value : [];
