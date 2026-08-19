@@ -1,8 +1,9 @@
 import {readFileSync} from "node:fs";
 import {describe,expect,it} from "vitest";
 import {getWorkspaceConfig} from "../src/modules/dga/workspace-config";
+import {PREVIEW_WORKSPACE_DATA} from "../src/modules/dga/preview-workspace-fixtures";
 import {auditActionLabel} from "../src/modules/audit/service";
-import {CONTRIBUTION_SECTIONS,REQUIREMENT_01_ID,SECTION_LABELS} from "../src/modules/requirement-contributions/types";
+import {CONTRIBUTION_SECTIONS,getContributionDefinition,REQUIREMENT_01_ID,REQUIREMENT_02_ID,SECTION_LABELS} from "../src/modules/requirement-contributions/types";
 
 describe("5.23.1 Requirement 01 section collaboration",()=>{
   it("limits delegation to the four approved institutional sections",()=>{
@@ -26,5 +27,31 @@ describe("5.23.1 Requirement 01 section collaboration",()=>{
     expect(auditActionLabel("SECTION_CONTRIBUTION_ASSIGNED")).toBe("إسناد مساهمة قسم");
     expect(auditActionLabel("SECTION_CONTRIBUTION_RETURNED")).toBe("إعادة مساهمة للتعديل");
     expect(auditActionLabel("SECTION_CONTRIBUTION_ACCEPTED")).toBe("قبول مساهمة");
+  });
+});
+
+describe("5.23.1 Requirement 02 initiative collaboration",()=>{
+  it("reuses the same contribution lifecycle for the three meaningful scopes",()=>{
+    expect(REQUIREMENT_02_ID).toBe("5-23-1-r2");
+    expect(getContributionDefinition(REQUIREMENT_02_ID)?.sections).toEqual(["initiatives","strategicAlignment","initiativeKpis"]);
+  });
+  it("keeps the workspace limited to initiatives, strategic alignment and KPIs",()=>{
+    const config=getWorkspaceConfig(REQUIREMENT_02_ID)!;
+    expect(config.sections.map(section=>section.key)).toEqual(["initiatives","strategicAlignment","initiativeKpis"]);
+    expect(config.sections[0].fields.map(field=>field.key)).toEqual(["name","description","owningDepartment","owner","status","startDate","targetDate","lastUpdate"]);
+  });
+  it("presents initiative audit events with Arabic business labels",()=>{
+    expect(auditActionLabel("INITIATIVE_RECORD_CREATED")).toBe("إنشاء سجل مبادرة");
+    expect(auditActionLabel("INITIATIVE_OBJECTIVE_LINKED")).toBe("ربط مبادرة بهدف استراتيجي");
+    expect(auditActionLabel("INITIATIVE_KPI_LINKED")).toBe("ربط مبادرة بمؤشر أداء");
+  });
+  it("uses Requirement 01 objectives and KPIs in the coherent preview scenario",()=>{
+    const requirement01=PREVIEW_WORKSPACE_DATA[REQUIREMENT_01_ID];
+    const requirement02=PREVIEW_WORKSPACE_DATA[REQUIREMENT_02_ID];
+    const objective=(requirement01.strategicGoals as Array<Record<string,unknown>>)[0].name;
+    const kpi=(requirement01.kpis as Array<Record<string,unknown>>)[0].name;
+    expect((requirement02.initiatives as unknown[])).toHaveLength(3);
+    expect((requirement02.strategicAlignment as Array<Record<string,unknown>>).some(row=>row.strategicObjective===objective)).toBe(true);
+    expect((requirement02.initiativeKpis as Array<Record<string,unknown>>).some(row=>row.kpiName===kpi)).toBe(true);
   });
 });

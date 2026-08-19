@@ -31,7 +31,7 @@ function RequirementWorkspace({ unit, requirement, persona, canEdit }: { unit: D
 export function DgaUnitPage({ unit, requirement, persona, canEdit = true }: { unit: DgaUnitDefinition; requirement?: DgaRequirementDefinition; persona?: PreviewPersonaKey; canEdit?: boolean }) {
   if (requirement) {
     const config = getWorkspaceConfig(requirement.id);
-    if (config) return <OperationalWorkspace unit={unit} requirement={requirement} config={config} initial={PREVIEW_WORKSPACE_DATA[requirement.id]??{}} initialEvidence={[]} initialStatus="IN_PROGRESS" canEdit={canEdit} preview={Boolean(persona)} personaKey={persona} governance={previewGovernance(persona,requirement.id)} />;
+    if (config) return <OperationalWorkspace unit={unit} requirement={requirement} config={config} initial={PREVIEW_WORKSPACE_DATA[requirement.id]??{}} initialEvidence={[]} initialStatus="IN_PROGRESS" canEdit={canEdit} preview={Boolean(persona)} personaKey={persona} governance={previewGovernance(persona,requirement.id)} referenceData={requirement.id==="5-23-1-r2"?PREVIEW_WORKSPACE_DATA["5-23-1-r1"]:{}} />;
     return <RequirementWorkspace unit={unit} requirement={requirement} persona={persona} canEdit={canEdit} />;
   }
   const completed = unit.requirements.filter((item) => item.status === "COMPLETED").length;

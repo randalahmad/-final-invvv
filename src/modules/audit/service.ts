@@ -5,7 +5,7 @@ import { requirePermission } from "@/server/authorization";
 
 const VIEW = "audit.view" as const;
 
-const ACTION_LABELS:Record<string,string>={SECTION_CONTRIBUTION_ASSIGNED:"إسناد مساهمة قسم",SECTION_CONTRIBUTION_OPENED:"فتح دعوة مساهمة",SECTION_CONTRIBUTION_SUBMITTED:"تسليم مساهمة",SECTION_CONTRIBUTION_RETURNED:"إعادة مساهمة للتعديل",SECTION_CONTRIBUTION_ACCEPTED:"قبول مساهمة",SECTION_CONTRIBUTION_CANCELLED:"إلغاء إسناد مساهمة"};
+const ACTION_LABELS:Record<string,string>={SECTION_CONTRIBUTION_ASSIGNED:"إسناد مساهمة قسم",SECTION_CONTRIBUTION_OPENED:"فتح دعوة مساهمة",SECTION_CONTRIBUTION_SUBMITTED:"تسليم مساهمة",SECTION_CONTRIBUTION_RETURNED:"إعادة مساهمة للتعديل",SECTION_CONTRIBUTION_ACCEPTED:"قبول مساهمة",SECTION_CONTRIBUTION_CANCELLED:"إلغاء إسناد مساهمة",INITIATIVE_RECORD_CREATED:"إنشاء سجل مبادرة",INITIATIVE_RECORD_UPDATED:"تحديث سجل مبادرة",INITIATIVE_OBJECTIVE_LINKED:"ربط مبادرة بهدف استراتيجي",INITIATIVE_KPI_LINKED:"ربط مبادرة بمؤشر أداء"};
 export const auditActionLabel=(action:string)=>ACTION_LABELS[action]??action;
 
 export interface AuditLogRow {
