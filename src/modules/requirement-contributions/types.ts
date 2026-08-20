@@ -20,6 +20,7 @@ export const CONTRIBUTION_DEFINITIONS:readonly ContributionDefinition[]=[
   {requirementId:"5-23-3-r1",code:"5.23.3.1",unit:"5.23.3",number:"01",sections:["structures"],labels:{structures:"بيانات الوحدة/اللجنة والتشكيل"}},
   {requirementId:"5-23-3-r2",code:"5.23.3.2",unit:"5.23.3",number:"02",sections:["processes","policies","performanceReports","decisions","correctiveActions","evidence"],labels:{processes:"توثيق العمليات والإجراءات",policies:"إعداد السياسات والوثائق",performanceReports:"إعداد تقارير الأداء",decisions:"توثيق القرارات",correctiveActions:"متابعة الإجراءات التصحيحية",evidence:"تجهيز أدلة تفعيل الحوكمة"}},
   {requirementId:"5-23-3-r3",code:"5.23.3.3",unit:"5.23.3",number:"03",sections:["activityDocumentation","materials","participants","activityReport","evidence"],labels:{activityDocumentation:"توثيق بيانات النشاط",materials:"إعداد المواد المعرفية والتوعوية",participants:"توثيق المشاركين",activityReport:"إعداد تقرير الإنجاز",evidence:"تجهيز أدلة النشاط"}},
+  {requirementId:"5-23-3-r4",code:"5.23.3.4",unit:"5.23.3",number:"04",sections:["stageDocumentation","responsibilities","templates","evidence"],labels:{stageDocumentation:"توثيق مراحل الآلية",responsibilities:"تحديث المسؤوليات",templates:"إضافة نماذج وقوالب المرحلة",evidence:"تجهيز الإثبات"}},
 ] as const;
 
 export const REQUIREMENT_01_ID="5-23-1-r1";

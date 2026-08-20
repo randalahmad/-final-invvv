@@ -65,6 +65,14 @@ ACTION_LABELS.CULTURE_ACTIVITY_MATERIAL_UPDATED="إضافة أو تحديث ما
 ACTION_LABELS.CULTURE_ACTIVITY_TASK_ASSIGNED="إسناد مهمة تنظيم نشاط ثقافة الابتكار";
 ACTION_LABELS.CULTURE_ACTIVITY_TASK_COMPLETED="إكمال مهمة تنظيم نشاط ثقافة الابتكار";
 ACTION_LABELS.CULTURE_ACTIVITY_CLOSED="إغلاق نشاط نشر ثقافة الابتكار";
+ACTION_LABELS.MECHANISM_VERSION_CREATED="توثيق إصدار جديد لآلية إدارة الابتكار الرقمي";
+ACTION_LABELS.MECHANISM_VERSION_UPDATED="تحديث بيانات إصدار آلية إدارة الابتكار الرقمي";
+ACTION_LABELS.MECHANISM_VERSION_APPROVED="اعتماد إصدار آلية إدارة الابتكار الرقمي";
+ACTION_LABELS.MECHANISM_VERSION_SUPERSEDED="استبدال إصدار سابق لآلية إدارة الابتكار الرقمي";
+ACTION_LABELS.MECHANISM_STAGE_UPDATED="تحديث/إعادة ترتيب مراحل خارطة الرحلة";
+ACTION_LABELS.MECHANISM_GATE_UPDATED="تحديث بوابة قرار بين مراحل الآلية";
+ACTION_LABELS.MECHANISM_TASK_ASSIGNED="إسناد مهمة توثيق آلية الابتكار";
+ACTION_LABELS.MECHANISM_TASK_COMPLETED="إكمال مهمة توثيق آلية الابتكار";
 export const auditActionLabel=(action:string)=>ACTION_LABELS[action]??action;
 
 export interface AuditLogRow {

@@ -45,6 +45,21 @@ const CULTURE_CONTRIBUTION_SECTIONS:readonly WorkspaceSection[]=[
   openSection("activityReport","تقرير الإنجاز",[f("activityName","النشاط"),f("summary","ملخص تقرير الإنجاز","textarea"),f("status","الحالة")]),
   openSection("evidence","تجهيز الإثبات",[f("title","وصف الدليل"),f("relatedRecord","النشاط المرتبط"),f("notes","ملاحظات التجهيز","textarea")]),
 ];
+// 5.23.3 Requirement 04 — آلية إدارة الابتكار الرقمي. تُدار كتعريف مؤسسي
+// مُصدَّر (وليس مشروعًا فرديًا): سجل إصدارات (بند 10 — versioning)، وكل
+// إصدار يحمل مراحل خارطة رحلة قابلة للتخصيص الكامل من قِبل الجهة (بند 3 —
+// لا تُفرض التسميات المثالية كقيم رسمية). حالة "معتمد" واحدة فقط تُمثّل
+// الإصدار الحالي في أي وقت؛ اعتماد إصدار جديد يحوّل الإصدار المعتمد سابقًا
+// تلقائيًا إلى "تم الاستبدال" مع بقائه قابلًا للقراءة (لا حذف ولا استبدال
+// صامت يفقد التتبع).
+export const MECHANISM_APPROVAL_STATUSES=["مسودة","قيد المراجعة","معتمد","تم الاستبدال"] as const;
+export function isCurrentMechanismVersion(row:Record<string,unknown>):boolean{return row?.approvalStatus==="معتمد";}
+const MECHANISM_CONTRIBUTION_SECTIONS:readonly WorkspaceSection[]=[
+  openSection("stageDocumentation","توثيق مراحل الآلية",[f("stageName","المرحلة"),f("summary","ملخص التوثيق","textarea"),f("status","الحالة")]),
+  openSection("responsibilities","تحديث المسؤوليات",[f("stageName","المرحلة"),f("summary","ملخص التحديث","textarea"),f("status","الحالة")]),
+  openSection("templates","إضافة نماذج وقوالب المرحلة",[f("stageName","المرحلة"),f("title","اسم النموذج/القالب"),f("status","الحالة")]),
+  openSection("evidence","تجهيز الإثبات",[f("title","وصف الدليل"),f("relatedRecord","الإصدار/المرحلة المرتبطة"),f("notes","ملاحظات التجهيز","textarea")]),
+];
 
 export const REQUIREMENT_WORKSPACES: readonly RequirementWorkspaceConfig[] = [
   { requirementId:"5-23-1-r1", code:"5.23.1.1", explanation:"وثّق مجالات الابتكار وأهدافه الاستراتيجية ومؤشراته كسجلات مستقلة، وبيّن ارتباطها بأهداف الجهة.", sections:[
@@ -171,7 +186,20 @@ export const REQUIREMENT_WORKSPACES: readonly RequirementWorkspaceConfig[] = [
     ]},
     ...CULTURE_CONTRIBUTION_SECTIONS,
   ], evidence:[e("CULTURE_ACTIVITY_COMPLETION_REPORTS","تقارير إنجاز حديثة لثلاثة أنشطة أو فعاليات على الأقل",3)] },
-  { requirementId:"5-23-3-r4", code:"5.23.3.4", explanation:"وثّق الآلية المعتمدة لإدارة الابتكار الرقمي ودورة حياتها من الفكرة والتصميم إلى التطوير ثم التنفيذ، وسجّل تقدّم كل مبادرة عبر مراحل الرحلة.", sections:[{key:"mechanism",title:"الآلية ودورة الحياة",fields:[f("framework","الآلية/الإطار المعتمد","textarea"),f("ideaDesign","الفكرة والتصميم","textarea"),f("development","التطوير","textarea"),f("implementation","التنفيذ","textarea")]},{key:"lifecycleStages",title:"سجل مراحل رحلة الابتكار",repeatable:true,minItems:1,fields:[f("initiative","المبادرة/الحل"),f("stage","المرحلة الحالية (تحدٍ / فكرة / فرز / تقييم / دراسة جدوى / اعتماد / Prototype / PoC / Pilot / تنفيذ / قياس أثر / توسع واستدامة)"),f("date","تاريخ آخر تحديث للمرحلة","date"),f("owner","المالك"),f("notes","ملاحظات المرحلة","textarea",false)]}], evidence:[e("DIGITAL_INNOVATION_MECHANISM","إطار أو آلية معتمدة لإدارة الابتكار الرقمي")] },
+  { requirementId:"5-23-3-r4", code:"5.23.3.4", explanation:"وثّق آلية إدارة الابتكار الرقمي كتعريف مؤسسي مُصدَّر — وليس مشروعًا فرديًا — بخارطة رحلة قابلة للتخصيص الكامل من الفكرة إلى التصميم فالتطوير فالتنفيذ، بمسؤوليات وبوابة قرار واضحة لكل مرحلة، مع الحفاظ على الإصدارات المعتمدة سابقًا قابلة للقراءة عند اعتماد إصدار جديد.", sections:[
+    {key:"mechanismVersions",title:"إصدارات آلية إدارة الابتكار الرقمي",repeatable:true,minItems:1,fields:[
+      f("name","اسم الآلية"),
+      f("description","الوصف","textarea"),
+      f("owner","المالك"),
+      f("version","الإصدار"),
+      f("createdDate","تاريخ الإنشاء","date"),
+      f("effectiveDate","تاريخ السريان","date"),
+      {...f("approvalStatus","حالة الاعتماد","select"),options:MECHANISM_APPROVAL_STATUSES},
+      f("approvingAuthority","جهة الاعتماد"),
+      f("nextReviewDate","تاريخ المراجعة القادمة","date",false),
+    ]},
+    ...MECHANISM_CONTRIBUTION_SECTIONS,
+  ], evidence:[e("DIGITAL_INNOVATION_MECHANISM","إطار أو آلية معتمدة لإدارة الابتكار الرقمي")] },
   { requirementId:"5-23-3-r5", code:"5.23.3.5", explanation:"وثّق آلية الاستقبال الآلي للمقترحات والتغذية الراجعة على الحلول المطورة ومصادرها وفئاتها.", sections:[{key:"mechanism",title:"قنوات الاستقبال",fields:[f("proposalReceiving","استقبال المقترحات","textarea"),f("feedbackReceiving","استقبال التغذية الراجعة على الحلول المطورة","textarea"),f("sourceAudience","المصدر/الفئة","textarea",false)]}], evidence:[e("AUTOMATED_PROPOSAL_SCREENSHOTS","لقطات حديثة تثبت الاستقبال الآلي للمقترحات والتغذية الراجعة")] },
 ] as const;
 
