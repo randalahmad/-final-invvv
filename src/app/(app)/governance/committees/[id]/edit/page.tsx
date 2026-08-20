@@ -46,6 +46,8 @@ export default async function EditCommitteePage({ params }: { params: { id: stri
               committeeId: committee.id,
               nameAr: committee.nameAr,
               category: committee.category,
+              type: committee.type,
+              purpose: committee.purpose,
               organizationId: committee.organizationId,
               decisionNumber: committee.decisionNumber,
               decisionDate: day(committee.decisionDate),

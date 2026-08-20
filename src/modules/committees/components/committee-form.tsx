@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createCommitteeAction, updateCommitteeAction, type CommitteeFormState } from "@/modules/committees/actions";
+import { COMMITTEE_TYPE_LABELS } from "@/modules/committees/schema";
 
 export interface Option {
   id: string;
@@ -16,6 +17,8 @@ export interface CommitteeInitial {
   committeeId: string;
   nameAr: string;
   category: string | null;
+  type: string | null;
+  purpose: string | null;
   organizationId: string | null;
   decisionNumber: string | null;
   decisionDate: string | null;
@@ -56,6 +59,31 @@ export function CommitteeForm({ mode, organizations, initial }: { mode: "create"
         <div className="flex flex-col gap-2">
           <Label htmlFor="category">الغرض/النوع (اختياري)</Label>
           <Input id="category" name="category" placeholder="مثال: لجنة توجيهية" defaultValue={initial?.category ?? ""} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="type">نوع الكيان</Label>
+          <select
+            id="type"
+            name="type"
+            defaultValue={initial?.type ?? "COMMITTEE"}
+            className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-border-dark dark:bg-surface-dark"
+          >
+            {Object.entries(COMMITTEE_TYPE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col gap-2 sm:col-span-2">
+          <Label htmlFor="purpose">الغرض من الوحدة/اللجنة (اختياري)</Label>
+          <textarea
+            id="purpose"
+            name="purpose"
+            rows={3}
+            defaultValue={initial?.purpose ?? ""}
+            className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-border-dark dark:bg-surface-dark"
+          />
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="organizationId">الجهة/المنظمة</Label>

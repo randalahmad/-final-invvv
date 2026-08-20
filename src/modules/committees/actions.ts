@@ -49,18 +49,24 @@ function toActionState(e: unknown): CommitteeActionState {
 
 // ── Committee ────────────────────────────────────────────────────────────
 
+function committeePayload(formData: FormData) {
+  return {
+    nameAr: formData.get("nameAr"),
+    category: formData.get("category") || undefined,
+    type: formData.get("type") || undefined,
+    purpose: formData.get("purpose") || undefined,
+    organizationId: formData.get("organizationId"),
+    decisionNumber: formData.get("decisionNumber") || undefined,
+    decisionDate: formData.get("decisionDate") || undefined,
+  };
+}
+
 export async function createCommitteeAction(_prev: CommitteeFormState, formData: FormData): Promise<CommitteeFormState> {
   const ctx = await getAccessContext();
   if (!ctx) return { error: "غير مصرّح" };
   let newId: string;
   try {
-    const created = await createCommittee(ctx, {
-      nameAr: formData.get("nameAr"),
-      category: formData.get("category") || undefined,
-      organizationId: formData.get("organizationId"),
-      decisionNumber: formData.get("decisionNumber") || undefined,
-      decisionDate: formData.get("decisionDate") || undefined,
-    });
+    const created = await createCommittee(ctx, committeePayload(formData));
     newId = created.id;
   } catch (e) {
     return toFormState(e);
@@ -88,13 +94,7 @@ export async function updateCommitteeAction(_prev: CommitteeFormState, formData:
   if (!ctx) return { error: "غير مصرّح" };
   const id = String(formData.get("committeeId") ?? "");
   try {
-    await updateCommittee(ctx, id, {
-      nameAr: formData.get("nameAr"),
-      category: formData.get("category") || undefined,
-      organizationId: formData.get("organizationId"),
-      decisionNumber: formData.get("decisionNumber") || undefined,
-      decisionDate: formData.get("decisionDate") || undefined,
-    });
+    await updateCommittee(ctx, id, committeePayload(formData));
   } catch (e) {
     return toFormState(e);
   }
@@ -113,6 +113,7 @@ export async function addCommitteeMemberAction(_prev: CommitteeFormState, formDa
       name: formData.get("name"),
       title: formData.get("title") || undefined,
       email: formData.get("email") || undefined,
+      category: formData.get("category") || undefined,
     });
   } catch (e) {
     return toFormState(e);
@@ -131,6 +132,7 @@ export async function updateCommitteeMemberAction(_prev: CommitteeFormState, for
       name: formData.get("name"),
       title: formData.get("title") || undefined,
       email: formData.get("email") || undefined,
+      category: formData.get("category") || undefined,
     });
   } catch (e) {
     return toFormState(e);

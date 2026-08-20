@@ -36,6 +36,91 @@ async function syncCooperationContacts(tx:Prisma.TransactionClient,data:Workspac
   }
 }
 
+// 5.23.3 Requirement 01 — تشكيل وحدة أو لجنة للابتكار. This requirement's
+// JSON workspace ("structures", each with nested members/tasks) is the
+// SOURCE OF TRUTH; every save projects it onto the pre-existing
+// Committee/CommitteeMember tables (idempotent via sourceKey) so the
+// standalone /governance/committees pages and Requirement 02 read the same
+// rows — no second committee table, no duplicate creation on re-save.
+const committeeTypeMap:Record<string,"UNIT"|"COMMITTEE">={"وحدة":"UNIT","لجنة":"COMMITTEE"};
+const committeeStatusMap:Record<string,"PROPOSED"|"ACTIVE"|"DISSOLVED">={"مُقترَحة":"PROPOSED","نشطة":"ACTIVE","منحلّة":"DISSOLVED"};
+const memberCategoryMap:Record<string,"EMPLOYEE"|"DEPARTMENT_REPRESENTATIVE"|"EXPERT"|"EXTERNAL_MEMBER"|"STUDENT"|"STUDENT_VOLUNTEER"|"VOLUNTEER"|"OTHER"> = {"موظف":"EMPLOYEE","ممثل إدارة":"DEPARTMENT_REPRESENTATIVE","خبير":"EXPERT","عضو خارجي":"EXTERNAL_MEMBER","طالب":"STUDENT","طالب متطوع":"STUDENT_VOLUNTEER","متطوع":"VOLUNTEER","فئة أخرى":"OTHER"};
+const memberStatusMap:Record<string,"ACTIVE"|"ENDED"|"SUSPENDED">={"نشط":"ACTIVE","منتهي":"ENDED","موقوف":"SUSPENDED"};
+const optionalDateValue=(value:unknown)=>value?new Date(String(value)):null;
+async function syncCommitteeRecords(tx:Prisma.TransactionClient,data:WorkspaceData,assignmentId:string,actorUserId:string,organizationId:string){
+  const structures=Array.isArray(data.structures)?data.structures:[];
+  for(const row of structures){
+    const rowId=String(row.id??"").trim();const name=String(row.name??"").trim();if(!rowId||!name)continue;
+    const sourceKey=`committee:${assignmentId}:${rowId}`;
+    const input={
+      nameAr:name,
+      type:committeeTypeMap[String(row.type??"")]??"COMMITTEE" as const,
+      purpose:String(row.purpose??"").trim()||null,
+      mandateDescription:String(row.mandateDescription??"").trim()||null,
+      relatedDepartmentName:String(row.relatedDepartmentName??"").trim()||null,
+      chairName:String(row.chairName??"").trim()||null,
+      secretaryName:String(row.secretaryName??"").trim()||null,
+      formationDate:optionalDateValue(row.formationDate),
+      operationStartDate:optionalDateValue(row.operationStartDate),
+      meetingFrequency:String(row.meetingFrequency??"").trim()||null,
+      notes:String(row.notes??"").trim()||null,
+      decisionNumber:String(row.decisionNumber??"").trim()||null,
+      decisionDate:optionalDateValue(row.decisionDate),
+      decisionApprovingAuthority:String(row.decisionApprovingAuthority??"").trim()||null,
+      decisionEffectiveDate:optionalDateValue(row.decisionEffectiveDate),
+      decisionNotes:String(row.decisionNotes??"").trim()||null,
+      status:committeeStatusMap[String(row.status??"")]??"PROPOSED" as const,
+      organizationId,
+    };
+    const existing=await tx.committee.findUnique({where:{sourceKey},select:{id:true,decisionNumber:true,decisionDate:true}});
+    const committee=existing?await tx.committee.update({where:{id:existing.id},data:input}):await tx.committee.create({data:{...input,sourceKey}});
+    row.committeeId=committee.id;
+    await writeAudit({actorUserId,action:existing?AUDIT.COMMITTEE_UPDATED:AUDIT.COMMITTEE_CREATED,entityType:"COMMITTEE",entityId:committee.id,summary:existing?"تحديث بيانات وحدة/لجنة ضمن المتطلب 5.23.3.1":"تشكيل وحدة/لجنة ابتكار ضمن المتطلب 5.23.3.1",metadata:{requirementCode:"5.23.3.1",assignmentId}},tx);
+    const decisionChanged=!existing||existing.decisionNumber!==input.decisionNumber||existing.decisionDate?.toISOString()!==(input.decisionDate?.toISOString()??undefined);
+    if(decisionChanged&&(input.decisionNumber||input.decisionDate))await writeAudit({actorUserId,action:AUDIT.COMMITTEE_DECISION_RECORDED,entityType:"COMMITTEE",entityId:committee.id,summary:"توثيق/تحديث قرار التشكيل",metadata:{requirementCode:"5.23.3.1",decisionNumber:input.decisionNumber,decisionDate:input.decisionDate}},tx);
+
+    const members=Array.isArray(row.members)?row.members:[];
+    for(const memberRow of members){
+      const memberId=String(memberRow.id??"").trim();const memberName=String(memberRow.name??"").trim();if(!memberId||!memberName)continue;
+      const memberSourceKey=`committee-member:${assignmentId}:${rowId}:${memberId}`;
+      const statusText=String(memberRow.status??"");const status=memberStatusMap[statusText]??"ACTIVE" as const;
+      const memberInput={
+        name:memberName,
+        category:memberCategoryMap[String(memberRow.category??"")]??"EMPLOYEE" as const,
+        affiliation:String(memberRow.affiliation??"").trim()||null,
+        title:String(memberRow.title??"").trim()||null,
+        email:String(memberRow.email??"").trim()||null,
+        phone:String(memberRow.phone??"").trim()||null,
+        roleInCommittee:String(memberRow.roleInCommittee??"").trim()||null,
+        responsibilities:String(memberRow.responsibilities??"").trim()||null,
+        responsibilityScope:String(memberRow.responsibilityScope??"").trim()||null,
+        isPrimaryResponsible:String(memberRow.isPrimaryResponsible??"")==="نعم",
+        delegateName:String(memberRow.delegateName??"").trim()||null,
+        membershipEndDate:optionalDateValue(memberRow.membershipEndDate),
+        status,
+        notes:String(memberRow.notes??"").trim()||null,
+        leftAt:status==="ENDED"?(optionalDateValue(memberRow.membershipEndDate)??new Date()):null,
+      };
+      const existingMember=await tx.committeeMember.findUnique({where:{sourceKey:memberSourceKey},select:{id:true,roleInCommittee:true}});
+      const member=existingMember?await tx.committeeMember.update({where:{id:existingMember.id},data:memberInput}):await tx.committeeMember.create({data:{...memberInput,committeeId:committee.id,sourceKey:memberSourceKey}});
+      if(!existingMember)await writeAudit({actorUserId,action:AUDIT.COMMITTEE_MEMBER_ADDED,entityType:"COMMITTEE",entityId:committee.id,summary:"إضافة عضو ضمن المتطلب 5.23.3.1",metadata:{requirementCode:"5.23.3.1",memberId:member.id,name:memberName}},tx);
+      else if(existingMember.roleInCommittee!==memberInput.roleInCommittee)await writeAudit({actorUserId,action:AUDIT.COMMITTEE_MEMBER_ROLE_UPDATED,entityType:"COMMITTEE",entityId:committee.id,summary:"تغيير دور عضو داخل اللجنة",before:{roleInCommittee:existingMember.roleInCommittee},after:{memberId:member.id,roleInCommittee:memberInput.roleInCommittee}},tx);
+      else await writeAudit({actorUserId,action:AUDIT.COMMITTEE_MEMBER_UPDATED,entityType:"COMMITTEE",entityId:committee.id,summary:"تحديث بيانات عضو ضمن المتطلب 5.23.3.1",metadata:{requirementCode:"5.23.3.1",memberId:member.id}},tx);
+    }
+
+    const tasks=Array.isArray(row.tasks)?row.tasks:[];
+    for(const task of tasks){
+      const title=String(task.title??"").trim();const assignedToUserId=String(task.assignedUserId??"").trim()||null;if(!title||!assignedToUserId)continue;
+      const taskSourceKey=`committee-task:${assignmentId}:${rowId}:${String(task.id??title)}`;
+      const status=task.status==="COMPLETED"?"COMPLETED" as const:task.status==="CANCELLED"?"CANCELLED" as const:task.status==="WAITING"?"WAITING" as const:task.status==="IN_PROGRESS"||task.status==="REVIEW"?"IN_PROGRESS" as const:"OPEN" as const;
+      const priority=["LOW","MEDIUM","HIGH","URGENT"].includes(String(task.priority))?String(task.priority) as "LOW"|"MEDIUM"|"HIGH"|"URGENT":"MEDIUM";
+      const existingTask=await tx.requirementTask.findUnique({where:{sourceKey:taskSourceKey}});
+      await tx.requirementTask.upsert({where:{sourceKey:taskSourceKey},create:{sourceKey:taskSourceKey,committeeId:committee.id,assignmentId,type:"FOLLOW_UP",title,status,priority,requestedById:actorUserId,assignedToUserId,dueDate:optionalDateValue(task.dueDate),nextAction:String(task.nextAction??`فتح وحدة/لجنة «${name}»`),completedAt:status==="COMPLETED"?(optionalDateValue(task.completedAt)??new Date()):null},update:{committeeId:committee.id,title,status,priority,assignedToUserId,dueDate:optionalDateValue(task.dueDate),nextAction:String(task.nextAction??`فتح وحدة/لجنة «${name}»`),completedAt:status==="COMPLETED"?(optionalDateValue(task.completedAt)??new Date()):null}});
+      if(!existingTask||existingTask.status!==status)await writeAudit({actorUserId,action:status==="COMPLETED"?AUDIT.COMMITTEE_TASK_COMPLETED:AUDIT.COMMITTEE_TASK_ASSIGNED,entityType:"COMMITTEE",entityId:committee.id,summary:status==="COMPLETED"?`إكمال مهمة «${title}»`:`إسناد مهمة «${title}»`,metadata:{requirementCode:"5.23.3.1",taskSourceKey,assignedToUserId,dueDate:task.dueDate??null}},tx);
+    }
+  }
+}
+
 const activityTypeMap:Record<string,"HACKATHON"|"INNOVATION_CAMP"|"WORKSHOP"|"COMPETITION"|"MEETING"|"PROGRAM"|"OTHER">={"هاكاثون":"HACKATHON","معسكر":"INNOVATION_CAMP","ورشة عمل":"WORKSHOP","مسابقة":"COMPETITION","لقاء":"MEETING","برنامج":"PROGRAM"};
 async function syncAnnualPlanActivities(tx:Prisma.TransactionClient,data:WorkspaceData,assignmentId:string,departmentId:string,actorUserId:string){
   const activities=Array.isArray(data.activities)?data.activities:[];
@@ -165,6 +250,7 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
     if(requirementId==="5-23-2-r2")await syncMethodologyApplications(tx,data,loaded.assignment.id,loaded.assignment.departmentId,actor.userId);
     if(requirementId==="5-23-2-r3")await syncOpenInnovationTasks(tx,data,loaded.assignment.id,actor.userId);
     if(requirementId==="5-23-2-r4")await syncCooperationActivationTasks(tx,data,loaded.assignment.id,actor.userId);
+    if(requirementId==="5-23-3-r1")await syncCommitteeRecords(tx,data,loaded.assignment.id,actor.userId,loaded.assignment.department.organizationId);
     await tx.complianceRequirementAssignment.update({where:{id:loaded.assignment.id},data:{workspaceData:data as Prisma.InputJsonValue,operationalStatus:status,lastSavedById:actor.userId}});
     await writeAudit({actorUserId:actor.userId,action:AUDIT.COMPLIANCE_ASSIGNMENT_UPDATED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"تحديث مساحة عمل متطلب",after:{status,requirementCode:config.code}},tx);
     if(requirementId==="5-23-2-r1"){

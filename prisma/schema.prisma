@@ -398,6 +398,37 @@ enum CommitteeMeetingStatus {
   CANCELLED
 }
 
+/// Whether a governance structure (5.23.3 Requirement 01) is an
+/// administrative unit or a committee — a product distinction, not a DGA
+/// field name.
+enum CommitteeType {
+  UNIT
+  COMMITTEE
+}
+
+/// Product member categories (5.23.3 Requirement 01, §4 of the approved
+/// spec) — NOT a DGA-mandated list. A member in any of these categories is
+/// explicitly NOT a platform User (see CommitteeMember.userId doc).
+enum CommitteeMemberCategory {
+  EMPLOYEE
+  DEPARTMENT_REPRESENTATIVE
+  EXPERT
+  EXTERNAL_MEMBER
+  STUDENT
+  STUDENT_VOLUNTEER
+  VOLUNTEER
+  OTHER
+}
+
+/// Membership status, separate from leftAt (the archival timestamp actually
+/// recorded when membership ends) so the workspace can show a declared
+/// status without guessing it from date math alone.
+enum CommitteeMemberStatus {
+  ACTIVE
+  ENDED
+  SUSPENDED
+}
+
 /// Documentary approval state for a StrategyDocument. This is a RECORD of an
 /// approval that happens outside the platform (by the responsible entity) —
 /// it is never a platform-internal approval workflow. A document may be
@@ -812,15 +843,18 @@ model RequirementTask {
   completedAt          DateTime?
   createdAt            DateTime                        @default(now())
   updatedAt            DateTime                        @updatedAt
+  committeeId          String?
   assignment           ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   activity             InnovationActivity?              @relation(fields: [activityId], references: [id], onDelete: SetNull)
   methodologyApplication MethodologyApplication?         @relation(fields: [methodologyApplicationId], references: [id], onDelete: SetNull)
+  committee            Committee?                       @relation(fields: [committeeId], references: [id], onDelete: SetNull)
   sectionContribution  RequirementSectionContribution?
 
   @@index([assignedToUserId, status, dueDate])
   @@index([assignmentId])
   @@index([activityId, status, dueDate])
   @@index([methodologyApplicationId, status, dueDate])
+  @@index([committeeId, status, dueDate])
   @@map("requirement_tasks")
 }
 
@@ -1128,39 +1162,76 @@ model IdeaDecision {
 // rather than a duplicate file system.
 // ---------------------------------------------------------------------------
 
+/// A governance structure (وحدة/لجنة) for innovation (5.23.3 Requirement 01).
+/// This is the SOURCE OF TRUTH for committees/units reused later by
+/// Requirement 02 (activation) — do not create a second structure table.
+/// Rows can originate two ways that both write here: the standalone
+/// /governance/committees CRUD, or the 5.23.3.1 requirement workspace JSON
+/// (synced via sourceKey so re-saving the workspace updates the same row
+/// instead of duplicating it — see workspace-service.ts syncCommitteeRecords).
 model Committee {
-  id             String          @id @default(cuid())
-  nameAr         String
-  category       String? // free text purpose/type (e.g. "لجنة الابتكار") — no locked enum
-  organizationId String
-  decisionNumber String? // formation decision number (structured, searchable)
-  decisionDate   DateTime? // formation decision date
-  status         CommitteeStatus @default(PROPOSED)
-  organization   Organization    @relation(fields: [organizationId], references: [id])
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  archivedAt     DateTime?
-  archivedById   String?
+  id                       String                   @id @default(cuid())
+  nameAr                   String
+  category                 String? // legacy free-text purpose/type, kept for pre-existing rows — superseded by type/purpose below
+  type                     CommitteeType            @default(COMMITTEE)
+  purpose                  String? // الغرض
+  mandateDescription       String? // وصف الاختصاص
+  relatedDepartmentName    String? // الجهة/الإدارة المرتبطة — descriptive text, not a hard FK (the structure may relate to an entity outside Department)
+  chairName                String? // الرئيس/المسؤول
+  secretaryName            String? // أمين اللجنة، عند وجوده
+  organizationId           String
+  formationDate            DateTime? // تاريخ التشكيل
+  operationStartDate       DateTime? // تاريخ بداية العمل
+  meetingFrequency         String? // دورية الاجتماعات، عند تحديدها
+  notes                    String?
+  decisionNumber           String? // formation decision number (structured, searchable) — never fabricated when no formal number exists
+  decisionDate             DateTime? // formation decision date
+  decisionApprovingAuthority String? // جهة الاعتماد
+  decisionEffectiveDate    DateTime? // تاريخ السريان
+  decisionNotes            String?
+  status                   CommitteeStatus          @default(PROPOSED)
+  sourceKey                String?                  @unique // set only for rows synced from a requirement workspace; null for standalone-created rows
+  organization             Organization             @relation(fields: [organizationId], references: [id])
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+  archivedAt                DateTime?
+  archivedById              String?
 
   members  CommitteeMember[]
   meetings CommitteeMeeting[]
+  tasks    RequirementTask[]
 
   @@index([organizationId])
   @@map("committees")
 }
 
 /// A committee member. Membership ends via leftAt (never deleted), so the
-/// committee's historical composition is always reconstructable.
+/// committee's historical composition is always reconstructable. A member is
+/// deliberately NOT the same thing as a platform User — userId stays
+/// optional (see product rule in the 5.23.3.1 spec: "a student volunteer may
+/// be listed as a committee member without having platform access").
 model CommitteeMember {
-  id          String    @id @default(cuid())
-  committeeId String
-  name        String
-  title       String? // role/designation on the committee
-  email       String?
-  userId      String? // soft ref → User.id, optional (member may not be a platform user)
-  joinedAt    DateTime  @default(now())
-  leftAt      DateTime?
-  committee   Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+  id                     String                   @id @default(cuid())
+  committeeId            String
+  name                   String
+  category               CommitteeMemberCategory  @default(EMPLOYEE) // الفئة — product categories, not a DGA-mandated list
+  affiliation            String? // الجهة/الجامعة/الإدارة
+  title                  String? // المسمى (job title) — role/designation held by the member outside the committee
+  email                  String?
+  phone                  String? // الهاتف، اختياري
+  roleInCommittee        String? // الدور داخل اللجنة (e.g. رئيس، مقرر، عضو)
+  responsibilities       String? // المسؤوليات
+  responsibilityScope    String? // نطاق المسؤولية
+  isPrimaryResponsible   Boolean                  @default(false) // هل هو مسؤول رئيسي؟
+  delegateName           String? // البديل، عند وجوده — free text, a delegate is not necessarily a platform user either
+  membershipEndDate      DateTime? // تاريخ انتهاء العضوية (declared/planned), distinct from leftAt (actual archival timestamp)
+  status                 CommitteeMemberStatus    @default(ACTIVE)
+  notes                  String?
+  sourceKey              String?                  @unique // set only for rows synced from a requirement workspace
+  userId                 String? // soft ref → User.id, optional (member may not be a platform user)
+  joinedAt               DateTime                 @default(now())
+  leftAt                 DateTime?
+  committee              Committee                @relation(fields: [committeeId], references: [id], onDelete: Cascade)
 
   @@index([committeeId])
   @@map("committee_members")

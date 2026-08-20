@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { addCommitteeMemberAction, updateCommitteeMemberAction, endCommitteeMembershipAction, type CommitteeFormState, type CommitteeActionState } from "@/modules/committees/actions";
+import { COMMITTEE_MEMBER_CATEGORY_LABELS } from "@/modules/committees/schema";
 
 export interface MemberRow {
   id: string;
   name: string;
   title: string | null;
   email: string | null;
+  category: string | null;
   joinedAt: Date;
   leftAt: Date | null;
 }
@@ -77,6 +79,23 @@ function EditMemberForm({ committeeId, member }: { committeeId: string; member: 
         <Input id={`edit-title-${member.id}`} name="title" defaultValue={member.title ?? ""} className="h-8 text-[12px]" />
       </div>
       <div className="flex flex-col gap-1">
+        <Label htmlFor={`edit-category-${member.id}`} className="text-[11px]">
+          الفئة
+        </Label>
+        <select
+          id={`edit-category-${member.id}`}
+          name="category"
+          defaultValue={member.category ?? "EMPLOYEE"}
+          className="h-8 rounded-lg border border-border bg-surface px-2 text-[12px] outline-none dark:border-border-dark dark:bg-surface-dark"
+        >
+          {Object.entries(COMMITTEE_MEMBER_CATEGORY_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex flex-col gap-1">
         <Label htmlFor={`edit-email-${member.id}`} className="text-[11px]">
           البريد الإلكتروني
         </Label>
@@ -113,6 +132,21 @@ export function AddMemberForm({ committeeId }: { committeeId: string }) {
           <Input id="title" name="title" placeholder="مثال: رئيس اللجنة" />
         </div>
         <div className="flex flex-col gap-1.5">
+          <Label htmlFor="category">الفئة</Label>
+          <select
+            id="category"
+            name="category"
+            defaultValue="EMPLOYEE"
+            className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-border-dark dark:bg-surface-dark"
+          >
+            {Object.entries(COMMITTEE_MEMBER_CATEGORY_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">البريد الإلكتروني (اختياري)</Label>
           <Input id="email" name="email" type="email" />
           <FieldError errors={fe.email} />
@@ -144,7 +178,7 @@ export function MemberList({ committeeId, members, canManage }: { committeeId: s
                 )}
               </p>
               <p className="text-[11.5px] text-muted">
-                {m.title ?? "—"} {m.email ? `· ${m.email}` : ""}
+                {m.title ?? "—"} {m.category ? `· ${COMMITTEE_MEMBER_CATEGORY_LABELS[m.category] ?? m.category}` : ""} {m.email ? `· ${m.email}` : ""}
               </p>
             </div>
             {canManage && !m.leftAt && <EndMembershipButton committeeId={committeeId} memberId={m.id} />}

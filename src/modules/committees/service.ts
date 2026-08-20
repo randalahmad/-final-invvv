@@ -72,11 +72,24 @@ export async function createCommittee(actor: AccessContext, raw: unknown): Promi
         action: AUDIT.COMMITTEE_CREATED,
         entityType: "COMMITTEE",
         entityId: created.id,
-        summary: "تشكيل لجنة حوكمة",
-        after: { nameAr: input.nameAr, organizationId: input.organizationId },
+        summary: "تشكيل وحدة/لجنة ابتكار",
+        after: { nameAr: input.nameAr, organizationId: input.organizationId, type: input.type },
       },
       tx,
     );
+    if (input.decisionNumber || input.decisionDate) {
+      await writeAudit(
+        {
+          actorUserId: actor.userId,
+          action: AUDIT.COMMITTEE_DECISION_RECORDED,
+          entityType: "COMMITTEE",
+          entityId: created.id,
+          summary: "توثيق قرار تشكيل",
+          after: { decisionNumber: input.decisionNumber, decisionDate: input.decisionDate },
+        },
+        tx,
+      );
+    }
     return created;
   });
 }
@@ -85,6 +98,7 @@ export async function updateCommittee(actor: AccessContext, committeeId: string,
   const current = await loadCommitteeInScope(actor, committeeId);
   requirePermission(actor, MANAGE);
   if (current.archivedAt) throw new CommitteeError("ALREADY_ARCHIVED", "لا يمكن تعديل لجنة مؤرشفة");
+  const before = await prisma.committee.findUnique({ where: { id: committeeId }, select: { decisionNumber: true, decisionDate: true } });
 
   const parsed = committeeSchema.safeParse(raw);
   if (!parsed.success) throw new CommitteeError("VALIDATION", "invalid", parsed.error.flatten().fieldErrors);
@@ -101,11 +115,26 @@ export async function updateCommittee(actor: AccessContext, committeeId: string,
         action: AUDIT.COMMITTEE_UPDATED,
         entityType: "COMMITTEE",
         entityId: committeeId,
-        summary: "تحديث بيانات لجنة حوكمة",
+        summary: "تحديث بيانات وحدة/لجنة",
         after: { nameAr: input.nameAr },
       },
       tx,
     );
+    const decisionChanged = before && (before.decisionNumber !== (input.decisionNumber ?? null) || before.decisionDate?.toISOString() !== (input.decisionDate?.toISOString() ?? null));
+    if (decisionChanged && (input.decisionNumber || input.decisionDate)) {
+      await writeAudit(
+        {
+          actorUserId: actor.userId,
+          action: AUDIT.COMMITTEE_DECISION_RECORDED,
+          entityType: "COMMITTEE",
+          entityId: committeeId,
+          summary: "تحديث قرار التشكيل",
+          before: { decisionNumber: before?.decisionNumber ?? null, decisionDate: before?.decisionDate ?? null },
+          after: { decisionNumber: input.decisionNumber, decisionDate: input.decisionDate },
+        },
+        tx,
+      );
+    }
   });
 }
 
@@ -227,7 +256,7 @@ export async function addCommitteeMember(actor: AccessContext, committeeId: stri
 export async function updateCommitteeMember(actor: AccessContext, memberId: string, raw: unknown): Promise<void> {
   const member = await prisma.committeeMember.findUnique({
     where: { id: memberId },
-    select: { id: true, committeeId: true, leftAt: true },
+    select: { id: true, committeeId: true, leftAt: true, roleInCommittee: true },
   });
   if (!member) throw new CommitteeError("NOT_FOUND", "العضو غير موجود");
   const committee = await loadCommitteeInScope(actor, member.committeeId);
@@ -238,6 +267,7 @@ export async function updateCommitteeMember(actor: AccessContext, memberId: stri
   const parsed = committeeMemberSchema.safeParse(raw);
   if (!parsed.success) throw new CommitteeError("VALIDATION", "invalid", parsed.error.flatten().fieldErrors);
   const input = parsed.data;
+  const roleChanged = (input.roleInCommittee ?? null) !== (member.roleInCommittee ?? null);
 
   await prisma.$transaction(async (tx) => {
     await tx.committeeMember.update({ where: { id: memberId }, data: input });
@@ -252,6 +282,20 @@ export async function updateCommitteeMember(actor: AccessContext, memberId: stri
       },
       tx,
     );
+    if (roleChanged) {
+      await writeAudit(
+        {
+          actorUserId: actor.userId,
+          action: AUDIT.COMMITTEE_MEMBER_ROLE_UPDATED,
+          entityType: "COMMITTEE",
+          entityId: member.committeeId,
+          summary: "تغيير دور عضو داخل اللجنة",
+          before: { roleInCommittee: member.roleInCommittee },
+          after: { memberId, roleInCommittee: input.roleInCommittee },
+        },
+        tx,
+      );
+    }
   });
 }
 
@@ -267,14 +311,14 @@ export async function endCommitteeMembership(actor: AccessContext, memberId: str
   if (member.leftAt) throw new CommitteeError("ALREADY_ARCHIVED", "انتهت عضوية هذا العضو بالفعل");
 
   await prisma.$transaction(async (tx) => {
-    await tx.committeeMember.update({ where: { id: memberId }, data: { leftAt: new Date() } });
+    await tx.committeeMember.update({ where: { id: memberId }, data: { leftAt: new Date(), status: "ENDED" } });
     await writeAudit(
       {
         actorUserId: actor.userId,
         action: AUDIT.COMMITTEE_MEMBER_REMOVED,
         entityType: "COMMITTEE",
         entityId: member.committeeId,
-        summary: "إنهاء عضوية في لجنة",
+        summary: "إنهاء/أرشفة عضوية في وحدة/لجنة",
         after: { memberId },
       },
       tx,
