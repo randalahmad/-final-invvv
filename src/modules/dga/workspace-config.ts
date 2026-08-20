@@ -30,6 +30,21 @@ const COOPERATION_ACTIVATION_CONTRIBUTION_SECTIONS:readonly WorkspaceSection[]=[
   openSection("correctiveActions","تحديث الإجراءات التصحيحية",[f("issue","الفجوة"),f("action","الإجراء","textarea"),f("responsible","المسؤول"),f("dueDate","الموعد","date"),f("status","الحالة")]),
   openSection("evidence","تجهيز دليل التفعيل",[f("title","وصف الدليل"),f("relatedRecord","السجل المرتبط"),f("notes","ملاحظات","textarea")]),
 ];
+// التصنيف الصريح والحاسم لأنشطة نشر ثقافة الابتكار (بند 3 من المواصفة) — أي
+// نشاط لا يحمل أحد هذه الأنواع لا يُحتسب، فلا تُحتسب اجتماعات أو فعاليات عشوائية.
+export const CULTURE_ACTIVITY_TYPES=["ورشة تدريبية","لقاء توعوي","برنامج تدريبي","جلسة نقل معرفة","حملة توعوية","فعالية نشر ثقافة الابتكار"] as const;
+// دالة حاسمة واحدة تقرر أهلية النشاط — نفس الشرط يُستخدم في العرض والتقدّم
+// وفي المزامنة، حتى لا يختلف عدّان مختلفان لعدد الأنشطة المؤهّلة.
+export function isQualifyingCultureActivity(row:Record<string,unknown>):boolean{
+  return (CULTURE_ACTIVITY_TYPES as readonly string[]).includes(String(row?.cultureType??""))&&Boolean(String(row?.name??"").trim())&&Boolean(String(row?.awarenessGoal??"").trim())&&Boolean(String(row?.targetSegment??"").trim());
+}
+const CULTURE_CONTRIBUTION_SECTIONS:readonly WorkspaceSection[]=[
+  openSection("activityDocumentation","توثيق بيانات النشاط",[f("activityName","النشاط"),f("summary","ملخص التوثيق","textarea"),f("status","الحالة")]),
+  openSection("materials","المواد المعرفية والتوعوية",[f("activityName","النشاط"),f("title","اسم المادة"),f("type","النوع"),f("status","الحالة")]),
+  openSection("participants","توثيق المشاركين",[f("activityName","النشاط"),f("summary","ملخص المشاركين والحضور","textarea"),f("status","الحالة")]),
+  openSection("activityReport","تقرير الإنجاز",[f("activityName","النشاط"),f("summary","ملخص تقرير الإنجاز","textarea"),f("status","الحالة")]),
+  openSection("evidence","تجهيز الإثبات",[f("title","وصف الدليل"),f("relatedRecord","النشاط المرتبط"),f("notes","ملاحظات التجهيز","textarea")]),
+];
 
 export const REQUIREMENT_WORKSPACES: readonly RequirementWorkspaceConfig[] = [
   { requirementId:"5-23-1-r1", code:"5.23.1.1", explanation:"وثّق مجالات الابتكار وأهدافه الاستراتيجية ومؤشراته كسجلات مستقلة، وبيّن ارتباطها بأهداف الجهة.", sections:[
@@ -140,7 +155,22 @@ export const REQUIREMENT_WORKSPACES: readonly RequirementWorkspaceConfig[] = [
       {...f("status","الحالة","select",false),options:["مسودة","قيد المراجعة","معتمد"]},
     ]},
   ], evidence:[e("COMMITTEE_ACTIVATION_DOCUMENTS","وثائق محدثة تثبت تفعيل الوحدة/اللجنة"),e("APPROVED_GOVERNANCE_POLICY","سياسة/إجراء/دليل عمل/نموذج/إطار حوكمة معتمد")] },
-  { requirementId:"5-23-3-r3", code:"5.23.3.3", explanation:"سجّل أنشطة نشر ثقافة الابتكار وتقييمها وارفع تقارير إنجاز حديثة لثلاثة أنشطة على الأقل.", sections:[{key:"cultureActivities",title:"أنشطة ثقافة الابتكار",repeatable:true,minItems:3,fields:[f("name","اسم النشاط"),f("type","نوع النشاط"),f("date","التاريخ","date"),f("audience","الفئة المستهدفة"),f("attendance","الحضور/المشاركون","number"),f("objective","الهدف","textarea"),f("evaluation","التقييم","textarea",false),f("result","النتيجة/المخرج","textarea")]}], evidence:[e("CULTURE_ACTIVITY_REPORTS","تقارير إنجاز حديثة للأنشطة",3)] },
+  { requirementId:"5-23-3-r3", code:"5.23.3.3", explanation:"نظِّم أنشطة وفعاليات لنشر ثقافة الابتكار عبر التدريب والتوعية ونقل المعرفة، بالبناء على النشاط القائم في الخطة السنوية للأنشطة (5.23.2.1) أو بإنشاء نشاط جديد عبر البنية التشغيلية المشتركة نفسها — دون إنشاء نظام فعاليات موازٍ. يلزم توثيق 3 أنشطة مؤهّلة على الأقل، كل نشاط بتصنيف ثقافي صريح وتقرير إنجاز مشتق من بياناته الفعلية.", sections:[
+    {key:"cultureActivities",title:"الأنشطة المؤهلة لنشر ثقافة الابتكار",repeatable:true,minItems:3,fields:[
+      f("name","اسم النشاط"),
+      {...f("cultureType","نوع نشاط نشر الثقافة","select"),options:CULTURE_ACTIVITY_TYPES},
+      f("awarenessGoal","الهدف التوعوي/التدريبي","textarea"),
+      f("targetSegment","الفئة المستهدفة"),
+      f("department","الإدارة المسؤولة"),
+      f("startDate","تاريخ البداية","date"),
+      f("endDate","تاريخ النهاية","date",false),
+      {...f("status","الحالة","select"),options:["مخطط لها","قيد التنفيذ","مكتملة","ملغاة"]},
+      f("knowledgeTopic","موضوع المعرفة","text",false),
+      f("presenter","مقدم/مدرب","text",false),
+      f("outcomeDescription","نتيجة التوعية/التعلّم","textarea",false),
+    ]},
+    ...CULTURE_CONTRIBUTION_SECTIONS,
+  ], evidence:[e("CULTURE_ACTIVITY_COMPLETION_REPORTS","تقارير إنجاز حديثة لثلاثة أنشطة أو فعاليات على الأقل",3)] },
   { requirementId:"5-23-3-r4", code:"5.23.3.4", explanation:"وثّق الآلية المعتمدة لإدارة الابتكار الرقمي ودورة حياتها من الفكرة والتصميم إلى التطوير ثم التنفيذ، وسجّل تقدّم كل مبادرة عبر مراحل الرحلة.", sections:[{key:"mechanism",title:"الآلية ودورة الحياة",fields:[f("framework","الآلية/الإطار المعتمد","textarea"),f("ideaDesign","الفكرة والتصميم","textarea"),f("development","التطوير","textarea"),f("implementation","التنفيذ","textarea")]},{key:"lifecycleStages",title:"سجل مراحل رحلة الابتكار",repeatable:true,minItems:1,fields:[f("initiative","المبادرة/الحل"),f("stage","المرحلة الحالية (تحدٍ / فكرة / فرز / تقييم / دراسة جدوى / اعتماد / Prototype / PoC / Pilot / تنفيذ / قياس أثر / توسع واستدامة)"),f("date","تاريخ آخر تحديث للمرحلة","date"),f("owner","المالك"),f("notes","ملاحظات المرحلة","textarea",false)]}], evidence:[e("DIGITAL_INNOVATION_MECHANISM","إطار أو آلية معتمدة لإدارة الابتكار الرقمي")] },
   { requirementId:"5-23-3-r5", code:"5.23.3.5", explanation:"وثّق آلية الاستقبال الآلي للمقترحات والتغذية الراجعة على الحلول المطورة ومصادرها وفئاتها.", sections:[{key:"mechanism",title:"قنوات الاستقبال",fields:[f("proposalReceiving","استقبال المقترحات","textarea"),f("feedbackReceiving","استقبال التغذية الراجعة على الحلول المطورة","textarea"),f("sourceAudience","المصدر/الفئة","textarea",false)]}], evidence:[e("AUTOMATED_PROPOSAL_SCREENSHOTS","لقطات حديثة تثبت الاستقبال الآلي للمقترحات والتغذية الراجعة")] },
 ] as const;

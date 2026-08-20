@@ -204,6 +204,25 @@ async function syncOpenInnovationTasks(tx:Prisma.TransactionClient,data:Workspac
   }
 }
 
+// 5.23.3 Requirement 03 — نشر ثقافة الابتكار. الأنشطة تعيش داخل workspaceData
+// فقط (نفس نمط 5.23.2.3 JSON-only) — سواء أُنشئت هنا أو رُبطت بنشاط قائم من
+// 5.23.2.1 (annualPlanActivityId فقط للتتبع، بلا كتابة على مساحة عمل متطلب
+// آخر). لا تُنشأ جداول علائقية جديدة ولا نظام مهام موازٍ؛ المهام تُزامَن على
+// RequirementTask نفسه المستخدم في كل المتطلبات الأخرى.
+async function syncCultureActivityTasks(tx:Prisma.TransactionClient,data:WorkspaceData,assignmentId:string,actorUserId:string){
+  for(const activity of Array.isArray(data.cultureActivities)?data.cultureActivities:[]){
+    const activityId=String(activity.id??"").trim();const activityName=String(activity.name??"").trim();if(!activityId||!activityName)continue;
+    for(const task of Array.isArray(activity.tasks)?activity.tasks:[]){
+      const title=String(task.title??"").trim();const assignedToUserId=String(task.assignedUserId??"").trim()||null;if(!title||!assignedToUserId)continue;
+      const sourceKey=`culture-activity:${activityId}:${String(task.id??title)}`;
+      const status=task.status==="COMPLETED"?"COMPLETED" as const:task.status==="CANCELLED"?"CANCELLED" as const:task.status==="WAITING"?"WAITING" as const:task.status==="IN_PROGRESS"||task.status==="REVIEW"?"IN_PROGRESS" as const:"OPEN" as const;
+      const priority=["LOW","MEDIUM","HIGH","URGENT"].includes(String(task.priority))?String(task.priority) as "LOW"|"MEDIUM"|"HIGH"|"URGENT":"MEDIUM";
+      const existing=await tx.requirementTask.findUnique({where:{sourceKey}});
+      await tx.requirementTask.upsert({where:{sourceKey},create:{sourceKey,assignmentId,type:"FOLLOW_UP",title,status,priority,requestedById:actorUserId,assignedToUserId,dueDate:task.dueDate?new Date(String(task.dueDate)):null,nextAction:String(task.nextAction??`فتح نشاط «${activityName}»`),completedAt:status==="COMPLETED"?new Date(String(task.completedAt??new Date().toISOString())):null},update:{title,status,priority,assignedToUserId,dueDate:task.dueDate?new Date(String(task.dueDate)):null,nextAction:String(task.nextAction??`فتح نشاط «${activityName}»`),completedAt:status==="COMPLETED"?new Date(String(task.completedAt??new Date().toISOString())):null}});
+      if(!existing||existing.status!==status)await writeAudit({actorUserId,action:status==="COMPLETED"?AUDIT.CULTURE_ACTIVITY_TASK_COMPLETED:AUDIT.CULTURE_ACTIVITY_TASK_ASSIGNED,entityType:"COMPLIANCE_REQUIREMENT",entityId:assignmentId,summary:status==="COMPLETED"?`إكمال مهمة «${title}»`:`إسناد مهمة «${title}»`,metadata:{requirementCode:"5.23.3.3",sourceKey,assignedToUserId,activityId}},tx);
+    }
+  }
+}
 async function syncCooperationActivationTasks(tx:Prisma.TransactionClient,data:WorkspaceData,assignmentId:string,actorUserId:string){
   for(const activation of Array.isArray(data.cooperationActivations)?data.cooperationActivations:[]){const activationId=String(activation.id??"");const partner=String(activation.cooperationName??"");if(!activationId)continue;for(const task of Array.isArray(activation.tasks)?activation.tasks:[]){const title=String(task.title??"").trim();const assignedToUserId=String(task.assignedUserId??"").trim()||null;if(!title||!assignedToUserId)continue;const sourceKey=`cooperation-activation:${activationId}:${String(task.section??"overview")}:${String(task.id??title)}`;const status=task.status==="COMPLETED"?"COMPLETED" as const:task.status==="CANCELLED"?"CANCELLED" as const:task.status==="WAITING"?"WAITING" as const:task.status==="IN_PROGRESS"?"IN_PROGRESS" as const:"OPEN" as const;const priority=["LOW","MEDIUM","HIGH","URGENT"].includes(String(task.priority))?String(task.priority) as "LOW"|"MEDIUM"|"HIGH"|"URGENT":"MEDIUM";await tx.requirementTask.upsert({where:{sourceKey},create:{sourceKey,assignmentId,type:"FOLLOW_UP",title,status,priority,requestedById:actorUserId,assignedToUserId,dueDate:task.dueDate?new Date(String(task.dueDate)):null,nextAction:String(task.nextAction??`فتح تفعيل التعاون مع «${partner}»`),completedAt:status==="COMPLETED"?new Date(String(task.completedAt??new Date().toISOString())):null},update:{title,status,priority,assignedToUserId,dueDate:task.dueDate?new Date(String(task.dueDate)):null,nextAction:String(task.nextAction??`فتح تفعيل التعاون مع «${partner}»`),completedAt:status==="COMPLETED"?new Date(String(task.completedAt??new Date().toISOString())):null}});}}
 }
@@ -291,6 +310,7 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
     if(requirementId==="5-23-2-r4")await syncCooperationActivationTasks(tx,data,loaded.assignment.id,actor.userId);
     if(requirementId==="5-23-3-r1")await syncCommitteeRecords(tx,data,loaded.assignment.id,actor.userId,loaded.assignment.department.organizationId);
     if(requirementId==="5-23-3-r2")await syncGovernanceOperationsTasks(tx,data,loaded.assignment.id,actor.userId);
+    if(requirementId==="5-23-3-r3")await syncCultureActivityTasks(tx,data,loaded.assignment.id,actor.userId);
     await tx.complianceRequirementAssignment.update({where:{id:loaded.assignment.id},data:{workspaceData:data as Prisma.InputJsonValue,operationalStatus:status,lastSavedById:actor.userId}});
     await writeAudit({actorUserId:actor.userId,action:AUDIT.COMPLIANCE_ASSIGNMENT_UPDATED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"تحديث مساحة عمل متطلب",after:{status,requirementCode:config.code}},tx);
     if(requirementId==="5-23-2-r1"){
@@ -340,6 +360,17 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
       if(changed("reviews"))await record(AUDIT.GOVERNANCE_REVIEW_RECORDED,"توثيق مراجعة حوكمة");
       if(changed("decisions"))await record(AUDIT.GOVERNANCE_DECISION_RECORDED,"تسجيل قرار حوكمة");
       if(changed("performanceReports"))await record(AUDIT.GOVERNANCE_PERFORMANCE_REPORT_RECORDED,"إعداد أو تحديث تقرير أداء حوكمة");
+    }
+    if(requirementId==="5-23-3-r3"){
+      const previous=loaded.assignment.workspaceData as WorkspaceData;const before=Array.isArray(previous.cultureActivities)?previous.cultureActivities:[];const after=Array.isArray(data.cultureActivities)?data.cultureActivities:[];
+      const record=(action:string,summary:string,metadata?:Record<string,unknown>)=>writeAudit({actorUserId:actor.userId,action,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary,metadata:{requirementCode:"5.23.3.3",...metadata}},tx);
+      const changed=(key:string)=>JSON.stringify(before.map(item=>item[key]))!==JSON.stringify(after.map(item=>item[key]));
+      if(after.length>before.length)await record(AUDIT.CULTURE_ACTIVITY_CREATED,"إنشاء أو ربط نشاط لنشر ثقافة الابتكار",{count:after.length-before.length});
+      else if(JSON.stringify(before.map(item=>({name:item.name,cultureType:item.cultureType,status:item.status})))!==JSON.stringify(after.map(item=>({name:item.name,cultureType:item.cultureType,status:item.status}))))await record(AUDIT.CULTURE_ACTIVITY_UPDATED,"تحديث بيانات نشاط نشر ثقافة الابتكار");
+      if(changed("annualPlanActivityId"))await record(AUDIT.CULTURE_ACTIVITY_LINKED,"ربط نشاط نشر ثقافة الابتكار بالخطة السنوية");
+      if(changed("participants"))await record(AUDIT.CULTURE_ACTIVITY_PARTICIPATION_UPDATED,"تحديث سجل المشاركين في نشاط نشر ثقافة الابتكار");
+      if(changed("files"))await record(AUDIT.CULTURE_ACTIVITY_MATERIAL_UPDATED,"إضافة أو تحديث مادة معرفية/توعوية");
+      if(after.some((item,index)=>item.status==="مكتملة"&&before[index]?.status!=="مكتملة"))await record(AUDIT.CULTURE_ACTIVITY_CLOSED,"إغلاق نشاط نشر ثقافة الابتكار");
     }
     if(requirementId==="5-23-1-r2"){
       const previous=loaded.assignment.workspaceData as WorkspaceData;

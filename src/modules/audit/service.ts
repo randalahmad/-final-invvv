@@ -57,6 +57,14 @@ ACTION_LABELS.GOVERNANCE_CORRECTIVE_ACTION_COMPLETED="إغلاق إجراء تص
 ACTION_LABELS.GOVERNANCE_PERFORMANCE_REPORT_RECORDED="إعداد أو تحديث تقرير أداء حوكمة";
 ACTION_LABELS.GOVERNANCE_TASK_ASSIGNED="إسناد مهمة تفعيل حوكمة";
 ACTION_LABELS.GOVERNANCE_TASK_COMPLETED="إكمال مهمة تفعيل حوكمة";
+ACTION_LABELS.CULTURE_ACTIVITY_CREATED="إنشاء أو ربط نشاط لنشر ثقافة الابتكار";
+ACTION_LABELS.CULTURE_ACTIVITY_UPDATED="تحديث بيانات نشاط نشر ثقافة الابتكار";
+ACTION_LABELS.CULTURE_ACTIVITY_LINKED="ربط نشاط نشر ثقافة الابتكار بالخطة السنوية";
+ACTION_LABELS.CULTURE_ACTIVITY_PARTICIPATION_UPDATED="تحديث سجل المشاركين في نشاط نشر ثقافة الابتكار";
+ACTION_LABELS.CULTURE_ACTIVITY_MATERIAL_UPDATED="إضافة أو تحديث مادة معرفية/توعوية";
+ACTION_LABELS.CULTURE_ACTIVITY_TASK_ASSIGNED="إسناد مهمة تنظيم نشاط ثقافة الابتكار";
+ACTION_LABELS.CULTURE_ACTIVITY_TASK_COMPLETED="إكمال مهمة تنظيم نشاط ثقافة الابتكار";
+ACTION_LABELS.CULTURE_ACTIVITY_CLOSED="إغلاق نشاط نشر ثقافة الابتكار";
 export const auditActionLabel=(action:string)=>ACTION_LABELS[action]??action;
 
 export interface AuditLogRow {
