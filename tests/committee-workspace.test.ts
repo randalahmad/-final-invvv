@@ -9,7 +9,9 @@ const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.ur
 describe("5.23.3 requirement 01 committee governance-structure workspace", () => {
   it("provides a coherent preview committee with the required member categories", () => {
     const structures = PREVIEW_COMMITTEE.structures as Record<string, unknown>[];
-    expect(structures).toHaveLength(1);
+    expect(structures.length).toBeGreaterThanOrEqual(3);
+    expect(structures.map((s) => s.name)).toEqual(["لجنة الابتكار المؤسسي", "اللجنة التقنية", "وحدة الابتكار"]);
+    expect(structures.every((s) => typeof s.committeeId === "string" && (s.committeeId as string).length > 0)).toBe(true);
     const structure = structures[0];
     expect(structure.name).toBe("لجنة الابتكار المؤسسي");
     const members = structure.members as Record<string, unknown>[];

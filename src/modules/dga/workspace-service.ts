@@ -121,6 +121,45 @@ async function syncCommitteeRecords(tx:Prisma.TransactionClient,data:WorkspaceDa
   }
 }
 
+// 5.23.3 Requirement 02 — تفعيل الوحدة أو اللجنة واعتماد العمليات والإجراءات.
+// Unlike 5.23.3.1 (committees), this requirement does NOT need its own
+// relational tables: processes/policies/reviews/decisions/performance
+// reports stay JSON-only inside workspaceData (same lightweight pattern as
+// 5.23.2.4's meetings/decisions/reports) because no other requirement reads
+// them relationally. Only two things need real DB rows: corrective actions
+// and general follow-up tasks — both reuse the SAME RequirementTask.committeeId
+// column 5.23.3.1 already added, so no schema change is needed here either.
+// The multi-select "اللجان/الوحدات المعنية" options come from 5.23.3.1's own
+// saved structures (passed in as referenceData by the caller) — never a
+// second committee list.
+const governanceTaskStatusMap=(value:unknown):"OPEN"|"IN_PROGRESS"|"WAITING"|"COMPLETED"|"CANCELLED"=>value==="COMPLETED"?"COMPLETED":value==="CANCELLED"?"CANCELLED":value==="WAITING"?"WAITING":value==="IN_PROGRESS"||value==="REVIEW"?"IN_PROGRESS":"OPEN";
+const correctiveActionStatusMap:Record<string,"OPEN"|"IN_PROGRESS"|"WAITING"|"COMPLETED"|"CANCELLED">={"مفتوح":"OPEN","قيد التنفيذ":"IN_PROGRESS","مكتمل":"COMPLETED","مغلق":"COMPLETED"};
+async function syncGovernanceOperationsTasks(tx:Prisma.TransactionClient,data:WorkspaceData,assignmentId:string,actorUserId:string){
+  const correctiveActions=Array.isArray(data.correctiveActions)?data.correctiveActions:[];
+  for(const row of correctiveActions){
+    const rowId=String(row.id??"").trim();const assignedToUserId=String(row.assignedUserId??"").trim()||null;if(!rowId||!assignedToUserId)continue;
+    const title=`إجراء تصحيحي: ${String(row.action??row.reason??"بلا وصف").trim()||"بلا وصف"}`;
+    const sourceKey=`governance-corrective:${assignmentId}:${rowId}`;
+    const status=correctiveActionStatusMap[String(row.status??"")]??"OPEN";
+    const priority="HIGH" as const; // corrective actions are always follow-up priority by nature
+    const committeeId=String(row.committeeId??"").trim()||null;
+    const existing=await tx.requirementTask.findUnique({where:{sourceKey}});
+    await tx.requirementTask.upsert({where:{sourceKey},create:{sourceKey,committeeId,assignmentId,type:"FOLLOW_UP",title,status,priority,requestedById:actorUserId,assignedToUserId,dueDate:optionalDateValue(row.dueDate),nextAction:String(row.action??"إغلاق الإجراء التصحيحي"),completedAt:status==="COMPLETED"?new Date():null},update:{committeeId,title,status,priority,assignedToUserId,dueDate:optionalDateValue(row.dueDate),nextAction:String(row.action??"إغلاق الإجراء التصحيحي"),completedAt:status==="COMPLETED"?new Date():null}});
+    if(!existing||existing.status!==status)await writeAudit({actorUserId,action:status==="COMPLETED"?AUDIT.GOVERNANCE_CORRECTIVE_ACTION_COMPLETED:AUDIT.GOVERNANCE_CORRECTIVE_ACTION_ASSIGNED,entityType:"COMPLIANCE_REQUIREMENT",entityId:assignmentId,summary:status==="COMPLETED"?"إغلاق إجراء تصحيحي":"فتح/إسناد إجراء تصحيحي",metadata:{requirementCode:"5.23.3.2",sourceKey,assignedToUserId,committeeId}},tx);
+  }
+  const tasks=Array.isArray(data.tasks)?data.tasks:[];
+  for(const task of tasks){
+    const taskId=String(task.id??"").trim();const title=String(task.title??"").trim();const assignedToUserId=String(task.assignedUserId??"").trim()||null;if(!taskId||!title||!assignedToUserId)continue;
+    const sourceKey=`governance-task:${assignmentId}:${taskId}`;
+    const status=governanceTaskStatusMap(task.status);
+    const priority=["LOW","MEDIUM","HIGH","URGENT"].includes(String(task.priority))?String(task.priority) as "LOW"|"MEDIUM"|"HIGH"|"URGENT":"MEDIUM";
+    const committeeId=String(task.committeeId??"").trim()||null;
+    const existing=await tx.requirementTask.findUnique({where:{sourceKey}});
+    await tx.requirementTask.upsert({where:{sourceKey},create:{sourceKey,committeeId,assignmentId,type:"FOLLOW_UP",title,status,priority,requestedById:actorUserId,assignedToUserId,dueDate:optionalDateValue(task.dueDate),nextAction:String(task.nextAction??"فتح مساحة تفعيل الحوكمة"),completedAt:status==="COMPLETED"?(optionalDateValue(task.completedAt)??new Date()):null},update:{committeeId,title,status,priority,assignedToUserId,dueDate:optionalDateValue(task.dueDate),nextAction:String(task.nextAction??"فتح مساحة تفعيل الحوكمة"),completedAt:status==="COMPLETED"?(optionalDateValue(task.completedAt)??new Date()):null}});
+    if(!existing||existing.status!==status)await writeAudit({actorUserId,action:status==="COMPLETED"?AUDIT.GOVERNANCE_TASK_COMPLETED:AUDIT.GOVERNANCE_TASK_ASSIGNED,entityType:"COMPLIANCE_REQUIREMENT",entityId:assignmentId,summary:status==="COMPLETED"?`إكمال مهمة «${title}»`:`إسناد مهمة «${title}»`,metadata:{requirementCode:"5.23.3.2",sourceKey,assignedToUserId,committeeId}},tx);
+  }
+}
+
 const activityTypeMap:Record<string,"HACKATHON"|"INNOVATION_CAMP"|"WORKSHOP"|"COMPETITION"|"MEETING"|"PROGRAM"|"OTHER">={"هاكاثون":"HACKATHON","معسكر":"INNOVATION_CAMP","ورشة عمل":"WORKSHOP","مسابقة":"COMPETITION","لقاء":"MEETING","برنامج":"PROGRAM"};
 async function syncAnnualPlanActivities(tx:Prisma.TransactionClient,data:WorkspaceData,assignmentId:string,departmentId:string,actorUserId:string){
   const activities=Array.isArray(data.activities)?data.activities:[];
@@ -251,6 +290,7 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
     if(requirementId==="5-23-2-r3")await syncOpenInnovationTasks(tx,data,loaded.assignment.id,actor.userId);
     if(requirementId==="5-23-2-r4")await syncCooperationActivationTasks(tx,data,loaded.assignment.id,actor.userId);
     if(requirementId==="5-23-3-r1")await syncCommitteeRecords(tx,data,loaded.assignment.id,actor.userId,loaded.assignment.department.organizationId);
+    if(requirementId==="5-23-3-r2")await syncGovernanceOperationsTasks(tx,data,loaded.assignment.id,actor.userId);
     await tx.complianceRequirementAssignment.update({where:{id:loaded.assignment.id},data:{workspaceData:data as Prisma.InputJsonValue,operationalStatus:status,lastSavedById:actor.userId}});
     await writeAudit({actorUserId:actor.userId,action:AUDIT.COMPLIANCE_ASSIGNMENT_UPDATED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"تحديث مساحة عمل متطلب",after:{status,requirementCode:config.code}},tx);
     if(requirementId==="5-23-2-r1"){
@@ -287,6 +327,19 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
     if(requirementId==="5-23-2-r4"){
       const previous=loaded.assignment.workspaceData as WorkspaceData;const before=Array.isArray(previous.cooperationActivations)?previous.cooperationActivations:[];const after=Array.isArray(data.cooperationActivations)?data.cooperationActivations:[];const record=(action:string,summary:string)=>writeAudit({actorUserId:actor.userId,action,entityType:"REQUIREMENT_ASSIGNMENT",entityId:loaded.assignment.id,departmentId:loaded.assignment.departmentId,summary,metadata:{requirementCode:"5.23.2.4"}},tx);const changed=(key:string)=>JSON.stringify(before.map(item=>item[key]))!==JSON.stringify(after.map(item=>item[key]));
       if(after.length>before.length)await record(AUDIT.COOPERATION_ACTIVATION_LINKED,"ربط علاقة تعاون بخطة التفعيل");if(changed("plan"))await record(AUDIT.COOPERATION_ACTIVATION_PLAN_UPDATED,"إنشاء أو تحديث خطة تفعيل التعاون");if(changed("meetings"))await record(AUDIT.COOPERATION_ACTIVATION_MEETING_UPDATED,"إضافة أو تحديث اجتماع متابعة ومحضره");if(changed("commitments")||changed("tasks"))await record(AUDIT.COOPERATION_ACTIVATION_COMMITMENT_UPDATED,"تحديث التزامات ومهام التعاون");if(changed("outputs"))await record(AUDIT.COOPERATION_ACTIVATION_OUTPUT_UPDATED,"توثيق مخرج فعلي للتعاون");if(changed("reports"))await record(AUDIT.COOPERATION_ACTIVATION_REPORT_UPDATED,"إضافة أو تحديث تقرير دوري");if(changed("decisions"))await record(AUDIT.COOPERATION_ACTIVATION_DECISION_UPDATED,"تسجيل قرار متابعة");if(changed("correctiveActions"))await record(AUDIT.COOPERATION_ACTIVATION_CORRECTIVE_UPDATED,"إنشاء أو تحديث إجراء تصحيحي");
+    }
+    if(requirementId==="5-23-3-r2"){
+      const previous=loaded.assignment.workspaceData as WorkspaceData;
+      const record=(action:string,summary:string,metadata?:Record<string,unknown>)=>writeAudit({actorUserId:actor.userId,action,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary,metadata:{requirementCode:"5.23.3.2",...metadata}},tx);
+      const rows=(key:string,source:WorkspaceData)=>Array.isArray(source[key])?(source[key] as Record<string,unknown>[]):[];
+      const changed=(key:string)=>JSON.stringify(rows(key,previous))!==JSON.stringify(rows(key,data));
+      const before=(key:string)=>rows(key,previous);const after=(key:string)=>rows(key,data);
+      if(after("processes").length>before("processes").length)await record(AUDIT.GOVERNANCE_PROCESS_CREATED,"اعتماد عملية/إجراء جديد ضمن تفعيل الحوكمة",{count:after("processes").length-before("processes").length});
+      else if(changed("processes"))await record(AUDIT.GOVERNANCE_PROCESS_UPDATED,"تحديث عملية/إجراء ضمن تفعيل الحوكمة");
+      if(changed("policies"))await record(AUDIT.GOVERNANCE_POLICY_UPDATED,"إضافة أو تحديث سياسة/وثيقة حوكمة");
+      if(changed("reviews"))await record(AUDIT.GOVERNANCE_REVIEW_RECORDED,"توثيق مراجعة حوكمة");
+      if(changed("decisions"))await record(AUDIT.GOVERNANCE_DECISION_RECORDED,"تسجيل قرار حوكمة");
+      if(changed("performanceReports"))await record(AUDIT.GOVERNANCE_PERFORMANCE_REPORT_RECORDED,"إعداد أو تحديث تقرير أداء حوكمة");
     }
     if(requirementId==="5-23-1-r2"){
       const previous=loaded.assignment.workspaceData as WorkspaceData;

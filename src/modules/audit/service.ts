@@ -47,6 +47,16 @@ ACTION_LABELS.COMMITTEE_MEETING_UPDATED="تحديث بيانات اجتماع";
 ACTION_LABELS.COMMITTEE_MEETING_ARCHIVED="أرشفة اجتماع";
 ACTION_LABELS.COMMITTEE_TASK_ASSIGNED="إسناد مهمة وحدة/لجنة";
 ACTION_LABELS.COMMITTEE_TASK_COMPLETED="إكمال مهمة وحدة/لجنة";
+ACTION_LABELS.GOVERNANCE_PROCESS_CREATED="اعتماد عملية/إجراء حوكمة جديد";
+ACTION_LABELS.GOVERNANCE_PROCESS_UPDATED="تحديث عملية/إجراء حوكمة";
+ACTION_LABELS.GOVERNANCE_POLICY_UPDATED="إضافة أو تحديث سياسة/وثيقة حوكمة";
+ACTION_LABELS.GOVERNANCE_REVIEW_RECORDED="توثيق مراجعة حوكمة";
+ACTION_LABELS.GOVERNANCE_DECISION_RECORDED="تسجيل قرار حوكمة";
+ACTION_LABELS.GOVERNANCE_CORRECTIVE_ACTION_ASSIGNED="فتح/إسناد إجراء تصحيحي";
+ACTION_LABELS.GOVERNANCE_CORRECTIVE_ACTION_COMPLETED="إغلاق إجراء تصحيحي";
+ACTION_LABELS.GOVERNANCE_PERFORMANCE_REPORT_RECORDED="إعداد أو تحديث تقرير أداء حوكمة";
+ACTION_LABELS.GOVERNANCE_TASK_ASSIGNED="إسناد مهمة تفعيل حوكمة";
+ACTION_LABELS.GOVERNANCE_TASK_COMPLETED="إكمال مهمة تفعيل حوكمة";
 export const auditActionLabel=(action:string)=>ACTION_LABELS[action]??action;
 
 export interface AuditLogRow {
