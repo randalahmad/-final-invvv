@@ -245,6 +245,27 @@ async function syncMechanismTasks(tx:Prisma.TransactionClient,data:WorkspaceData
     }
   }
 }
+// 5.23.3 Requirement 05 — استقبال المقترحات والتغذية الراجعة. مهام "إسناد
+// متابعة" لكل رد JSON-only داخل workspaceData["intakeLinks"][].responses[]
+// فقط — تُزامَن على نفس RequirementTask (لا نظام مهام ثانٍ، بند 11)، بمفتاح
+// مصدر يحمل هوية الرابط والرد والمهمة معًا لرابط عميق دقيق في "مهامي".
+async function syncIntakeResponseTasks(tx:Prisma.TransactionClient,data:WorkspaceData,assignmentId:string,actorUserId:string){
+  for(const link of Array.isArray(data.intakeLinks)?data.intakeLinks:[]){
+    const linkId=String(link.id??"").trim();if(!linkId)continue;
+    for(const response of Array.isArray(link.responses)?link.responses:[]){
+      const responseId=String(response.id??"").trim();const referenceNumber=String(response.referenceNumber??"").trim();if(!responseId)continue;
+      for(const task of Array.isArray(response.tasks)?response.tasks:[]){
+        const title=String(task.title??"").trim();const assignedToUserId=String(task.assignedUserId??"").trim()||null;if(!title||!assignedToUserId)continue;
+        const sourceKey=`intake-response:${linkId}:${responseId}:${String(task.id??title)}`;
+        const status=task.status==="COMPLETED"?"COMPLETED" as const:task.status==="CANCELLED"?"CANCELLED" as const:task.status==="WAITING"?"WAITING" as const:task.status==="IN_PROGRESS"||task.status==="REVIEW"?"IN_PROGRESS" as const:"OPEN" as const;
+        const priority=["LOW","MEDIUM","HIGH","URGENT"].includes(String(task.priority))?String(task.priority) as "LOW"|"MEDIUM"|"HIGH"|"URGENT":"MEDIUM";
+        const existing=await tx.requirementTask.findUnique({where:{sourceKey}});
+        await tx.requirementTask.upsert({where:{sourceKey},create:{sourceKey,assignmentId,type:"FOLLOW_UP",title,status,priority,requestedById:actorUserId,assignedToUserId,dueDate:task.dueDate?new Date(String(task.dueDate)):null,nextAction:String(task.nextAction??`متابعة الرد ${referenceNumber||responseId}`),completedAt:status==="COMPLETED"?new Date(String(task.completedAt??new Date().toISOString())):null},update:{title,status,priority,assignedToUserId,dueDate:task.dueDate?new Date(String(task.dueDate)):null,nextAction:String(task.nextAction??`متابعة الرد ${referenceNumber||responseId}`),completedAt:status==="COMPLETED"?new Date(String(task.completedAt??new Date().toISOString())):null}});
+        if(!existing||existing.status!==status)await writeAudit({actorUserId,action:status==="COMPLETED"?AUDIT.INTAKE_RESPONSE_TASK_COMPLETED:AUDIT.INTAKE_RESPONSE_TASK_ASSIGNED,entityType:"COMPLIANCE_REQUIREMENT",entityId:assignmentId,summary:status==="COMPLETED"?`إكمال مهمة متابعة الرد «${referenceNumber||responseId}»`:`إسناد مهمة متابعة الرد «${referenceNumber||responseId}»`,metadata:{requirementCode:"5.23.3.5",sourceKey,assignedToUserId,linkId,responseId}},tx);
+      }
+    }
+  }
+}
 async function syncCooperationActivationTasks(tx:Prisma.TransactionClient,data:WorkspaceData,assignmentId:string,actorUserId:string){
   for(const activation of Array.isArray(data.cooperationActivations)?data.cooperationActivations:[]){const activationId=String(activation.id??"");const partner=String(activation.cooperationName??"");if(!activationId)continue;for(const task of Array.isArray(activation.tasks)?activation.tasks:[]){const title=String(task.title??"").trim();const assignedToUserId=String(task.assignedUserId??"").trim()||null;if(!title||!assignedToUserId)continue;const sourceKey=`cooperation-activation:${activationId}:${String(task.section??"overview")}:${String(task.id??title)}`;const status=task.status==="COMPLETED"?"COMPLETED" as const:task.status==="CANCELLED"?"CANCELLED" as const:task.status==="WAITING"?"WAITING" as const:task.status==="IN_PROGRESS"?"IN_PROGRESS" as const:"OPEN" as const;const priority=["LOW","MEDIUM","HIGH","URGENT"].includes(String(task.priority))?String(task.priority) as "LOW"|"MEDIUM"|"HIGH"|"URGENT":"MEDIUM";await tx.requirementTask.upsert({where:{sourceKey},create:{sourceKey,assignmentId,type:"FOLLOW_UP",title,status,priority,requestedById:actorUserId,assignedToUserId,dueDate:task.dueDate?new Date(String(task.dueDate)):null,nextAction:String(task.nextAction??`فتح تفعيل التعاون مع «${partner}»`),completedAt:status==="COMPLETED"?new Date(String(task.completedAt??new Date().toISOString())):null},update:{title,status,priority,assignedToUserId,dueDate:task.dueDate?new Date(String(task.dueDate)):null,nextAction:String(task.nextAction??`فتح تفعيل التعاون مع «${partner}»`),completedAt:status==="COMPLETED"?new Date(String(task.completedAt??new Date().toISOString())):null}});}}
 }
@@ -334,6 +355,7 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
     if(requirementId==="5-23-3-r2")await syncGovernanceOperationsTasks(tx,data,loaded.assignment.id,actor.userId);
     if(requirementId==="5-23-3-r3")await syncCultureActivityTasks(tx,data,loaded.assignment.id,actor.userId);
     if(requirementId==="5-23-3-r4")await syncMechanismTasks(tx,data,loaded.assignment.id,actor.userId);
+    if(requirementId==="5-23-3-r5")await syncIntakeResponseTasks(tx,data,loaded.assignment.id,actor.userId);
     await tx.complianceRequirementAssignment.update({where:{id:loaded.assignment.id},data:{workspaceData:data as Prisma.InputJsonValue,operationalStatus:status,lastSavedById:actor.userId}});
     await writeAudit({actorUserId:actor.userId,action:AUDIT.COMPLIANCE_ASSIGNMENT_UPDATED,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary:"تحديث مساحة عمل متطلب",after:{status,requirementCode:config.code}},tx);
     if(requirementId==="5-23-2-r1"){
@@ -405,6 +427,19 @@ export async function saveRequirementWorkspace(actor: AccessContext, requirement
       if(after.some((v,i)=>v.approvalStatus==="تم الاستبدال"&&before[i]?.approvalStatus!=="تم الاستبدال"))await record(AUDIT.MECHANISM_VERSION_SUPERSEDED,"استبدال إصدار سابق بعد اعتماد إصدار أحدث");
       if(JSON.stringify(before.map(v=>stagesOf(v).map(s=>({name:s.name,archived:s.archived,order:s.order}))))!==JSON.stringify(after.map(v=>stagesOf(v).map(s=>({name:s.name,archived:s.archived,order:s.order})))))await record(AUDIT.MECHANISM_STAGE_UPDATED,"تحديث أو إعادة ترتيب مراحل خارطة الرحلة");
       if(JSON.stringify(before.map(v=>stagesOf(v).map(s=>s.gate)))!==JSON.stringify(after.map(v=>stagesOf(v).map(s=>s.gate))))await record(AUDIT.MECHANISM_GATE_UPDATED,"تحديث بوابة قرار بين مراحل الآلية");
+    }
+    if(requirementId==="5-23-3-r5"){
+      const previous=loaded.assignment.workspaceData as WorkspaceData;const before=Array.isArray(previous.intakeLinks)?previous.intakeLinks:[];const after=Array.isArray(data.intakeLinks)?data.intakeLinks:[];
+      const record=(action:string,summary:string,metadata?:Record<string,unknown>)=>writeAudit({actorUserId:actor.userId,action,entityType:"COMPLIANCE_REQUIREMENT",entityId:loaded.assignment.complianceRequirementId,departmentId:loaded.assignment.departmentId,summary,metadata:{requirementCode:"5.23.3.5",...metadata}},tx);
+      if(after.length>before.length)await record(AUDIT.INTAKE_LINK_CREATED,"إنشاء رابط استقبال مقترحات/تغذية راجعة",{count:after.length-before.length});
+      else if(JSON.stringify(before.map(l=>({name:l.name,purpose:l.purpose,owningDepartment:l.owningDepartment,owner:l.owner,participantDescription:l.participantDescription})))!==JSON.stringify(after.map(l=>({name:l.name,purpose:l.purpose,owningDepartment:l.owningDepartment,owner:l.owner,participantDescription:l.participantDescription}))))await record(AUDIT.INTAKE_LINK_UPDATED,"تحديث بيانات رابط الاستقبال");
+      if(after.some((l,i)=>l.status!==before[i]?.status))await record(AUDIT.INTAKE_LINK_STATUS_CHANGED,"تغيير حالة رابط الاستقبال");
+      if(JSON.stringify(before.map(l=>l.formFields))!==JSON.stringify(after.map(l=>l.formFields)))await record(AUDIT.INTAKE_FORM_CONFIG_UPDATED,"تحديث إعداد حقول نموذج الاستقبال");
+      const responsesOf=(row:Record<string,unknown>)=>Array.isArray(row.responses)?(row.responses as Record<string,unknown>[]):[];
+      const beforeResponses=before.flatMap(responsesOf);const afterResponses=after.flatMap(responsesOf);
+      if(afterResponses.some((r,i)=>r.status!==beforeResponses[i]?.status&&r.status==="مغلق"))await record(AUDIT.INTAKE_RESPONSE_CLOSED,"إغلاق رد");
+      else if(afterResponses.some((r,i)=>r.status!==beforeResponses[i]?.status))await record(AUDIT.INTAKE_RESPONSE_STATUS_CHANGED,"تحديث حالة الرد");
+      if(afterResponses.some((r,i)=>r.ownerUserId&&r.ownerUserId!==beforeResponses[i]?.ownerUserId))await record(AUDIT.INTAKE_RESPONSE_OWNER_ASSIGNED,"إسناد مالك للرد");
     }
     if(requirementId==="5-23-1-r2"){
       const previous=loaded.assignment.workspaceData as WorkspaceData;

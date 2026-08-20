@@ -60,6 +60,26 @@ const MECHANISM_CONTRIBUTION_SECTIONS:readonly WorkspaceSection[]=[
   openSection("templates","إضافة نماذج وقوالب المرحلة",[f("stageName","المرحلة"),f("title","اسم النموذج/القالب"),f("status","الحالة")]),
   openSection("evidence","تجهيز الإثبات",[f("title","وصف الدليل"),f("relatedRecord","الإصدار/المرحلة المرتبطة"),f("notes","ملاحظات التجهيز","textarea")]),
 ];
+// 5.23.3 Requirement 05 — استقبال المقترحات والتغذية الراجعة. كل "رابط
+// استقبال" سجل مستقل مع مجموعة ردوده الخاصة (بند 2 — لا تختلط ردود روابط
+// مختلفة). المستجيب العام ليس مساهمًا ولا مستخدم منصة (بند 12/21) — الاستقبال
+// العام يمر عبر مسار توكن منفصل مخصص للإرسال فقط دون أي قراءة، لا عبر نظام
+// المساهمات الحالي (ذاك مخصص لتوثيق المتطلب نفسه من داخل المنصة).
+export const INTAKE_LINK_TYPES=["مقترحات","تغذية راجعة","كلاهما"] as const;
+export const INTAKE_LINK_STATUSES=["مسودة","نشط","مغلق"] as const;
+export const INTAKE_RESPONSE_STATUSES=["جديد","قيد المراجعة","تم الإسناد","تمت المعالجة","مغلق","غير قابل للتنفيذ"] as const;
+// أهلية الرابط لاستقبال ردود جديدة الآن — حاسمة ومُعاد استخدامها في العرض
+// العام والتحقق من الإرسال معًا، حتى لا يختلف تقييمان لحالة نفس الرابط.
+export function isIntakeLinkAcceptingResponses(row:Record<string,unknown>):boolean{
+  if(row?.status!=="نشط")return false;
+  const closeDate=row?.closeDate?String(row.closeDate):"";
+  if(closeDate&&new Date(closeDate).getTime()<Date.now())return false;
+  return true;
+}
+const INTAKE_CONTRIBUTION_SECTIONS:readonly WorkspaceSection[]=[
+  openSection("linkDocumentation","توثيق رابط الاستقبال",[f("linkName","الرابط"),f("summary","ملخص التوثيق","textarea"),f("status","الحالة")]),
+  openSection("evidence","تجهيز الإثبات",[f("title","وصف الدليل"),f("relatedRecord","الرابط/الرد المرتبط"),f("notes","ملاحظات التجهيز","textarea")]),
+];
 
 export const REQUIREMENT_WORKSPACES: readonly RequirementWorkspaceConfig[] = [
   { requirementId:"5-23-1-r1", code:"5.23.1.1", explanation:"وثّق مجالات الابتكار وأهدافه الاستراتيجية ومؤشراته كسجلات مستقلة، وبيّن ارتباطها بأهداف الجهة.", sections:[
@@ -200,7 +220,23 @@ export const REQUIREMENT_WORKSPACES: readonly RequirementWorkspaceConfig[] = [
     ]},
     ...MECHANISM_CONTRIBUTION_SECTIONS,
   ], evidence:[e("DIGITAL_INNOVATION_MECHANISM","إطار أو آلية معتمدة لإدارة الابتكار الرقمي")] },
-  { requirementId:"5-23-3-r5", code:"5.23.3.5", explanation:"وثّق آلية الاستقبال الآلي للمقترحات والتغذية الراجعة على الحلول المطورة ومصادرها وفئاتها.", sections:[{key:"mechanism",title:"قنوات الاستقبال",fields:[f("proposalReceiving","استقبال المقترحات","textarea"),f("feedbackReceiving","استقبال التغذية الراجعة على الحلول المطورة","textarea"),f("sourceAudience","المصدر/الفئة","textarea",false)]}], evidence:[e("AUTOMATED_PROPOSAL_SCREENSHOTS","لقطات حديثة تثبت الاستقبال الآلي للمقترحات والتغذية الراجعة")] },
+  { requirementId:"5-23-3-r5", code:"5.23.3.5", explanation:"وفّر آلية عملية لاستقبال المقترحات الابتكارية والتغذية الراجعة عبر روابط استقبال متعددة ومعزولة، كل رابط بمجموعة ردوده الخاصة، مع تنظيم الردود ومتابعتها وإثبات أن الآلية تعمل فعليًا — دون تحويلها إلى مسار حوكمة أفكار كامل.", sections:[
+    {key:"intakeLinks",title:"روابط استقبال المقترحات والتغذية الراجعة",repeatable:true,minItems:1,fields:[
+      f("name","اسم الرابط/الحملة"),
+      f("purpose","الغرض","textarea"),
+      {...f("type","النوع","select"),options:INTAKE_LINK_TYPES},
+      f("relatedServiceName","الخدمة/الحل المرتبط","text",false),
+      f("owningDepartment","الإدارة المالكة"),
+      f("owner","المسؤول"),
+      f("targetAudience","الجمهور المستهدف"),
+      f("startDate","تاريخ البداية","date"),
+      f("closeDate","تاريخ الإغلاق","date",false),
+      {...f("status","حالة الرابط","select"),options:INTAKE_LINK_STATUSES},
+      f("participantDescription","وصف يظهر للمشارك","textarea"),
+      f("instructions","تعليمات (اختياري)","textarea",false),
+    ]},
+    ...INTAKE_CONTRIBUTION_SECTIONS,
+  ], evidence:[e("AUTOMATED_PROPOSAL_SCREENSHOTS","لقطات حديثة تثبت الاستقبال الآلي للمقترحات والتغذية الراجعة")] },
 ] as const;
 
 export function getWorkspaceConfig(requirementId: string) { return REQUIREMENT_WORKSPACES.find((item) => item.requirementId === requirementId); }

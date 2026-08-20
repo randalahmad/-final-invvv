@@ -73,6 +73,16 @@ ACTION_LABELS.MECHANISM_STAGE_UPDATED="تحديث/إعادة ترتيب مراح
 ACTION_LABELS.MECHANISM_GATE_UPDATED="تحديث بوابة قرار بين مراحل الآلية";
 ACTION_LABELS.MECHANISM_TASK_ASSIGNED="إسناد مهمة توثيق آلية الابتكار";
 ACTION_LABELS.MECHANISM_TASK_COMPLETED="إكمال مهمة توثيق آلية الابتكار";
+ACTION_LABELS.INTAKE_LINK_CREATED="إنشاء رابط استقبال مقترحات/تغذية راجعة";
+ACTION_LABELS.INTAKE_LINK_UPDATED="تحديث بيانات رابط الاستقبال";
+ACTION_LABELS.INTAKE_LINK_STATUS_CHANGED="تغيير حالة رابط الاستقبال";
+ACTION_LABELS.INTAKE_FORM_CONFIG_UPDATED="تحديث إعداد حقول نموذج الاستقبال";
+ACTION_LABELS.INTAKE_RESPONSE_RECEIVED="استلام رد عبر رابط الاستقبال";
+ACTION_LABELS.INTAKE_RESPONSE_STATUS_CHANGED="تحديث حالة الرد";
+ACTION_LABELS.INTAKE_RESPONSE_OWNER_ASSIGNED="إسناد مالك للرد";
+ACTION_LABELS.INTAKE_RESPONSE_TASK_ASSIGNED="إسناد مهمة متابعة رد";
+ACTION_LABELS.INTAKE_RESPONSE_TASK_COMPLETED="إكمال مهمة متابعة رد";
+ACTION_LABELS.INTAKE_RESPONSE_CLOSED="إغلاق رد";
 export const auditActionLabel=(action:string)=>ACTION_LABELS[action]??action;
 
 export interface AuditLogRow {
