@@ -138,7 +138,7 @@ export async function submitPublicIntakeResponse(token: string, submission: Publ
 
   await prisma.$transaction(async (tx) => {
     await tx.complianceRequirementAssignment.update({ where: { id: assignment.id }, data: { workspaceData: nextData as Prisma.InputJsonValue, operationalStatus: status } });
-    await writeAudit({ action: AUDIT.INTAKE_RESPONSE_RECEIVED, entityType: "COMPLIANCE_REQUIREMENT", entityId: assignment.complianceRequirementId, departmentId: assignment.departmentId, summary: `استلام رد عبر رابط الاستقبال «${String(link.name ?? "")}»`, metadata: { requirementCode: INTAKE_REQUIREMENT_CODE, linkId: link.id, responseId, referenceNumber } }, tx);
+    await writeAudit({ action: AUDIT.INTAKE_RESPONSE_RECEIVED, entityType: "COMPLIANCE_REQUIREMENT", entityId: assignment.complianceRequirementId, departmentId: assignment.departmentId, summary: `استلام رد عبر رابط الاستقبال «${String(link.name ?? "")}»`, metadata: { requirementCode: INTAKE_REQUIREMENT_CODE, linkId: String(link.id ?? ""), responseId, referenceNumber } }, tx);
   });
 
   return { referenceNumber, responseId };
