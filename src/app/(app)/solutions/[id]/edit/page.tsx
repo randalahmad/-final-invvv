@@ -89,6 +89,14 @@ export default async function EditSolutionPage({ params }: { params: { id: strin
               isSustained: solution.isSustained,
               sustainabilityOwner: solution.sustainabilityOwner,
               sustainabilityPlan: solution.sustainabilityPlan,
+              portfolioStatus: solution.portfolioStatus, externalReferenceId: solution.externalReferenceId, solutionType: solution.solutionType,
+              domain: solution.domain, executingEntity: solution.executingEntity, operationalOwner: solution.operationalOwner,
+              nextAction: solution.nextAction, nextActionDueDate: day(solution.nextActionDueDate), expectedImpact: solution.expectedImpact,
+              achievedImpact: solution.achievedImpact, satisfactionMeasurementSource: solution.satisfactionMeasurementSource,
+              satisfactionMeasurementDate: day(solution.satisfactionMeasurementDate), usageStartDate: day(solution.usageStartDate), stillInUse: solution.stillInUse,
+              usingDepartmentName: solution.usingDepartmentName, operationNotes: solution.operationNotes,
+              digitalTransformationObjective: solution.digitalTransformationObjective, innovationObjective: solution.innovationObjective,
+              linkedInitiative: solution.linkedInitiative, technologyTags: solution.technologyTags, duplicateReason: solution.duplicateReason,
             }}
           />
         </CardContent>

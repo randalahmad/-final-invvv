@@ -24,6 +24,7 @@ const MSG: Record<string, string> = {
   NOT_DRAFT: "يمكن تعديل المسودات فقط",
   INVALID_STATE: "لا يمكن تنفيذ هذا الإجراء على الحالة الحالية",
   BAD_REFERENCE: "أحد المراجع المرتبطة غير صالح",
+  DUPLICATE: "قد يكون هذا الحل مسجلًا مسبقًا. افتح السجل المحتمل أو وضّح سبب المتابعة كسجل جديد.",
   FIELD_FORBIDDEN: "أحد الحقول غير مسموح بتعديله ضمن المشاركة",
   SHARE_INACTIVE: "لا توجد مشاركة سارية لهذا الحل",
   ACTION_NOT_ALLOWED: "هذا الإجراء غير مسموح ضمن المشاركة",
@@ -72,6 +73,13 @@ function payload(fd: FormData) {
     isSustained: fd.get("isSustained") ?? undefined,
     sustainabilityOwner: fd.get("sustainabilityOwner"),
     sustainabilityPlan: fd.get("sustainabilityPlan"),
+    portfolioStatus: fd.get("portfolioStatus") || undefined,
+    externalReferenceId: fd.get("externalReferenceId"), solutionType: fd.get("solutionType"), domain: fd.get("domain"),
+    executingEntity: fd.get("executingEntity"), operationalOwner: fd.get("operationalOwner"), nextAction: fd.get("nextAction"), nextActionDueDate: fd.get("nextActionDueDate"),
+    expectedImpact: fd.get("expectedImpact"), achievedImpact: fd.get("achievedImpact"), satisfactionMeasurementSource: fd.get("satisfactionMeasurementSource"), satisfactionMeasurementDate: fd.get("satisfactionMeasurementDate"),
+    usageStartDate: fd.get("usageStartDate"), stillInUse: fd.get("stillInUse") ?? undefined, usingDepartmentName: fd.get("usingDepartmentName"), operationNotes: fd.get("operationNotes"),
+    digitalTransformationObjective: fd.get("digitalTransformationObjective"), innovationObjective: fd.get("innovationObjective"), linkedInitiative: fd.get("linkedInitiative"), technologyTagsText: fd.get("technologyTagsText"),
+    duplicateContinuationReason: fd.get("duplicateContinuationReason"),
   };
 }
 

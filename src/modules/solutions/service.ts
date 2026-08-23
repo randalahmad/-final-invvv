@@ -12,6 +12,7 @@ import {
   effectiveScopes,
 } from "@/server/authorization";
 import { solutionSchema } from "./schema";
+import { detectPotentialDuplicates, solutionFingerprint } from "./portfolio";
 
 export type SolutionErrorCode =
   | "VALIDATION"
@@ -132,6 +133,14 @@ function writableData(input: Awaited<ReturnType<typeof solutionSchema.parseAsync
     isSustained: input.isSustained,
     sustainabilityOwner: input.sustainabilityOwner,
     sustainabilityPlan: input.sustainabilityPlan,
+    portfolioStatus: input.portfolioStatus,
+    externalReferenceId: input.externalReferenceId,
+    solutionType: input.solutionType, domain: input.domain, executingEntity: input.executingEntity, operationalOwner: input.operationalOwner,
+    nextAction: input.nextAction, nextActionDueDate: input.nextActionDueDate, expectedImpact: input.expectedImpact, achievedImpact: input.achievedImpact,
+    satisfactionMeasurementSource: input.satisfactionMeasurementSource, satisfactionMeasurementDate: input.satisfactionMeasurementDate,
+    usageStartDate: input.usageStartDate, stillInUse: input.stillInUse, usingDepartmentName: input.usingDepartmentName, operationNotes: input.operationNotes,
+    digitalTransformationObjective: input.digitalTransformationObjective, innovationObjective: input.innovationObjective, linkedInitiative: input.linkedInitiative,
+    technologyTags: input.technologyTagsText?.split(/[،,]/).map((x) => x.trim()).filter(Boolean) ?? [],
   };
 }
 
@@ -146,12 +155,16 @@ export async function createSolution(actor: AccessContext, raw: unknown): Promis
   await requireDepartmentScope(actor, input.owningDepartmentId);
   await assertReferences(input);
 
+  const candidates = await prisma.innovationSolution.findMany({ where: { status: { not: "ARCHIVED" } }, select: { id: true, nameAr: true, externalReferenceId: true, sourceRecordType: true, sourceRecordId: true } });
+  const duplicates = detectPotentialDuplicates(input, candidates);
+  if (duplicates.length && !input.duplicateContinuationReason) throw new SolutionError("DUPLICATE", "قد يكون هذا الحل مسجلًا مسبقًا");
+
   const data = writableData(input);
   const completeness = computeSolutionCompleteness(data as unknown as Record<string, unknown>);
 
   return prisma.$transaction(async (tx) => {
     const created = await tx.innovationSolution.create({
-      data: { ...data, status: "DRAFT", completionPct: completeness.percentage },
+      data: { ...data, intakeFingerprint: duplicates.length ? null : solutionFingerprint(input), duplicateOfId: duplicates[0]?.id ?? null, duplicateReason: input.duplicateContinuationReason, status: "DRAFT", completionPct: completeness.percentage },
       select: { id: true },
     });
     await writeAudit(
@@ -331,6 +344,10 @@ export async function getSolutionById(actor: AccessContext, solutionId: string) 
       launchDate: true, beneficiaryCount: true, achievedOrExpectedImpact: true, beneficiarySatisfactionPct: true,
       previouslySubmittedForMeasurement: true, significantChangeNote: true, innovationMethodologySource: true,
       digitalTransformationPlanLink: true, isSustained: true, sustainabilityOwner: true, sustainabilityPlan: true,
+      portfolioStatus: true, externalReferenceId: true, solutionType: true, domain: true, executingEntity: true, operationalOwner: true,
+      nextAction: true, nextActionDueDate: true, expectedImpact: true, achievedImpact: true, satisfactionMeasurementSource: true,
+      satisfactionMeasurementDate: true, usageStartDate: true, stillInUse: true, usingDepartmentName: true, operationNotes: true,
+      digitalTransformationObjective: true, innovationObjective: true, linkedInitiative: true, technologyTags: true, duplicateReason: true,
       completionPct: true, owningDepartmentId: true, ownerUserId: true,
       strategicObjectiveId: true, activityId: true, ideaId: true,
       createdAt: true, updatedAt: true, archivedAt: true,
@@ -380,6 +397,7 @@ export async function listSolutionsInScope(actor: AccessContext, filters: Soluti
     select: {
       id: true, nameAr: true, source: true, maturityStage: true, implementationStatus: true,
       status: true, completionPct: true, evidenceReadinessPct: true, updatedAt: true, ideaId: true,
+      portfolioStatus: true, beneficiaryCount: true, nextAction: true, nextActionDueDate: true, duplicateOfId: true,
       owningDepartment: { select: { nameAr: true, organization: { select: { nameAr: true } } } },
       owner: { select: { name: true } },
     },

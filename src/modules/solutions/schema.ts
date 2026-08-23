@@ -26,6 +26,7 @@ const optionalNumber = z
 export const MATURITY_STAGES = ["CONCEPT", "PROTOTYPE", "POC", "PILOT", "OPERATIONAL"] as const;
 export const IMPLEMENTATION_STATUSES = ["PLANNING", "IN_PROGRESS", "OPERATING", "ON_HOLD", "COMPLETED", "CANCELLED"] as const;
 export const SOLUTION_SOURCES = ["ACTIVITY", "INTERNAL_PROPOSAL", "EXTERNAL_PARTNERSHIP"] as const;
+export const PORTFOLIO_STATUSES = ["RECEIVED", "NEEDS_COMPLETION", "UNDER_REVIEW", "ACCEPTED", "IN_PROGRESS", "OPERATIONAL", "ON_HOLD", "ARCHIVED"] as const;
 
 /**
  * Editable solution fields. Deliberately excludes ideaId, status, publishedAt,
@@ -64,6 +65,27 @@ export const solutionSchema = z
     isSustained: z.union([z.boolean(), z.string(), z.undefined()]).transform((v) => v === true || v === "on" || v === "true"),
     sustainabilityOwner: optionalText(200),
     sustainabilityPlan: optionalText(2000),
+    portfolioStatus: z.enum(PORTFOLIO_STATUSES).default("NEEDS_COMPLETION"),
+    externalReferenceId: optionalText(120),
+    solutionType: optionalText(120),
+    domain: optionalText(120),
+    executingEntity: optionalText(200),
+    operationalOwner: optionalText(200),
+    nextAction: optionalText(500),
+    nextActionDueDate: optionalDate,
+    expectedImpact: optionalText(2000),
+    achievedImpact: optionalText(2000),
+    satisfactionMeasurementSource: optionalText(500),
+    satisfactionMeasurementDate: optionalDate,
+    usageStartDate: optionalDate,
+    stillInUse: z.union([z.boolean(), z.string(), z.undefined()]).transform((v) => v === true || v === "on" || v === "true"),
+    usingDepartmentName: optionalText(200),
+    operationNotes: optionalText(2000),
+    digitalTransformationObjective: optionalText(500),
+    innovationObjective: optionalText(500),
+    linkedInitiative: optionalText(500),
+    technologyTagsText: optionalText(1000),
+    duplicateContinuationReason: optionalText(1000),
   })
   .refine((d) => !d.startDate || !d.targetEndDate || d.targetEndDate >= d.startDate, {
     path: ["targetEndDate"],
@@ -96,4 +118,7 @@ export const RECORD_STATUS_LABELS: Record<string, string> = {
   DRAFT: "مسودة",
   ACTIVE: "نشط",
   ARCHIVED: "مؤرشف",
+};
+export const PORTFOLIO_STATUS_LABELS: Record<string, string> = {
+  RECEIVED: "جديد / مستلم", NEEDS_COMPLETION: "يحتاج استكمال", UNDER_REVIEW: "قيد المراجعة", ACCEPTED: "مقبول في السجل", IN_PROGRESS: "قيد التنفيذ", OPERATIONAL: "تشغيلي", ON_HOLD: "متوقف", ARCHIVED: "مؤرشف",
 };

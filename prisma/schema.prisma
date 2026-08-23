@@ -153,6 +153,28 @@ enum ImplementationStatus {
   CANCELLED
 }
 
+enum SolutionPortfolioStatus {
+  RECEIVED
+  NEEDS_COMPLETION
+  UNDER_REVIEW
+  ACCEPTED
+  IN_PROGRESS
+  OPERATIONAL
+  ON_HOLD
+  ARCHIVED
+  REJECTED
+}
+
+enum SolutionIntakeStatus {
+  DRAFT
+  SUBMITTED
+  NEEDS_AMENDMENT
+  POSSIBLE_DUPLICATE
+  ACCEPTED
+  LINKED_TO_EXISTING
+  REJECTED
+}
+
 enum RecordStatus {
   DRAFT
   ACTIVE
@@ -783,13 +805,13 @@ model ComplianceRequirementAssignment {
   archivedAt              DateTime?
   archivedById            String?
 
-  document             StrategyDocument? // 1:1 in practice — one active document per assignment
-  raciAssignments      RequirementRaciAssignment[]
-  tasks                RequirementTask[]
-  workflowEvents       RequirementWorkflowEvent[]
-  versions             RequirementWorkspaceVersion[]
-  collaboration        RequirementCollaborationEntry[]
-  sectionContributions RequirementSectionContribution[]
+  document                StrategyDocument? // 1:1 in practice — one active document per assignment
+  raciAssignments         RequirementRaciAssignment[]
+  tasks                   RequirementTask[]
+  workflowEvents          RequirementWorkflowEvent[]
+  versions                RequirementWorkspaceVersion[]
+  collaboration           RequirementCollaborationEntry[]
+  sectionContributions    RequirementSectionContribution[]
   methodologyApplications MethodologyApplication[]
 
   @@index([complianceRequirementId, departmentId])
@@ -826,29 +848,29 @@ model RequirementRaciAssignment {
 }
 
 model RequirementTask {
-  id                   String                          @id @default(cuid())
-  assignmentId         String
-  activityId           String?
+  id                       String                          @id @default(cuid())
+  assignmentId             String
+  activityId               String?
   methodologyApplicationId String?
-  sourceKey            String?                           @unique
-  type                 RequirementTaskType
-  title                String
-  status               RequirementTaskStatus           @default(OPEN)
-  priority             WorkPriority                    @default(MEDIUM)
-  requestedById        String
-  assignedToUserId     String?
-  assignedDepartmentId String?
-  dueDate              DateTime?
-  nextAction           String?
-  completedAt          DateTime?
-  createdAt            DateTime                        @default(now())
-  updatedAt            DateTime                        @updatedAt
-  committeeId          String?
-  assignment           ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  activity             InnovationActivity?              @relation(fields: [activityId], references: [id], onDelete: SetNull)
-  methodologyApplication MethodologyApplication?         @relation(fields: [methodologyApplicationId], references: [id], onDelete: SetNull)
-  committee            Committee?                       @relation(fields: [committeeId], references: [id], onDelete: SetNull)
-  sectionContribution  RequirementSectionContribution?
+  sourceKey                String?                         @unique
+  type                     RequirementTaskType
+  title                    String
+  status                   RequirementTaskStatus           @default(OPEN)
+  priority                 WorkPriority                    @default(MEDIUM)
+  requestedById            String
+  assignedToUserId         String?
+  assignedDepartmentId     String?
+  dueDate                  DateTime?
+  nextAction               String?
+  completedAt              DateTime?
+  createdAt                DateTime                        @default(now())
+  updatedAt                DateTime                        @updatedAt
+  committeeId              String?
+  assignment               ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  activity                 InnovationActivity?             @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  methodologyApplication   MethodologyApplication?         @relation(fields: [methodologyApplicationId], references: [id], onDelete: SetNull)
+  committee                Committee?                      @relation(fields: [committeeId], references: [id], onDelete: SetNull)
+  sectionContribution      RequirementSectionContribution?
 
   @@index([assignedToUserId, status, dueDate])
   @@index([assignmentId])
@@ -1022,19 +1044,19 @@ model InnovationActivity {
 /// Detailed sessions, participants, outputs and prototype stages remain in the
 /// requirement workspace JSON so their flexible structure is not duplicated.
 model MethodologyApplication {
-  id                   String   @id @default(cuid())
+  id                   String                          @id @default(cuid())
   assignmentId         String
-  sourceKey            String   @unique
+  sourceKey            String                          @unique
   nameAr               String
   challengeAr          String?
   methodologyAr        String?
   owningDepartmentName String?
   responsibleUserId    String?
-  status               String   @default("DRAFT")
+  status               String                          @default("DRAFT")
   startDate            DateTime?
   endDate              DateTime?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  createdAt            DateTime                        @default(now())
+  updatedAt            DateTime                        @updatedAt
   archivedAt           DateTime?
   assignment           ComplianceRequirementAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   tasks                RequirementTask[]
@@ -1170,32 +1192,32 @@ model IdeaDecision {
 /// (synced via sourceKey so re-saving the workspace updates the same row
 /// instead of duplicating it — see workspace-service.ts syncCommitteeRecords).
 model Committee {
-  id                       String                   @id @default(cuid())
-  nameAr                   String
-  category                 String? // legacy free-text purpose/type, kept for pre-existing rows — superseded by type/purpose below
-  type                     CommitteeType            @default(COMMITTEE)
-  purpose                  String? // الغرض
-  mandateDescription       String? // وصف الاختصاص
-  relatedDepartmentName    String? // الجهة/الإدارة المرتبطة — descriptive text, not a hard FK (the structure may relate to an entity outside Department)
-  chairName                String? // الرئيس/المسؤول
-  secretaryName            String? // أمين اللجنة، عند وجوده
-  organizationId           String
-  formationDate            DateTime? // تاريخ التشكيل
-  operationStartDate       DateTime? // تاريخ بداية العمل
-  meetingFrequency         String? // دورية الاجتماعات، عند تحديدها
-  notes                    String?
-  decisionNumber           String? // formation decision number (structured, searchable) — never fabricated when no formal number exists
-  decisionDate             DateTime? // formation decision date
+  id                         String          @id @default(cuid())
+  nameAr                     String
+  category                   String? // legacy free-text purpose/type, kept for pre-existing rows — superseded by type/purpose below
+  type                       CommitteeType   @default(COMMITTEE)
+  purpose                    String? // الغرض
+  mandateDescription         String? // وصف الاختصاص
+  relatedDepartmentName      String? // الجهة/الإدارة المرتبطة — descriptive text, not a hard FK (the structure may relate to an entity outside Department)
+  chairName                  String? // الرئيس/المسؤول
+  secretaryName              String? // أمين اللجنة، عند وجوده
+  organizationId             String
+  formationDate              DateTime? // تاريخ التشكيل
+  operationStartDate         DateTime? // تاريخ بداية العمل
+  meetingFrequency           String? // دورية الاجتماعات، عند تحديدها
+  notes                      String?
+  decisionNumber             String? // formation decision number (structured, searchable) — never fabricated when no formal number exists
+  decisionDate               DateTime? // formation decision date
   decisionApprovingAuthority String? // جهة الاعتماد
-  decisionEffectiveDate    DateTime? // تاريخ السريان
-  decisionNotes            String?
-  status                   CommitteeStatus          @default(PROPOSED)
-  sourceKey                String?                  @unique // set only for rows synced from a requirement workspace; null for standalone-created rows
-  organization             Organization             @relation(fields: [organizationId], references: [id])
-  createdAt                DateTime                 @default(now())
-  updatedAt                DateTime                 @updatedAt
-  archivedAt                DateTime?
-  archivedById              String?
+  decisionEffectiveDate      DateTime? // تاريخ السريان
+  decisionNotes              String?
+  status                     CommitteeStatus @default(PROPOSED)
+  sourceKey                  String?         @unique // set only for rows synced from a requirement workspace; null for standalone-created rows
+  organization               Organization    @relation(fields: [organizationId], references: [id])
+  createdAt                  DateTime        @default(now())
+  updatedAt                  DateTime        @updatedAt
+  archivedAt                 DateTime?
+  archivedById               String?
 
   members  CommitteeMember[]
   meetings CommitteeMeeting[]
@@ -1211,27 +1233,27 @@ model Committee {
 /// optional (see product rule in the 5.23.3.1 spec: "a student volunteer may
 /// be listed as a committee member without having platform access").
 model CommitteeMember {
-  id                     String                   @id @default(cuid())
-  committeeId            String
-  name                   String
-  category               CommitteeMemberCategory  @default(EMPLOYEE) // الفئة — product categories, not a DGA-mandated list
-  affiliation            String? // الجهة/الجامعة/الإدارة
-  title                  String? // المسمى (job title) — role/designation held by the member outside the committee
-  email                  String?
-  phone                  String? // الهاتف، اختياري
-  roleInCommittee        String? // الدور داخل اللجنة (e.g. رئيس، مقرر، عضو)
-  responsibilities       String? // المسؤوليات
-  responsibilityScope    String? // نطاق المسؤولية
-  isPrimaryResponsible   Boolean                  @default(false) // هل هو مسؤول رئيسي؟
-  delegateName           String? // البديل، عند وجوده — free text, a delegate is not necessarily a platform user either
-  membershipEndDate      DateTime? // تاريخ انتهاء العضوية (declared/planned), distinct from leftAt (actual archival timestamp)
-  status                 CommitteeMemberStatus    @default(ACTIVE)
-  notes                  String?
-  sourceKey              String?                  @unique // set only for rows synced from a requirement workspace
-  userId                 String? // soft ref → User.id, optional (member may not be a platform user)
-  joinedAt               DateTime                 @default(now())
-  leftAt                 DateTime?
-  committee              Committee                @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+  id                   String                  @id @default(cuid())
+  committeeId          String
+  name                 String
+  category             CommitteeMemberCategory @default(EMPLOYEE) // الفئة — product categories, not a DGA-mandated list
+  affiliation          String? // الجهة/الجامعة/الإدارة
+  title                String? // المسمى (job title) — role/designation held by the member outside the committee
+  email                String?
+  phone                String? // الهاتف، اختياري
+  roleInCommittee      String? // الدور داخل اللجنة (e.g. رئيس، مقرر، عضو)
+  responsibilities     String? // المسؤوليات
+  responsibilityScope  String? // نطاق المسؤولية
+  isPrimaryResponsible Boolean                 @default(false) // هل هو مسؤول رئيسي؟
+  delegateName         String? // البديل، عند وجوده — free text, a delegate is not necessarily a platform user either
+  membershipEndDate    DateTime? // تاريخ انتهاء العضوية (declared/planned), distinct from leftAt (actual archival timestamp)
+  status               CommitteeMemberStatus   @default(ACTIVE)
+  notes                String?
+  sourceKey            String?                 @unique // set only for rows synced from a requirement workspace
+  userId               String? // soft ref → User.id, optional (member may not be a platform user)
+  joinedAt             DateTime                @default(now())
+  leftAt               DateTime?
+  committee            Committee               @relation(fields: [committeeId], references: [id], onDelete: Cascade)
 
   @@index([committeeId])
   @@map("committee_members")
@@ -1307,7 +1329,7 @@ model InnovationSolution {
   /// 5.24.1 (بند ح): نسبة رضا المستفيدين (0-100).
   beneficiarySatisfactionPct        Int?
   /// 5.24.1 (شرط ت بالمتطلب الثاني): هل قُدّم هذا الحل في دورة قياس سابقة؟
-  previouslySubmittedForMeasurement Boolean   @default(false)
+  previouslySubmittedForMeasurement Boolean                    @default(false)
   /// ملاحظة التطور الكبير المطلوبة إذا كان الحل قُدّم سابقًا (بند ت).
   significantChangeNote             String?
   /// 5.24.1 (بند ث بالمتطلب الثاني): مصدر منهجية الابتكار التي بُنيت عليها فكرة الحل.
@@ -1318,6 +1340,45 @@ model InnovationSolution {
   isSustained                       Boolean?
   sustainabilityOwner               String?
   sustainabilityPlan                String?
+  /// Operational 5.24.1 portfolio state. Separate from maturity and implementation status.
+  portfolioStatus                   SolutionPortfolioStatus    @default(NEEDS_COMPLETION)
+  externalReferenceId               String?
+  intakeFingerprint                 String?                    @unique
+  solutionType                      String?
+  domain                            String?
+  executingEntity                   String?
+  operationalOwner                  String?
+  currentResponsibleUserId          String?
+  nextAction                        String?
+  nextActionDueDate                 DateTime?
+  expectedImpact                    String?
+  achievedImpact                    String?
+  costReductionValue                Decimal?                   @db.Decimal(14, 2)
+  costReductionPct                  Decimal?                   @db.Decimal(7, 2)
+  costReductionDescription          String?
+  satisfactionMeasurementSource     String?
+  satisfactionMeasurementDate       DateTime?
+  usageStartDate                    DateTime?
+  stillInUse                        Boolean?
+  usingDepartmentName               String?
+  operationNotes                    String?
+  methodologyApplicationId          String?
+  sourceRecordType                  String?
+  sourceRecordId                    String?
+  sourceTraceability                Json?
+  digitalTransformationObjective    String?
+  innovationObjective               String?
+  linkedInitiative                  String?
+  beneficiaryGroups                 Json?
+  technologyTags                    String[]                   @default([])
+  supportingArtifacts               Json?
+  implementationJourney             Json?
+  readinessDetails                  Json?
+  duplicateOfId                     String?
+  duplicateReason                   String?
+  duplicateOf                       InnovationSolution?        @relation("SolutionDuplicates", fields: [duplicateOfId], references: [id], onDelete: SetNull)
+  possibleDuplicates                InnovationSolution[]       @relation("SolutionDuplicates")
+  intakeSubmissions                 SolutionIntakeSubmission[]
 
   activity           InnovationActivity? @relation(fields: [activityId], references: [id])
   idea               Idea?               @relation("SolutionFromIdea", fields: [ideaId], references: [id])
@@ -1334,7 +1395,62 @@ model InnovationSolution {
 
   @@index([owningDepartmentId])
   @@index([maturityStage])
+  @@index([portfolioStatus])
+  @@index([sourceRecordType, sourceRecordId])
+  @@index([duplicateOfId])
   @@map("innovation_solutions")
+}
+
+model SolutionIntakeLink {
+  id                 String                     @id @default(cuid())
+  tokenHash          String                     @unique
+  tokenLast4         String
+  nameAr             String
+  purpose            String
+  targetDepartmentId String?
+  ownerUserId        String
+  startsAt           DateTime
+  closesAt           DateTime?
+  isActive           Boolean                    @default(true)
+  instructions       String?
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+  archivedAt         DateTime?
+  submissions        SolutionIntakeSubmission[]
+
+  @@index([targetDepartmentId, isActive])
+  @@map("solution_intake_links")
+}
+
+model SolutionIntakeSubmission {
+  id                 String               @id @default(cuid())
+  intakeLinkId       String?
+  solutionId         String?
+  linkedSolutionId   String?
+  importBatchKey     String?              @unique
+  sourceKind         String
+  submitterName      String
+  submitterEmail     String?
+  departmentName     String?
+  payload            Json
+  fingerprint        String
+  status             SolutionIntakeStatus @default(SUBMITTED)
+  reviewerUserId     String?
+  reviewerNotes      String?
+  amendmentDueDate   DateTime?
+  duplicateReason    String?
+  continuationReason String?
+  submittedAt        DateTime             @default(now())
+  reviewedAt         DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  intakeLink         SolutionIntakeLink?  @relation(fields: [intakeLinkId], references: [id], onDelete: SetNull)
+  solution           InnovationSolution?  @relation(fields: [solutionId], references: [id], onDelete: SetNull)
+
+  @@index([intakeLinkId, status])
+  @@index([fingerprint])
+  @@index([linkedSolutionId])
+  @@map("solution_intake_submissions")
 }
 
 /// 5.24.2 (بند 4): الجوائز التي حصل عليها الحل الابتكاري — محلية/إقليمية/دولية. سجل متكرر

@@ -13,6 +13,7 @@ import { PreviewForm } from "./preview-form";
 import { DgaReadinessDashboard } from "@/modules/dga/components/readiness-dashboard";
 import { DgaUnitPage } from "@/modules/dga/components/unit-page";
 import { getDgaRequirement, getDgaUnitByPath } from "@/modules/dga/source-of-truth";
+import { SolutionPortfolioPreview, SolutionPortfolioUtilityPreview, SolutionWorkspacePreview } from "@/modules/solutions/components/portfolio-preview";
 
 const strategies = [["SO-01","رفع كفاءة تبني الحلول الابتكارية","إدارة الابتكار","نشط","72%"],["SO-02","تعزيز الشراكات البحثية والتقنية","مركز الشراكات","نشط","58%"],["SO-03","بناء ثقافة الابتكار المؤسسي","الموارد البشرية","مسودة","35%"]];
 const programs = [["هاكاثون المدن المستدامة 2026","هاكاثون","جارٍ","مركز الابتكار","15 أغسطس 2026"],["برنامج مسرعة الحلول الحكومية","برنامج","مخطط","إدارة التحول المؤسسي","1 سبتمبر 2026"],["ورشة تصميم الخدمات حول المستفيد","ورشة عمل","مكتمل","إدارة تجربة المستفيد","28 يوليو 2026"]];
@@ -82,8 +83,12 @@ export function PreviewScreen({path,persona}:{path:string;persona:PreviewPersona
   if(path==="/activities")return can("activity.view")?<Collection title="البرامج والفعاليات" description="البرامج والورش والهاكاثونات الجاري تنفيذها أو التخطيط لها." action={can("activity.manage")?"برنامج أو فعالية جديدة":undefined} headers={["البرنامج أو الفعالية","النوع","الحالة","المسؤول","الموعد المستهدف"]} rows={programs} firstLink="/activities/preview-hackathon"/>:unavailable();
   if(path==="/challenges")return can("challenge.view")?<Collection title="التحديات" description="التحديات المؤسسية ومسار دراستها وربطها بالحلول." action={can("challenge.create")?"تسجيل تحدٍ جديد":undefined} headers={["التحدي","المسؤول","الحالة","التصنيف"]} rows={challenges} firstLink="/challenges/preview-challenge"/>:unavailable();
   if(path==="/governance/ideas")return can("idea.view")?<Collection title="بنك الابتكار" description="الأفكار والمخرجات الابتكارية ومراحل التقييم والإجراءات التالية." action={persona==="admin"||persona==="internal"?"إضافة سجل":undefined} headers={["السجل","الحالة","الإدارة","المسؤول","الإجراء التالي"]} rows={ideas} firstLink="/governance/ideas/preview-innovation"/>:unavailable();
-  if(path==="/solutions")return can("solution.view")?<Collection title="الحلول الابتكارية" description="محفظة الحلول ومراحل نضجها وتنفيذها واكتمال بياناتها." action={can("solution.create")?"تسجيل حل":undefined} headers={["الحل","المسؤول","مرحلة النضج","حالة التنفيذ","اكتمال البيانات"]} rows={persona==="partner"?solutions.slice(0,1):persona==="viewer"?solutions.slice(2):solutions} firstLink="/solutions/preview-solution"/>:unavailable();
-  if(path.startsWith("/solutions/"))return can("solution.view")?<Solution canUpdate={can("solution.update")} canViewCompliance={can("compliance.view")}/>:unavailable();
+  if(path==="/solutions")return can("solution.view")?<SolutionPortfolioPreview persona={persona}/>:unavailable();
+  if(path==="/solutions/intake-links")return <SolutionPortfolioUtilityPreview kind="links" persona={persona}/>;
+  if(path==="/solutions/import")return <SolutionPortfolioUtilityPreview kind="import" persona={persona}/>;
+  if(path==="/solutions/from-existing")return <SolutionPortfolioUtilityPreview kind="existing" persona={persona}/>;
+  if(path==="/solutions/export")return <SolutionPortfolioUtilityPreview kind="export" persona={persona}/>;
+  if(path.startsWith("/solutions/"))return can("solution.view")?<SolutionWorkspacePreview id={path.split("/")[2]??"citizen-assistant"} persona={persona}/>:unavailable();
   if(path==="/governance")return can("committee.view")||can("idea.view")?<Governance canManage={can("committee.manage")}/>:unavailable();
   if(path==="/compliance")return can("compliance.view")?<Phase3Compliance/>:unavailable();
   if(path==="/alerts")return can("alert.view")?<Alerts/>:unavailable();

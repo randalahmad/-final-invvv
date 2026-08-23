@@ -55,6 +55,12 @@ export interface SolutionInitial {
   isSustained: boolean | null;
   sustainabilityOwner: string | null;
   sustainabilityPlan: string | null;
+  portfolioStatus?: string; externalReferenceId?: string | null; solutionType?: string | null; domain?: string | null;
+  executingEntity?: string | null; operationalOwner?: string | null; nextAction?: string | null; nextActionDueDate?: string | null;
+  expectedImpact?: string | null; achievedImpact?: string | null; satisfactionMeasurementSource?: string | null;
+  satisfactionMeasurementDate?: string | null; usageStartDate?: string | null; stillInUse?: boolean | null;
+  usingDepartmentName?: string | null; operationNotes?: string | null; digitalTransformationObjective?: string | null;
+  innovationObjective?: string | null; linkedInitiative?: string | null; technologyTags?: string[]; duplicateReason?: string | null;
 }
 
 function FieldError({ errors }: { errors?: string[] }) {
@@ -114,6 +120,22 @@ export function SolutionForm({
           <Label htmlFor="problemStatement">وصف المشكلة</Label>
           <textarea id="problemStatement" name="problemStatement" rows={4} className={fieldClass} defaultValue={initial?.problemStatement ?? ""} />
           <FieldError errors={fe.problemStatement} />
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-dashed p-4">
+        <p className="mb-3 text-sm font-semibold">تشغيل محفظة 5.24.1</p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-col gap-2"><Label htmlFor="portfolioStatus">حالة السجل التشغيلية</Label><select id="portfolioStatus" name="portfolioStatus" className={fieldClass} defaultValue={initial?.portfolioStatus??"NEEDS_COMPLETION"}><option value="RECEIVED">جديد / مستلم</option><option value="NEEDS_COMPLETION">يحتاج استكمال</option><option value="UNDER_REVIEW">قيد المراجعة</option><option value="ACCEPTED">مقبول في السجل</option><option value="IN_PROGRESS">قيد التنفيذ</option><option value="OPERATIONAL">تشغيلي</option><option value="ON_HOLD">متوقف</option></select></div>
+          <div className="flex flex-col gap-2"><Label htmlFor="externalReferenceId">المعرّف المرجعي</Label><Input id="externalReferenceId" name="externalReferenceId" defaultValue={initial?.externalReferenceId??""} placeholder="اختياري — يستخدم لمنع التكرار"/></div>
+          <div className="flex flex-col gap-2"><Label htmlFor="solutionType">نوع الحل</Label><Input id="solutionType" name="solutionType" defaultValue={initial?.solutionType??""} placeholder="خدمة رقمية، أتمتة، منتج…"/></div>
+          <div className="flex flex-col gap-2"><Label htmlFor="domain">المجال</Label><Input id="domain" name="domain" defaultValue={initial?.domain??""}/></div>
+          <div className="flex flex-col gap-2"><Label htmlFor="executingEntity">الجهة المنفذة</Label><Input id="executingEntity" name="executingEntity" defaultValue={initial?.executingEntity??""}/></div>
+          <div className="flex flex-col gap-2"><Label htmlFor="operationalOwner">المالك التشغيلي</Label><Input id="operationalOwner" name="operationalOwner" defaultValue={initial?.operationalOwner??""}/></div>
+          <div className="flex flex-col gap-2"><Label htmlFor="technologyTagsText">التقنيات الناشئة</Label><Input id="technologyTagsText" name="technologyTagsText" defaultValue={initial?.technologyTags?.join("، ")??""} placeholder="افصل بينها بفاصلة"/></div>
+          <div className="flex flex-col gap-2"><Label htmlFor="nextAction">الإجراء التالي</Label><Input id="nextAction" name="nextAction" defaultValue={initial?.nextAction??""}/></div>
+          <div className="flex flex-col gap-2"><Label htmlFor="nextActionDueDate">موعد الإجراء</Label><Input id="nextActionDueDate" name="nextActionDueDate" type="date" defaultValue={initial?.nextActionDueDate??""}/></div>
+          <div className="flex flex-col gap-2 lg:col-span-3"><Label htmlFor="duplicateContinuationReason">سبب المتابعة كسجل جديد عند ظهور تشابه</Label><textarea id="duplicateContinuationReason" name="duplicateContinuationReason" rows={2} className={fieldClass} defaultValue={initial?.duplicateReason??""} placeholder="يُطلب فقط إذا نبّه النظام إلى سجل محتمل التكرار"/></div>
         </div>
       </div>
 

@@ -5,6 +5,7 @@ import { DEMO_MODE } from "@/server/demo-data";
 // Edge-safe middleware: protects every route except static assets and the
 // Auth.js API handler. Uses only the edge-safe config (no Prisma / bcrypt).
 export default async function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith("/solution-intake/")) return NextResponse.next();
   if (request.nextUrl.pathname.startsWith("/contribute/")) return NextResponse.next();
   if (isUxPreviewMode()) {
     // Internal rewrite target: render it once instead of feeding it back into
