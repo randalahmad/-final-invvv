@@ -63,6 +63,16 @@ function Phase4Operations({path,persona}:{path:string;persona:PreviewPersonaKey}
 export function PreviewScreen({path,persona}:{path:string;persona:PreviewPersonaKey}){
   const permissions=new Set(permissionsForPreviewPersona(persona));
   const can=(permission:PermissionKey)=>permissions.has(permission);
+  const unavailable=()=> <div className="py-20 text-center"><Badge variant="neutral">{UX_PREVIEW_PERSONAS[persona].label}</Badge><h1 className="mt-3 text-lg font-bold">هذه الوجهة غير متاحة لهذه الشخصية</h1><p className="mt-1 text-[13px] text-muted">يعكس ذلك صلاحيات الدور الحالية في وضع المعاينة.</p><Button asChild className="mt-4" variant="outline"><Link href="/dashboard">العودة إلى لوحة العمل</Link></Button></div>;
+  // Resolve the operational 5.24.1 preview before the generic DGA matcher.
+  // Otherwise `/solutions` is swallowed by DgaUnitPage's static field cards.
+  if(path==="/solutions")return can("solution.view")?<SolutionPortfolioPreview persona={persona}/>:unavailable();
+  if(path==="/solutions/new")return persona==="viewer"?unavailable():<PreviewForm kind="solution"/>;
+  if(path==="/solutions/intake-links")return <SolutionPortfolioUtilityPreview kind="links" persona={persona}/>;
+  if(path==="/solutions/import")return <SolutionPortfolioUtilityPreview kind="import" persona={persona}/>;
+  if(path==="/solutions/from-existing")return <SolutionPortfolioUtilityPreview kind="existing" persona={persona}/>;
+  if(path==="/solutions/export")return <SolutionPortfolioUtilityPreview kind="export" persona={persona}/>;
+  if(path.startsWith("/solutions/"))return can("solution.view")?<SolutionWorkspacePreview id={path.split("/")[2]??"citizen-assistant"} persona={persona}/>:unavailable();
   const dgaUnit = getDgaUnitByPath(path);
   if (path === "/dashboard") return <DgaReadinessDashboard persona={persona} />;
   if (dgaUnit) {
@@ -73,7 +83,6 @@ export function PreviewScreen({path,persona}:{path:string;persona:PreviewPersona
     return <DgaUnitPage unit={dgaUnit} requirement={selectedRequirement} persona={persona} canEdit={persona === "admin" || persona === "internal" || (persona === "partner" && partnerCanEdit)} eventId={eventId} />;
   }
   if (path === "/account") return <Collection title="حسابي" description="بيانات المستخدم الحالي ودوره ونطاق وصوله في منصة الجاهزية المؤسسية." headers={["المستخدم","الدور","نطاق البيانات","الصلاحية"]} rows={[[UX_PREVIEW_PERSONAS[persona].name,UX_PREVIEW_PERSONAS[persona].label,persona === "admin" ? "كامل المنصة" : persona === "partner" ? "الاتفاقيات والحلول المشتركة" : persona === "viewer" ? "المؤشرات والتقارير المنشورة" : "الجهة والإدارات المسندة","نشط"]]} />;
-  const unavailable=()=> <div className="py-20 text-center"><Badge variant="neutral">{UX_PREVIEW_PERSONAS[persona].label}</Badge><h1 className="mt-3 text-lg font-bold">هذه الوجهة غير متاحة لهذه الشخصية</h1><p className="mt-1 text-[13px] text-muted">يعكس ذلك صلاحيات الدور الحالية في وضع المعاينة.</p><Button asChild className="mt-4" variant="outline"><Link href="/dashboard">العودة إلى لوحة العمل</Link></Button></div>;
   if(path==="/dashboard")return <Dashboard persona={persona}/>;
   if(path.startsWith("/preview-form/"))return persona==="viewer"?unavailable():<PreviewForm kind={path.split("/").pop()??"activity"}/>;
   if(["/my-tasks","/reviews","/evidence-matrix","/evidence-repository","/readiness-check"].includes(path))return <Phase4Operations path={path} persona={persona}/>;
@@ -83,12 +92,6 @@ export function PreviewScreen({path,persona}:{path:string;persona:PreviewPersona
   if(path==="/activities")return can("activity.view")?<Collection title="البرامج والفعاليات" description="البرامج والورش والهاكاثونات الجاري تنفيذها أو التخطيط لها." action={can("activity.manage")?"برنامج أو فعالية جديدة":undefined} headers={["البرنامج أو الفعالية","النوع","الحالة","المسؤول","الموعد المستهدف"]} rows={programs} firstLink="/activities/preview-hackathon"/>:unavailable();
   if(path==="/challenges")return can("challenge.view")?<Collection title="التحديات" description="التحديات المؤسسية ومسار دراستها وربطها بالحلول." action={can("challenge.create")?"تسجيل تحدٍ جديد":undefined} headers={["التحدي","المسؤول","الحالة","التصنيف"]} rows={challenges} firstLink="/challenges/preview-challenge"/>:unavailable();
   if(path==="/governance/ideas")return can("idea.view")?<Collection title="بنك الابتكار" description="الأفكار والمخرجات الابتكارية ومراحل التقييم والإجراءات التالية." action={persona==="admin"||persona==="internal"?"إضافة سجل":undefined} headers={["السجل","الحالة","الإدارة","المسؤول","الإجراء التالي"]} rows={ideas} firstLink="/governance/ideas/preview-innovation"/>:unavailable();
-  if(path==="/solutions")return can("solution.view")?<SolutionPortfolioPreview persona={persona}/>:unavailable();
-  if(path==="/solutions/intake-links")return <SolutionPortfolioUtilityPreview kind="links" persona={persona}/>;
-  if(path==="/solutions/import")return <SolutionPortfolioUtilityPreview kind="import" persona={persona}/>;
-  if(path==="/solutions/from-existing")return <SolutionPortfolioUtilityPreview kind="existing" persona={persona}/>;
-  if(path==="/solutions/export")return <SolutionPortfolioUtilityPreview kind="export" persona={persona}/>;
-  if(path.startsWith("/solutions/"))return can("solution.view")?<SolutionWorkspacePreview id={path.split("/")[2]??"citizen-assistant"} persona={persona}/>:unavailable();
   if(path==="/governance")return can("committee.view")||can("idea.view")?<Governance canManage={can("committee.manage")}/>:unavailable();
   if(path==="/compliance")return can("compliance.view")?<Phase3Compliance/>:unavailable();
   if(path==="/alerts")return can("alert.view")?<Alerts/>:unavailable();

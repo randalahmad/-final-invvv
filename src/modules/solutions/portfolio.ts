@@ -37,6 +37,7 @@ export function computePortfolioReadiness(solution: Record<string, unknown>) {
 }
 
 export const PREVIEW_PORTFOLIO_SOLUTIONS = [
+  { id:"manual-service", nameAr:"بوابة المواعيد الاستباقية", department:"إدارة الخدمات الرقمية", owner:"نورة العتيبي", source:"تقديم مباشر", maturity:"نموذج عمل", status:"مقبول في السجل", beneficiaries:"3,200", readiness:71, tasks:1, nextAction:"اعتماد خطة التجربة", technology:["تحليل البيانات","أتمتة"], duplicateOf:null },
   { id:"citizen-assistant", nameAr:"المساعد الرقمي لخدمات المستفيدين", department:"إدارة تجربة المستفيد", owner:"سارة القحطاني", source:"مبادرة داخلية", maturity:"تشغيل فعلي", status:"تشغيلي", beneficiaries:"18,400", readiness:93, tasks:0, nextAction:"تحديث تقرير الاستخدام الربعي", technology:["الذكاء الاصطناعي","تحليل البيانات"], duplicateOf:null },
   { id:"energy-poc", nameAr:"نظام إدارة الطاقة التنبؤي", department:"إدارة المرافق", owner:"خالد الحربي", source:"ورشة منهجية", maturity:"إثبات مفهوم PoC", status:"قيد التنفيذ", beneficiaries:"12 مبنى", readiness:62, tasks:2, nextAction:"استكمال دراسة الجدوى", technology:["إنترنت الأشياء","تحليل البيانات"], duplicateOf:null },
   { id:"intake-queue", nameAr:"منصة متابعة طلبات الدعم الموحدة", department:"تقنية المعلومات", owner:"بانتظار الإسناد", source:"رابط حصر الحلول", maturity:"مفهوم", status:"جديد / مستلم", beneficiaries:"—", readiness:34, tasks:1, nextAction:"مراجعة طلب الحصر", technology:["أتمتة"], duplicateOf:null },

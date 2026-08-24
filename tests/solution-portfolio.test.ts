@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computePortfolioReadiness, detectPotentialDuplicates, normalizeSolutionTitle, solutionFingerprint } from "@/modules/solutions/portfolio";
+import { PREVIEW_PORTFOLIO_SOLUTIONS } from "@/modules/solutions/portfolio";
 
 describe("5.24.1 operational solution portfolio", () => {
   it("normalizes Arabic titles deterministically", () => {
@@ -17,5 +18,10 @@ describe("5.24.1 operational solution portfolio", () => {
   it("explains internal readiness dimensions rather than claiming an official score", () => {
     const readiness=computePortfolioReadiness({nameAr:"حل",description:"وصف",problemStatement:"مشكلة",owningDepartmentId:"d",ownerUserId:"u",maturityStage:"POC",implementationStatus:"IN_PROGRESS",startDate:new Date(),beneficiaryCount:12,nextAction:"رفع التقرير"});
     expect(readiness.percentage).toBeGreaterThan(50); expect(readiness.missing).toContain("الارتباط الاستراتيجي"); expect(readiness.missing).toContain("الوثائق المساندة");
+  });
+  it("provides the seven connected stakeholder preview scenarios", () => {
+    expect(PREVIEW_PORTFOLIO_SOLUTIONS).toHaveLength(7);
+    expect(PREVIEW_PORTFOLIO_SOLUTIONS.map((row) => row.source)).toEqual(expect.arrayContaining(["تقديم مباشر", "رابط حصر الحلول", "استيراد من Excel", "هاكاثون المدن المستدامة"]));
+    expect(PREVIEW_PORTFOLIO_SOLUTIONS.some((row) => row.duplicateOf)).toBe(true);
   });
 });
