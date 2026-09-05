@@ -14,6 +14,7 @@ import { DgaReadinessDashboard } from "@/modules/dga/components/readiness-dashbo
 import { DgaUnitPage } from "@/modules/dga/components/unit-page";
 import { getDgaRequirement, getDgaUnitByPath } from "@/modules/dga/source-of-truth";
 import { SolutionPortfolioPreview, SolutionPortfolioUtilityPreview, SolutionWorkspacePreview } from "@/modules/solutions/components/portfolio-preview";
+import { CreateIntakePagePreview, IntakeHomePreview, IntakeInboxPreview, MySubmissionsPreview, SubmissionReviewPreview } from "@/modules/solutions/components/intake-preview";
 
 const strategies = [["SO-01","رفع كفاءة تبني الحلول الابتكارية","إدارة الابتكار","نشط","72%"],["SO-02","تعزيز الشراكات البحثية والتقنية","مركز الشراكات","نشط","58%"],["SO-03","بناء ثقافة الابتكار المؤسسي","الموارد البشرية","مسودة","35%"]];
 const programs = [["هاكاثون المدن المستدامة 2026","هاكاثون","جارٍ","مركز الابتكار","15 أغسطس 2026"],["برنامج مسرعة الحلول الحكومية","برنامج","مخطط","إدارة التحول المؤسسي","1 سبتمبر 2026"],["ورشة تصميم الخدمات حول المستفيد","ورشة عمل","مكتمل","إدارة تجربة المستفيد","28 يوليو 2026"]];
@@ -67,6 +68,14 @@ export function PreviewScreen({path,persona}:{path:string;persona:PreviewPersona
   // Resolve the operational 5.24.1 preview before the generic DGA matcher.
   // Otherwise `/solutions` is swallowed by DgaUnitPage's static field cards.
   if(path==="/solutions")return can("solution.view")?<SolutionPortfolioPreview persona={persona}/>:unavailable();
+  if(path==="/solutions/intake")return <IntakeHomePreview persona={persona}/>;
+  if(path==="/solutions/intake/new")return persona==="admin"||persona==="internal"?<CreateIntakePagePreview/>:unavailable();
+  if(path==="/solutions/intake/manual")return persona==="admin"||persona==="internal"?<PreviewForm kind="idea-intake"/>:unavailable();
+  if(path==="/solutions/intake/inbox")return persona==="admin"||persona==="internal"?<IntakeInboxPreview/>:unavailable();
+  if(path==="/solutions/intake/my-submissions")return <MySubmissionsPreview/>;
+  if(path.startsWith("/solutions/intake/my-submissions/"))return <SubmissionReviewPreview id={path.split("/").at(-1)??"new-service"} innovatorView/>;
+  if(path.startsWith("/solutions/intake/evaluation/"))return persona==="admin"||persona==="internal"?<SubmissionReviewPreview id={path.split("/").at(-1)??"energy-monitor"}/>:unavailable();
+  if(path.startsWith("/solutions/intake/submissions/"))return <SubmissionReviewPreview id={path.split("/").at(-1)??"new-service"} innovatorView={false}/>;
   if(path==="/solutions/new")return persona==="viewer"?unavailable():<PreviewForm kind="solution"/>;
   if(path==="/solutions/intake-links")return <SolutionPortfolioUtilityPreview kind="links" persona={persona}/>;
   if(path==="/solutions/import")return <SolutionPortfolioUtilityPreview kind="import" persona={persona}/>;
