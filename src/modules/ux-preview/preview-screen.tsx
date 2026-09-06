@@ -14,7 +14,8 @@ import { DgaReadinessDashboard } from "@/modules/dga/components/readiness-dashbo
 import { DgaUnitPage } from "@/modules/dga/components/unit-page";
 import { getDgaRequirement, getDgaUnitByPath } from "@/modules/dga/source-of-truth";
 import { SolutionPortfolioPreview, SolutionPortfolioUtilityPreview, SolutionWorkspacePreview } from "@/modules/solutions/components/portfolio-preview";
-import { CreateIntakePagePreview, IntakeHomePreview, IntakeInboxPreview, MySubmissionsPreview, SubmissionReviewPreview } from "@/modules/solutions/components/intake-preview";
+import { CreateIntakePagePreview, IntakeDecisionsPreview, IntakeHomePreview, IntakeInboxPreview, MySubmissionsPreview, SubmissionReviewPreview } from "@/modules/solutions/components/intake-preview";
+import { ImpactPortfolioPreview, ImpactWorkspacePreview } from "@/modules/impact/components/impact-preview";
 
 const strategies = [["SO-01","رفع كفاءة تبني الحلول الابتكارية","إدارة الابتكار","نشط","72%"],["SO-02","تعزيز الشراكات البحثية والتقنية","مركز الشراكات","نشط","58%"],["SO-03","بناء ثقافة الابتكار المؤسسي","الموارد البشرية","مسودة","35%"]];
 const programs = [["هاكاثون المدن المستدامة 2026","هاكاثون","جارٍ","مركز الابتكار","15 أغسطس 2026"],["برنامج مسرعة الحلول الحكومية","برنامج","مخطط","إدارة التحول المؤسسي","1 سبتمبر 2026"],["ورشة تصميم الخدمات حول المستفيد","ورشة عمل","مكتمل","إدارة تجربة المستفيد","28 يوليو 2026"]];
@@ -72,6 +73,7 @@ export function PreviewScreen({path,persona}:{path:string;persona:PreviewPersona
   if(path==="/solutions/intake/new")return persona==="admin"||persona==="internal"?<CreateIntakePagePreview/>:unavailable();
   if(path==="/solutions/intake/manual")return persona==="admin"||persona==="internal"?<PreviewForm kind="idea-intake"/>:unavailable();
   if(path==="/solutions/intake/inbox")return persona==="admin"||persona==="internal"?<IntakeInboxPreview/>:unavailable();
+  if(path==="/solutions/intake/decisions")return persona==="admin"||persona==="internal"?<IntakeDecisionsPreview/>:unavailable();
   if(path==="/solutions/intake/my-submissions")return <MySubmissionsPreview/>;
   if(path.startsWith("/solutions/intake/my-submissions/"))return <SubmissionReviewPreview id={path.split("/").at(-1)??"new-service"} innovatorView/>;
   if(path.startsWith("/solutions/intake/evaluation/"))return persona==="admin"||persona==="internal"?<SubmissionReviewPreview id={path.split("/").at(-1)??"energy-monitor"}/>:unavailable();
@@ -82,6 +84,8 @@ export function PreviewScreen({path,persona}:{path:string;persona:PreviewPersona
   if(path==="/solutions/from-existing")return <SolutionPortfolioUtilityPreview kind="existing" persona={persona}/>;
   if(path==="/solutions/export")return <SolutionPortfolioUtilityPreview kind="export" persona={persona}/>;
   if(path.startsWith("/solutions/"))return can("solution.view")?<SolutionWorkspacePreview id={path.split("/")[2]??"citizen-assistant"} persona={persona}/>:unavailable();
+  if(path==="/impact")return can("impact.view")?<ImpactPortfolioPreview persona={persona}/>:unavailable();
+  if(path.startsWith("/impact/"))return can("impact.view")?<ImpactWorkspacePreview solutionId={path.split("/")[2]??"citizen-assistant"} persona={persona}/>:unavailable();
   const dgaUnit = getDgaUnitByPath(path);
   if (path === "/dashboard") return <DgaReadinessDashboard persona={persona} />;
   if (dgaUnit) {
