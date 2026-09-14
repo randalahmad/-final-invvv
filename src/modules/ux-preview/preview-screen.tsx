@@ -16,6 +16,9 @@ import { getDgaRequirement, getDgaUnitByPath } from "@/modules/dga/source-of-tru
 import { SolutionPortfolioPreview, SolutionPortfolioUtilityPreview, SolutionWorkspacePreview } from "@/modules/solutions/components/portfolio-preview";
 import { CreateIntakePagePreview, IntakeDecisionsPreview, IntakeHomePreview, IntakeInboxPreview, MySubmissionsPreview, SubmissionReviewPreview } from "@/modules/solutions/components/intake-preview";
 import { ImpactPortfolioPreview, ImpactWorkspacePreview } from "@/modules/impact/components/impact-preview";
+import { IdeaStageGatePreview, InnovatorIdeasPreview, NewIdeaPreview } from "@/modules/solutions/components/innovator-journey-preview";
+import { ImpactDashboardPreview, OperationsDataPreview, PortfolioDashboardPreview } from "./portfolio-impact-operations";
+import { LifecyclePreview } from "./lifecycle-preview";
 
 const strategies = [["SO-01","رفع كفاءة تبني الحلول الابتكارية","إدارة الابتكار","نشط","72%"],["SO-02","تعزيز الشراكات البحثية والتقنية","مركز الشراكات","نشط","58%"],["SO-03","بناء ثقافة الابتكار المؤسسي","الموارد البشرية","مسودة","35%"]];
 const programs = [["هاكاثون المدن المستدامة 2026","هاكاثون","جارٍ","مركز الابتكار","15 أغسطس 2026"],["برنامج مسرعة الحلول الحكومية","برنامج","مخطط","إدارة التحول المؤسسي","1 سبتمبر 2026"],["ورشة تصميم الخدمات حول المستفيد","ورشة عمل","مكتمل","إدارة تجربة المستفيد","28 يوليو 2026"]];
@@ -39,7 +42,7 @@ function Collection(p:{title:string;description:string;action?:string;headers:st
   return <div className="flex flex-col gap-5"><PageHeader title={p.title} description={p.description} action={p.action?<PreviewAction>{p.action}</PreviewAction>:undefined}/><Table headers={p.headers} rows={p.rows} firstLink={p.firstLink}/></div>;
 }
 
-function Dashboard({persona}:{persona:PreviewPersonaKey}){const dashboard={admin:{description:"نظرة إشرافية على تشغيل المنصة والأعمال الإدارية.",metrics:[["مستخدمون نشطون","12"],["طلبات تسجيل","3"],["حلول ابتكارية","3"],["جاهزية المنصة","68%"]]},internal:{description:"نقطة البداية لمتابعة أعمال الابتكار والبرامج والمواعيد.",metrics:[["إجراءات تحتاج متابعة","5"],["برامج جارية","2"],["حلول ابتكارية","3"],["الجاهزية التقديرية","68%"]]},partner:{description:"السجلات المشتركة معك والتحديثات المطلوبة منك فقط.",metrics:[["حلول مشتركة","1"],["تحديثات مطلوبة","2"],["وثائق مشتركة","3"],["موعد قادم","1"]]},viewer:{description:"مؤشرات تنفيذية ومحفظة منشورة للقراءة فقط.",metrics:[["حلول منشورة","1"],["برامج مكتملة","1"],["مؤشر الجاهزية","68%"],["تقارير متاحة","4"]]}}[persona];return <div className="flex flex-col gap-5"><PageHeader title="لوحة العمل" description={dashboard.description}/>
+function Dashboard({persona}:{persona:PreviewPersonaKey}){const dashboard={admin:{description:"نظرة إشرافية على تشغيل المنصة والأعمال الإدارية.",metrics:[["مستخدمون نشطون","12"],["طلبات تسجيل","3"],["حلول ابتكارية","3"],["جاهزية المنصة","68%"]]},internal:{description:"نقطة البداية لمتابعة أعمال الابتكار والبرامج والمواعيد.",metrics:[["إجراءات تحتاج متابعة","5"],["برامج جارية","2"],["حلول ابتكارية","3"],["الجاهزية التقديرية","68%"]]},partner:{description:"السجلات المشتركة معك والتحديثات المطلوبة منك فقط.",metrics:[["حلول مشتركة","1"],["تحديثات مطلوبة","2"],["وثائق مشتركة","3"],["موعد قادم","1"]]},viewer:{description:"مؤشرات تنفيذية ومحفظة منشورة للقراءة فقط.",metrics:[["حلول منشورة","1"],["برامج مكتملة","1"],["مؤشر الجاهزية","68%"],["تقارير متاحة","4"]]},innovator:{description:"تابع أفكارك وحلولك المقدمة، واطلع على ملاحظات فريق الابتكار والإجراء التالي.",metrics:[["مشاركاتي","2"],["تحتاج استكمال","1"],["قيد المراجعة","1"],["حلول مقبولة","1"]]}}[persona];return <div className="flex flex-col gap-5"><PageHeader title="لوحة العمل" description={dashboard.description}/>
   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{dashboard.metrics.map(([l,v])=><Card key={l}><CardContent className="p-5"><p className="text-[12px] text-muted">{l}</p><p className="mt-2 text-2xl font-bold">{v}</p></CardContent></Card>)}</div>
   <div className="grid gap-4 lg:grid-cols-3"><Card className="lg:col-span-2"><CardHeader><CardTitle>ما يحتاج إجراء</CardTitle></CardHeader><CardContent className="space-y-3">{[["استكمال بيانات نظام إدارة الطاقة","اليوم","عاجل"],["مراجعة مخرجات هاكاثون المدن المستدامة","12 أغسطس","مراجعة"],["رفع محضر لجنة التقييم","15 أغسطس","وثيقة"]].map(([t,d,s])=><div key={t} className="flex items-center gap-3 rounded-xl border p-3"><TriangleAlert className="h-4 w-4 text-amber-600"/><div className="flex-1"><p className="text-[13px] font-semibold">{t}</p><p className="text-[11.5px] text-muted">الموعد المستهدف: {d}</p></div><Badge variant="warning">{s}</Badge></div>)}</CardContent></Card>
   <Card><CardHeader><CardTitle>البرامج الجارية</CardTitle></CardHeader><CardContent className="space-y-3">{programs.slice(0,2).map(p=><div key={p[0]} className="border-b pb-3 last:border-0"><p className="text-[13px] font-semibold">{p[0]}</p><p className="mt-1 text-[11.5px] text-muted">{p[2]} · {p[4]}</p></div>)}</CardContent></Card></div></div>}
@@ -66,9 +69,15 @@ export function PreviewScreen({path,persona}:{path:string;persona:PreviewPersona
   const permissions=new Set(permissionsForPreviewPersona(persona));
   const can=(permission:PermissionKey)=>permissions.has(permission);
   const unavailable=()=> <div className="py-20 text-center"><Badge variant="neutral">{UX_PREVIEW_PERSONAS[persona].label}</Badge><h1 className="mt-3 text-lg font-bold">هذه الوجهة غير متاحة لهذه الشخصية</h1><p className="mt-1 text-[13px] text-muted">يعكس ذلك صلاحيات الدور الحالية في وضع المعاينة.</p><Button asChild className="mt-4" variant="outline"><Link href="/dashboard">العودة إلى لوحة العمل</Link></Button></div>;
+  if(path==="/lifecycle")return <LifecyclePreview/>;
+  if(path.startsWith("/lifecycle/"))return <LifecyclePreview stage={path.split("/").at(-1)}/>;
   // Resolve the operational 5.24.1 preview before the generic DGA matcher.
   // Otherwise `/solutions` is swallowed by DgaUnitPage's static field cards.
   if(path==="/solutions")return can("solution.view")?<SolutionPortfolioPreview persona={persona}/>:unavailable();
+  if(path==="/solutions/portfolio")return can("solution.view")?<PortfolioDashboardPreview/>:unavailable();
+  if(path==="/solutions/my-ideas")return persona==="innovator"?<InnovatorIdeasPreview/>:unavailable();
+  if(path==="/solutions/new-idea")return persona==="innovator"?<NewIdeaPreview/>:unavailable();
+  if(path.startsWith("/solutions/my-ideas/"))return persona==="innovator"?<IdeaStageGatePreview id={path.split("/").at(-1)??"demo-idea-review"}/>:unavailable();
   if(path==="/solutions/intake")return <IntakeHomePreview persona={persona}/>;
   if(path==="/solutions/intake/new")return persona==="admin"||persona==="internal"?<CreateIntakePagePreview/>:unavailable();
   if(path==="/solutions/intake/manual")return persona==="admin"||persona==="internal"?<PreviewForm kind="idea-intake"/>:unavailable();
@@ -84,7 +93,7 @@ export function PreviewScreen({path,persona}:{path:string;persona:PreviewPersona
   if(path==="/solutions/from-existing")return <SolutionPortfolioUtilityPreview kind="existing" persona={persona}/>;
   if(path==="/solutions/export")return <SolutionPortfolioUtilityPreview kind="export" persona={persona}/>;
   if(path.startsWith("/solutions/"))return can("solution.view")?<SolutionWorkspacePreview id={path.split("/")[2]??"citizen-assistant"} persona={persona}/>:unavailable();
-  if(path==="/impact")return can("impact.view")?<ImpactPortfolioPreview persona={persona}/>:unavailable();
+  if(path==="/impact")return can("impact.view")?<ImpactDashboardPreview/>:unavailable();
   if(path.startsWith("/impact/"))return can("impact.view")?<ImpactWorkspacePreview solutionId={path.split("/")[2]??"citizen-assistant"} persona={persona}/>:unavailable();
   const dgaUnit = getDgaUnitByPath(path);
   if (path === "/dashboard") return <DgaReadinessDashboard persona={persona} />;
@@ -98,7 +107,8 @@ export function PreviewScreen({path,persona}:{path:string;persona:PreviewPersona
   if (path === "/account") return <Collection title="حسابي" description="بيانات المستخدم الحالي ودوره ونطاق وصوله في منصة الجاهزية المؤسسية." headers={["المستخدم","الدور","نطاق البيانات","الصلاحية"]} rows={[[UX_PREVIEW_PERSONAS[persona].name,UX_PREVIEW_PERSONAS[persona].label,persona === "admin" ? "كامل المنصة" : persona === "partner" ? "الاتفاقيات والحلول المشتركة" : persona === "viewer" ? "المؤشرات والتقارير المنشورة" : "الجهة والإدارات المسندة","نشط"]]} />;
   if(path==="/dashboard")return <Dashboard persona={persona}/>;
   if(path.startsWith("/preview-form/"))return persona==="viewer"?unavailable():<PreviewForm kind={path.split("/").pop()??"activity"}/>;
-  if(["/my-tasks","/reviews","/evidence-matrix","/evidence-repository","/readiness-check"].includes(path))return <Phase4Operations path={path} persona={persona}/>;
+  if(["/my-tasks","/reviews","/evidence-matrix","/evidence-repository","/reports"].includes(path))return <OperationsDataPreview path={path}/>;
+  if(path==="/readiness-check")return <Phase4Operations path={path} persona={persona}/>;
   const extra = <ExtraPreviewScreen path={path}/>;
   if (path === "/impact" || path === "/evidence" || path === "/partners" || path === "/agreements" || path === "/settings" || path === "/admin/users/requests" || path.startsWith("/activities/") || path.startsWith("/challenges/") || path.startsWith("/governance/ideas/") || path.startsWith("/governance/committees/")) return extra;
   if(path==="/strategy")return can("strategy.objective.view")?<Collection title="الاستراتيجية والخطة السنوية" description="الأهداف الاستراتيجية ومؤشرات التقدم والجهات المسؤولة عنها." action={can("strategy.objective.manage")?"هدف استراتيجي جديد":undefined} headers={["الرمز","الهدف","المسؤول","الحالة","التقدم"]} rows={strategies}/>:unavailable();

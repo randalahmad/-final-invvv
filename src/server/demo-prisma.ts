@@ -30,6 +30,16 @@ import {
   DEMO_SOLUTIONS,
   DEMO_TASKS,
   DEMO_AUDIT_LOG,
+  DEMO_EVIDENCE,
+  DEMO_IDEAS,
+  DEMO_IDEA_DECISIONS,
+  DEMO_IDEA_EVALUATIONS,
+  DEMO_IDEA_INFO_REQUESTS,
+  DEMO_IMPACT_INDICATORS,
+  DEMO_IMPACT_MEASUREMENTS,
+  DEMO_SOLUTION_AWARDS,
+  DEMO_SOLUTION_INTAKE_LINKS,
+  DEMO_SOLUTION_INTAKE_SUBMISSIONS,
   demoRoleAssignments,
   type DemoUser,
 } from "./demo-data";
@@ -67,6 +77,16 @@ const DEMO_TABLES: Record<string, unknown[]> = {
   requirementTask: DEMO_TASKS,
   auditLog: DEMO_AUDIT_LOG,
   evidenceLink: DEMO_EVIDENCE_LINKS,
+  evidence: DEMO_EVIDENCE,
+  idea: DEMO_IDEAS,
+  ideaDecision: DEMO_IDEA_DECISIONS,
+  ideaEvaluation: DEMO_IDEA_EVALUATIONS,
+  ideaInfoRequest: DEMO_IDEA_INFO_REQUESTS,
+  solutionIntakeLink: DEMO_SOLUTION_INTAKE_LINKS,
+  solutionIntakeSubmission: DEMO_SOLUTION_INTAKE_SUBMISSIONS,
+  solutionAward: DEMO_SOLUTION_AWARDS,
+  impactIndicator: DEMO_IMPACT_INDICATORS,
+  impactMeasurement: DEMO_IMPACT_MEASUREMENTS,
 };
 
 function matchesWhere(row: Record<string, unknown>, where: Record<string, unknown> | undefined): boolean {

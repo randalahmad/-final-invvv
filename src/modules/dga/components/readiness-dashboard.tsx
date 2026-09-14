@@ -9,7 +9,7 @@ import { DGA_TOTALS, DGA_UNITS } from "../source-of-truth";
 function href(path: string, persona?: PreviewPersonaKey) { return persona ? buildPreviewHref(path, persona) : path; }
 
 export function DgaReadinessDashboard({ persona }: { persona?: PreviewPersonaKey }) {
-  const visibleUnits = persona === "viewer" ? [] : persona === "partner" ? DGA_UNITS.filter((unit) => ["5.23.1", "5.23.2", "5.24.1"].includes(unit.code)) : DGA_UNITS;
+  const visibleUnits = persona === "viewer" ? [] : persona === "innovator" ? DGA_UNITS.filter((unit) => unit.code === "5.24.1") : persona === "partner" ? DGA_UNITS.filter((unit) => ["5.23.1", "5.23.2", "5.24.1"].includes(unit.code)) : DGA_UNITS;
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-primary/15 bg-gradient-to-l from-primary-50 to-white p-6 dark:from-primary/10 dark:to-surface-dark">
