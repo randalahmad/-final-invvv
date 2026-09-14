@@ -26,6 +26,7 @@
 import {
   DEMO_USERS,
   DEMO_REQUIREMENT_ASSIGNMENTS,
+  DEMO_EVIDENCE_LINKS,
   DEMO_SOLUTIONS,
   DEMO_TASKS,
   DEMO_AUDIT_LOG,
@@ -65,14 +66,24 @@ const DEMO_TABLES: Record<string, unknown[]> = {
   innovationSolution: DEMO_SOLUTIONS,
   requirementTask: DEMO_TASKS,
   auditLog: DEMO_AUDIT_LOG,
+  evidenceLink: DEMO_EVIDENCE_LINKS,
 };
 
 function matchesWhere(row: Record<string, unknown>, where: Record<string, unknown> | undefined): boolean {
   if (!where) return true;
   return Object.entries(where).every(([key, value]) => {
     if (value === undefined) return true;
-    if (key === "id" || key === "email") return row[key] === value;
-    return true; // unknown/complex filter shapes: don't exclude in demo mode
+    if (key === "OR" && Array.isArray(value)) return value.some((condition) => matchesWhere(row, condition as Record<string, unknown>));
+    const rowValue = row[key];
+    if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+      const filter = value as Record<string, unknown>;
+      if ("in" in filter && Array.isArray(filter.in)) return filter.in.includes(rowValue);
+      if ("startsWith" in filter && typeof filter.startsWith === "string") return typeof rowValue === "string" && rowValue.startsWith(filter.startsWith);
+      if ("not" in filter) return rowValue !== filter.not;
+      if (rowValue !== null && typeof rowValue === "object") return matchesWhere(rowValue as Record<string, unknown>, filter);
+      return true;
+    }
+    return rowValue === value;
   });
 }
 

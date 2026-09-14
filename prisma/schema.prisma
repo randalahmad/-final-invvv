@@ -1100,6 +1100,7 @@ model Idea {
   evaluations  IdeaEvaluation[]
   decisions    IdeaDecision[]
   infoRequests IdeaInfoRequest[]
+  analysisSuggestion IdeaAnalysisSuggestion?
   solution     InnovationSolution? @relation("SolutionFromIdea")
 
   @@index([status])
@@ -1173,6 +1174,25 @@ model IdeaDecision {
 
   @@index([ideaId])
   @@map("idea_decisions")
+}
+
+/// One current, human-triggered preliminary analysis per idea. It is separate
+/// from the official review, evaluation and decision records: it can only
+/// advise a reviewer and never changes the idea lifecycle by itself.
+model IdeaAnalysisSuggestion {
+  id            String   @id @default(cuid())
+  ideaId        String   @unique
+  score         Int
+  flags         Json
+  provider      String
+  model         String
+  requestedById String?  // soft ref → User.id
+  generatedAt   DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  idea          Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@index([generatedAt])
+  @@map("idea_analysis_suggestions")
 }
 
 // ---------------------------------------------------------------------------

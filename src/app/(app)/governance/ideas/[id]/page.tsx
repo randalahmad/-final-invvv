@@ -15,6 +15,8 @@ import { ReviewPanel } from "@/modules/ideas/components/review-panel";
 import { EvaluationTimeline } from "@/modules/ideas/components/evaluation-timeline";
 import { DecisionPanel } from "@/modules/ideas/components/decision-panel";
 import { DecisionHistory } from "@/modules/ideas/components/decision-history";
+import { IdeaAnalysisPanel } from "@/modules/idea-analysis/components/analysis-panel";
+import { getIdeaAnalysis } from "@/modules/idea-analysis/service";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -33,13 +35,15 @@ export default async function IdeaDetailsPage({ params }: { params: { id: string
   }
 
   const flags = computeIdeaActionFlags(ctx, { status: idea.status, submittedById: idea.submittedById, departmentId: idea.departmentId });
-  const [evaluations, infoRequests, decisions, linkedSolution] = await Promise.all([
+  const canEvaluate = can(ctx, "idea.evaluate");
+  const [evaluations, infoRequests, decisions, linkedSolution, ideaAnalysis] = await Promise.all([
     listIdeaEvaluations(ctx, idea.id),
     listInfoRequests(ctx, idea.id),
     getIdeaDecisionHistory(ctx, idea.id),
     getLinkedSolution(ctx, idea.id),
+    canEvaluate ? getIdeaAnalysis(ctx, idea.id) : Promise.resolve(null),
   ]);
-  const reviewFlags = computeReviewFlags(ctx, { status: idea.status, submittedById: idea.submittedById }, can(ctx, "idea.evaluate"));
+  const reviewFlags = computeReviewFlags(ctx, { status: idea.status, submittedById: idea.submittedById }, canEvaluate);
   const decisionFlags = computeDecisionFlags(
     ctx,
     { status: idea.status, submittedById: idea.submittedById },
@@ -65,6 +69,8 @@ export default async function IdeaDetailsPage({ params }: { params: { id: string
       <IdeaActionBar ideaId={idea.id} flags={flags} />
 
       <ReviewPanel ideaId={idea.id} flags={reviewFlags} />
+
+      {canEvaluate && <IdeaAnalysisPanel ideaId={idea.id} suggestion={ideaAnalysis} />}
 
       <DecisionPanel ideaId={idea.id} flags={decisionFlags} finalizedDecisionId={finalizedDecisionId} />
 

@@ -77,7 +77,21 @@ export const DEMO_REQUIREMENT_ASSIGNMENTS = [
   priority: "MEDIUM",
   nextAction: null,
   workspaceData: {},
-  requirement: { id: `${r.id}-req`, code: r.code, titleAr: r.title, evidenceRules: [] },
+  requirement: {
+    id: `${r.id}-req`,
+    code: r.code,
+    titleAr: r.title,
+    evidenceRules: [{
+      evidenceTypeKey: {
+        "5.23.1.1": "DIGITAL_STRATEGY",
+        "5.23.1.2": "INITIATIVE_KPI_DOCUMENTS",
+        "5.23.1.3": "COOPERATION_AGREEMENT",
+        "5.23.2.1": "ANNUAL_INNOVATION_PLAN",
+        "5.23.3.1": "COMMITTEE_STRUCTURE",
+      }[r.code]!,
+      minCount: 1,
+    }],
+  },
   department: { id: DEMO_DEPT.id, nameAr: DEMO_DEPT.nameAr, organizationId: DEMO_ORG.id, organization: { id: DEMO_ORG.id, nameAr: DEMO_ORG.nameAr } },
   raciAssignments: [],
   tasks: [],
@@ -85,6 +99,88 @@ export const DEMO_REQUIREMENT_ASSIGNMENTS = [
   versions: [],
   collaboration: [],
 }));
+
+/**
+ * Superset shape for every nested EvidenceLink/Evidence path read by the
+ * evidence matrix, readiness and alerts services. These are intentionally
+ * linked to only part of the five requirement assignments: preview users see
+ * approved, in-review and genuinely missing evidence rather than a cosmetic
+ * all-complete state.
+ */
+export const DEMO_EVIDENCE_LINKS = [
+  {
+    id: "demo-evidence-link-1",
+    evidenceId: "demo-evidence-1",
+    entityType: "REQUIREMENT_ASSIGNMENT",
+    entityId: "demo-ra-1",
+    requirementId: "demo-ra-1-req",
+    createdAt: new Date(Date.now() - 7 * 86400000),
+    evidence: {
+      id: "demo-evidence-1",
+      title: "استراتيجية التحول الرقمي المعتمدة",
+      classification: "DIGITAL_STRATEGY",
+      fileName: "digital-transformation-strategy.pdf",
+      version: 2,
+      ownerUserId: "demo-admin",
+      uploadedById: "demo-admin",
+      uploadedBy: { name: "مدير النظام (Demo)" },
+      createdAt: new Date(Date.now() - 7 * 86400000),
+      updatedAt: new Date(Date.now() - 2 * 86400000),
+      archivedAt: null,
+      reviewStatus: "APPROVED",
+      approvedAt: new Date(Date.now() - 2 * 86400000),
+      validUntil: new Date(Date.now() + 180 * 86400000),
+    },
+  },
+  {
+    id: "demo-evidence-link-2",
+    evidenceId: "demo-evidence-2",
+    entityType: "REQUIREMENT_ASSIGNMENT",
+    entityId: "demo-ra-2",
+    requirementId: "demo-ra-2-req",
+    createdAt: new Date(Date.now() - 2 * 86400000),
+    evidence: {
+      id: "demo-evidence-2",
+      title: "وثائق مبادرات ومؤشرات الأداء",
+      classification: "INITIATIVE_KPI_DOCUMENTS",
+      fileName: "innovation-initiatives-kpis.xlsx",
+      version: 1,
+      ownerUserId: "demo-editor",
+      uploadedById: "demo-editor",
+      uploadedBy: { name: "محرر الابتكار الداخلي (Demo)" },
+      createdAt: new Date(Date.now() - 2 * 86400000),
+      updatedAt: new Date(Date.now() - 2 * 86400000),
+      archivedAt: null,
+      reviewStatus: "UNDER_REVIEW",
+      approvedAt: null,
+      validUntil: null,
+    },
+  },
+  {
+    id: "demo-evidence-link-3",
+    evidenceId: "demo-evidence-3",
+    entityType: "REQUIREMENT_ASSIGNMENT",
+    entityId: "demo-ra-4",
+    requirementId: "demo-ra-4-req",
+    createdAt: new Date(Date.now() - 12 * 86400000),
+    evidence: {
+      id: "demo-evidence-3",
+      title: "الخطة السنوية للفعاليات الابتكارية",
+      classification: "ANNUAL_INNOVATION_PLAN",
+      fileName: "annual-innovation-activities-plan.pdf",
+      version: 3,
+      ownerUserId: "demo-editor",
+      uploadedById: "demo-editor",
+      uploadedBy: { name: "محرر الابتكار الداخلي (Demo)" },
+      createdAt: new Date(Date.now() - 12 * 86400000),
+      updatedAt: new Date(Date.now() - 1 * 86400000),
+      archivedAt: null,
+      reviewStatus: "NEEDS_UPDATE",
+      approvedAt: null,
+      validUntil: new Date(Date.now() - 1 * 86400000),
+    },
+  },
+];
 
 export const DEMO_SOLUTIONS = [
   { id: "demo-sol-1", nameAr: "مساعد ذكي لطلبات المستفيدين", maturityStage: "PILOT", implementationStatus: "IN_PROGRESS", owningDepartmentName: DEMO_DEPT.nameAr, beneficiaryCount: 1200, cost: 250000 },

@@ -35,6 +35,9 @@ export default async function EvidenceRepositoryPage({ searchParams }: { searchP
         title="مستودع الأدلة"
         description={`عرض مركزي حي لكل الأدلة الموجودة فعليًا (${rows.length} من أصل ${allRows.filter((r) => r.evidenceId).length}) عبر معياري 5.23 و5.24 — نفس بيانات مصفوفة الأدلة، بعدسة تصفح بدل عدسة الفجوات.`}
       />
+      <p className="text-sm text-muted">
+        لمراجعة فجوات الأدلة ومتطلباتها، افتح <Link className="text-primary underline" href="/evidence-matrix">مصفوفة أدلة القياس</Link>.
+      </p>
 
       <form className="flex flex-wrap gap-2">
         <input name="q" defaultValue={searchParams.q} placeholder="بحث بالعنوان أو اسم الملف" className="min-w-[220px] rounded-lg border bg-transparent p-2 text-xs" />
