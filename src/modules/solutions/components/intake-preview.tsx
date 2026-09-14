@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { ArrowLeft, CheckCircle2, Clock3, FileText, Link2, MessageSquare, Plus, Send, UserRound } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock3, FileText, Lightbulb, Link2, MessageSquare, Plus, Send, UserRound } from "lucide-react";
 
 import { PreviewLink as Link } from "@/components/layout/preview-link";
 import { PageHeader } from "@/components/shared/page-header";
@@ -25,6 +25,7 @@ export function IntakeHomePreview({ persona }: { persona: PreviewPersonaKey }) {
       {canManage ? <Button asChild variant="outline"><Link href="/solutions/intake/inbox">الوارد من الأفكار والحلول</Link></Button> : null}
       {canManage ? <Button asChild variant="outline"><Link href="/solutions/intake/decisions">التقييم والقرارات</Link></Button> : null}
       <Button asChild variant="outline"><Link href="/solutions/intake/my-submissions"><UserRound className="h-4 w-4"/>تجربة «مشاركاتي» للمبتكر</Link></Button>
+      {persona === "innovator" ? <Button asChild><Link href="/solutions/my-ideas"><Lightbulb className="h-4 w-4"/>أفكاري</Link></Button> : null}
     </div>
     <div className="grid gap-4 lg:grid-cols-3">{intakePages.map(page=><Card key={page.id}><CardHeader><div className="flex items-start justify-between gap-3"><CardTitle>{page.name}</CardTitle><Badge variant="success">{page.status}</Badge></div></CardHeader><CardContent className="space-y-3 text-xs"><p><span className="text-muted">الجمهور:</span> {page.audience}</p><p><span className="text-muted">المالك:</span> {page.owner}</p><div className="flex justify-between rounded-xl bg-slate-50 p-3"><span>{page.submissions} مشاركة</span><span>{page.created}</span></div><Button asChild className="w-full" size="sm" variant="outline"><Link href={page.id === "public" ? "/submit/innovation-ideas" : "/solutions/intake/inbox"}>فتح الصفحة <ArrowLeft className="h-4 w-4"/></Link></Button></CardContent></Card>)}</div>
     <Card className="border-primary/20"><CardContent className="grid gap-3 p-5 text-center text-sm md:grid-cols-4"><div>الاستقبال</div><div>المراجعة والإحالة</div><div>التقييم والقرار</div><div className="font-semibold text-primary">محفظة الحلول الابتكارية</div></CardContent></Card>

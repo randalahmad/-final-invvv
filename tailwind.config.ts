@@ -55,6 +55,16 @@ const config: Config = {
         warning: { DEFAULT: "#F5A623", bg: "#FEF4E3" },
         danger: { DEFAULT: "#EF4444", bg: "#FDEEEE" },
         info: { DEFAULT: "#3B82F6", bg: "#EAF1FE" },
+        // Accent used only by the innovator-journey Preview showcase (idea-analysis module).
+        accent: {
+          DEFAULT: "#EC1F52",
+          50: "#FDE7ED",
+          100: "#FBCBD6",
+          400: "#F24A72",
+          500: "#EC1F52",
+          600: "#C81545",
+          700: "#9E1038",
+        },
       },
       borderRadius: {
         xl: "1rem",
