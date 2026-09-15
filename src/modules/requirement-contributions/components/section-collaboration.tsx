@@ -1,37 +1,805 @@
 "use client";
-import {useEffect,useMemo,useState} from "react";
-import {useFormState} from "react-dom";
-import {CalendarClock,Check,ClipboardCheck,Copy,UserPlus,Users,X} from "lucide-react";
-import {Badge} from "@/components/ui/badge";
-import {Button} from "@/components/ui/button";
-import {Card,CardContent,CardHeader,CardTitle} from "@/components/ui/card";
-import {createContributionAction,reviewContributionAction,type ContributionActionState} from "../actions";
-import {getContributionDefinition,type ContributionView} from "../types";
+import { useEffect, useMemo, useState } from "react";
+import { useFormState } from "react-dom";
+import {
+  CalendarClock,
+  Check,
+  ClipboardCheck,
+  Copy,
+  UserPlus,
+  Users,
+  X,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  createContributionAction,
+  reviewContributionAction,
+  type ContributionActionState,
+} from "../actions";
+import { getContributionDefinition, type ContributionView } from "../types";
 
-const statusLabels:Record<string,string>={NOT_SENT:"لم يتم الإرسال",INVITATION_SENT:"أرسلت الدعوة",OPENED:"تم فتح الطلب",IN_PROGRESS:"قيد العمل",SUBMITTED:"تم التسليم",UNDER_REVIEW:"قيد المراجعة",NEEDS_AMENDMENT:"يحتاج تعديل",COMPLETED:"مكتمل",OVERDUE:"متأخر",CANCELLED:"ملغي"};
-const priorityLabels={LOW:"منخفضة",MEDIUM:"متوسطة",HIGH:"عالية",URGENT:"عاجلة"};
-const base=(overrides:Partial<ContributionView>):ContributionView=>({id:"preview",sectionKey:"",contributorRole:"RESPONSIBLE",contributorUserId:"internal",contributorName:"نورة العتيبي",contributorEmail:"noura@example.gov.sa",jobTitle:"أخصائية تخطيط استراتيجي",departmentName:"إدارة الاستراتيجية والتخطيط",assignedByName:"مدير الابتكار",reviewerName:null,dueDate:"2026-08-24T00:00:00.000Z",priority:"HIGH",requesterNote:null,status:"IN_PROGRESS",invitationDelivery:"NOT_REQUIRED",assignedAt:"2026-08-18T07:15:00.000Z",invitationSentAt:"2026-08-18T07:15:00.000Z",openedAt:"2026-08-18T08:00:00.000Z",submittedAt:null,reviewedAt:null,completedAt:null,latestSubmission:null,...overrides});
-function previewRows(requirementId:string):ContributionView[]{if(requirementId==="5-23-2-r1")return[base({id:"annual-plan-owner",sectionKey:"annualPlan",contributorName:"نورة العتيبي",departmentName:"إدارة الابتكار المؤسسي",requesterNote:"مراجعة ملكية الخطة السنوية",status:"COMPLETED"}),base({id:"annual-plan-activities",sectionKey:"activities",contributorName:"سارة الحربي",departmentName:"إدارة البرامج",dueDate:"2026-08-25T00:00:00.000Z",priority:"HIGH",requesterNote:"استكمال بيانات الورشة ومواعيدها",status:"IN_PROGRESS"})];return requirementId==="5-23-1-r2"?[base({id:"r2-initiative",sectionKey:"initiatives",contributorName:"نورة العتيبي",departmentName:"إدارة التحول الرقمي",requesterNote:"استكمال بيانات منصة التجارب الرقمية",status:"IN_PROGRESS"}),base({id:"r2-kpi",sectionKey:"initiativeKpis",contributorName:"خالد القحطاني",departmentName:"إدارة البيانات",dueDate:"2026-08-17T00:00:00.000Z",priority:"URGENT",requesterNote:"ربط المؤشر وتوثيق المستهدف",status:"OVERDUE"}),base({id:"r2-align",sectionKey:"strategicAlignment",contributorUserId:null,contributorName:"سارة الحربي",departmentName:"إدارة الاستراتيجية",status:"COMPLETED",invitationDelivery:"PREPARED",submittedAt:"2026-08-16T10:00:00.000Z",reviewedAt:"2026-08-17T08:00:00.000Z",completedAt:"2026-08-17T08:00:00.000Z",latestSubmission:{version:1,data:{initiativeName:"مختبر تحسين رحلة المستفيد",strategicObjective:"رفع نسبة المبادرات الابتكارية الرقمية المرتبطة بالأهداف الاستراتيجية",alignmentReason:"يدعم تحسين جودة الخدمات الرقمية"},submittedAt:"2026-08-16T10:00:00.000Z",reviewNotes:null}})]:[base({id:"r1-goals",sectionKey:"strategicGoals"}),base({id:"r1-kpis",sectionKey:"kpis",contributorName:"خالد القحطاني",departmentName:"إدارة البيانات",dueDate:"2026-08-17T00:00:00.000Z",priority:"URGENT",status:"OVERDUE"}),base({id:"r1-align",sectionKey:"alignment",contributorUserId:null,status:"COMPLETED",invitationDelivery:"PREPARED",submittedAt:"2026-08-15T11:30:00.000Z",reviewedAt:"2026-08-16T08:00:00.000Z",completedAt:"2026-08-16T08:00:00.000Z",latestSubmission:{version:1,data:{entityAlignment:"مواءمة الهدف المؤسسي"},submittedAt:"2026-08-15T11:30:00.000Z",reviewNotes:null}})];}
+const statusLabels: Record<string, string> = {
+  NOT_SENT: "لم يتم الإرسال",
+  INVITATION_SENT: "أرسلت الدعوة",
+  OPENED: "تم فتح الطلب",
+  IN_PROGRESS: "قيد العمل",
+  SUBMITTED: "تم التسليم",
+  UNDER_REVIEW: "قيد المراجعة",
+  NEEDS_AMENDMENT: "يحتاج تعديل",
+  COMPLETED: "مكتمل",
+  OVERDUE: "متأخر",
+  CANCELLED: "ملغي",
+};
+const priorityLabels = {
+  LOW: "منخفضة",
+  MEDIUM: "متوسطة",
+  HIGH: "عالية",
+  URGENT: "عاجلة",
+};
+const base = (overrides: Partial<ContributionView>): ContributionView => ({
+  id: "preview",
+  sectionKey: "",
+  contributorRole: "RESPONSIBLE",
+  contributorUserId: "internal",
+  contributorName: "نورة العتيبي",
+  contributorEmail: "noura@example.gov.sa",
+  jobTitle: "أخصائية تخطيط استراتيجي",
+  departmentName: "إدارة الاستراتيجية والتخطيط",
+  assignedByName: "مدير الابتكار",
+  reviewerName: null,
+  dueDate: "2026-08-24T00:00:00.000Z",
+  priority: "HIGH",
+  requesterNote: null,
+  status: "IN_PROGRESS",
+  invitationDelivery: "NOT_REQUIRED",
+  assignedAt: "2026-08-18T07:15:00.000Z",
+  invitationSentAt: "2026-08-18T07:15:00.000Z",
+  openedAt: "2026-08-18T08:00:00.000Z",
+  submittedAt: null,
+  reviewedAt: null,
+  completedAt: null,
+  latestSubmission: null,
+  ...overrides,
+});
+function previewRows(requirementId: string): ContributionView[] {
+  if (requirementId === "5-23-2-r1")
+    return [
+      base({
+        id: "annual-plan-owner",
+        sectionKey: "annualPlan",
+        contributorName: "نورة العتيبي",
+        departmentName: "إدارة الابتكار المؤسسي",
+        requesterNote: "مراجعة ملكية الخطة السنوية",
+        status: "COMPLETED",
+      }),
+      base({
+        id: "annual-plan-activities",
+        sectionKey: "activities",
+        contributorName: "سارة الحربي",
+        departmentName: "إدارة البرامج",
+        dueDate: "2026-08-25T00:00:00.000Z",
+        priority: "HIGH",
+        requesterNote: "استكمال بيانات الورشة ومواعيدها",
+        status: "IN_PROGRESS",
+      }),
+    ];
+  return requirementId === "5-23-1-r2"
+    ? [
+        base({
+          id: "r2-initiative",
+          sectionKey: "initiatives",
+          contributorName: "نورة العتيبي",
+          departmentName: "إدارة التحول الرقمي",
+          requesterNote: "استكمال بيانات منصة التجارب الرقمية",
+          status: "IN_PROGRESS",
+        }),
+        base({
+          id: "r2-kpi",
+          sectionKey: "initiativeKpis",
+          contributorName: "خالد القحطاني",
+          departmentName: "إدارة البيانات",
+          dueDate: "2026-08-17T00:00:00.000Z",
+          priority: "URGENT",
+          requesterNote: "ربط المؤشر وتوثيق المستهدف",
+          status: "OVERDUE",
+        }),
+        base({
+          id: "r2-align",
+          sectionKey: "strategicAlignment",
+          contributorUserId: null,
+          contributorName: "سارة الحربي",
+          departmentName: "إدارة الاستراتيجية",
+          status: "COMPLETED",
+          invitationDelivery: "PREPARED",
+          submittedAt: "2026-08-16T10:00:00.000Z",
+          reviewedAt: "2026-08-17T08:00:00.000Z",
+          completedAt: "2026-08-17T08:00:00.000Z",
+          latestSubmission: {
+            version: 1,
+            data: {
+              initiativeName: "مختبر تحسين رحلة المستفيد",
+              strategicObjective:
+                "رفع نسبة المبادرات الابتكارية الرقمية المرتبطة بالأهداف الاستراتيجية",
+              alignmentReason: "يدعم تحسين جودة الخدمات الرقمية",
+            },
+            submittedAt: "2026-08-16T10:00:00.000Z",
+            reviewNotes: null,
+          },
+        }),
+      ]
+    : [
+        base({ id: "r1-goals", sectionKey: "strategicGoals" }),
+        base({
+          id: "r1-kpis",
+          sectionKey: "kpis",
+          contributorName: "خالد القحطاني",
+          departmentName: "إدارة البيانات",
+          dueDate: "2026-08-17T00:00:00.000Z",
+          priority: "URGENT",
+          status: "OVERDUE",
+        }),
+        base({
+          id: "r1-align",
+          sectionKey: "alignment",
+          contributorUserId: null,
+          status: "COMPLETED",
+          invitationDelivery: "PREPARED",
+          submittedAt: "2026-08-15T11:30:00.000Z",
+          reviewedAt: "2026-08-16T08:00:00.000Z",
+          completedAt: "2026-08-16T08:00:00.000Z",
+          latestSubmission: {
+            version: 1,
+            data: { entityAlignment: "مواءمة الهدف المؤسسي" },
+            submittedAt: "2026-08-15T11:30:00.000Z",
+            reviewNotes: null,
+          },
+        }),
+      ];
+}
 
-function previewRequirement03Rows():ContributionView[]{return [base({id:"r3-internal",sectionKey:"agreements",contributorName:"خالد القحطاني",jobTitle:"مستشار قانوني",departmentName:"الإدارة القانونية",requesterNote:"مراجعة بيانات اتفاقية جامعة المجمعة",status:"COMPLETED",submittedAt:"2026-08-14T10:30:00.000Z",reviewedAt:"2026-08-15T08:00:00.000Z",completedAt:"2026-08-15T08:00:00.000Z",latestSubmission:{version:2,data:{cooperationName:"جامعة المجمعة",title:"اتفاقية التعاون البحثي والابتكاري 2026"},submittedAt:"2026-08-14T10:30:00.000Z",reviewNotes:"تم قبول البيانات بعد استكمال الرقم المرجعي"}}),base({id:"r3-external",sectionKey:"partnerContacts",contributorUserId:null,contributorName:"د. سارة المطيري",contributorEmail:"s.almotairi@example.edu.sa",jobTitle:"مديرة مركز الابتكار",departmentName:"جامعة المجمعة — شريك خارجي",requesterNote:"تأكيد بيانات جهة الاتصال والمخرجات المتفق عليها",status:"INVITATION_SENT",invitationDelivery:"PREPARED",dueDate:"2026-08-23T00:00:00.000Z"}),base({id:"r3-overdue",sectionKey:"cooperationOutputs",contributorName:"نورة العتيبي",departmentName:"إدارة الشراكات",requesterNote:"استكمال المخرج الفعلي للتعاون",status:"OVERDUE",priority:"URGENT",dueDate:"2026-08-17T00:00:00.000Z"})];}
+function previewRequirement03Rows(): ContributionView[] {
+  return [
+    base({
+      id: "r3-internal",
+      sectionKey: "agreements",
+      contributorName: "خالد القحطاني",
+      jobTitle: "مستشار قانوني",
+      departmentName: "الإدارة القانونية",
+      requesterNote: "مراجعة بيانات اتفاقية جامعة المجمعة",
+      status: "COMPLETED",
+      submittedAt: "2026-08-14T10:30:00.000Z",
+      reviewedAt: "2026-08-15T08:00:00.000Z",
+      completedAt: "2026-08-15T08:00:00.000Z",
+      latestSubmission: {
+        version: 2,
+        data: {
+          cooperationName: "جامعة المجمعة",
+          title: "اتفاقية التعاون البحثي والابتكاري 2026",
+        },
+        submittedAt: "2026-08-14T10:30:00.000Z",
+        reviewNotes: "تم قبول البيانات بعد استكمال الرقم المرجعي",
+      },
+    }),
+    base({
+      id: "r3-external",
+      sectionKey: "partnerContacts",
+      contributorUserId: null,
+      contributorName: "د. سارة المطيري",
+      contributorEmail: "s.almotairi@example.edu.sa",
+      jobTitle: "مديرة مركز الابتكار",
+      departmentName: "جامعة المجمعة — شريك خارجي",
+      requesterNote: "تأكيد بيانات جهة الاتصال والمخرجات المتفق عليها",
+      status: "INVITATION_SENT",
+      invitationDelivery: "PREPARED",
+      dueDate: "2026-08-23T00:00:00.000Z",
+    }),
+    base({
+      id: "r3-overdue",
+      sectionKey: "cooperationOutputs",
+      contributorName: "نورة العتيبي",
+      departmentName: "إدارة الشراكات",
+      requesterNote: "استكمال المخرج الفعلي للتعاون",
+      status: "OVERDUE",
+      priority: "URGENT",
+      dueDate: "2026-08-17T00:00:00.000Z",
+    }),
+  ];
+}
 
-function previewMethodologyRows():ContributionView[]{return[base({id:"method-sessions",sectionKey:"sessions",contributorName:"سارة الحربي",departmentName:"إدارة الابتكار",requesterNote:"استكمال توثيق جلسة الإجراء الداخلي",status:"IN_PROGRESS"}),base({id:"method-evidence",sectionKey:"evidence",contributorName:"خالد القحطاني",departmentName:"إدارة الخدمات الرقمية",dueDate:"2026-08-24T00:00:00.000Z",priority:"HIGH",requesterNote:"تجهيز وثيقة إثبات تطبيق المنهجية",status:"IN_PROGRESS"})];}
+function previewMethodologyRows(): ContributionView[] {
+  return [
+    base({
+      id: "method-sessions",
+      sectionKey: "sessions",
+      contributorName: "سارة الحربي",
+      departmentName: "إدارة الابتكار",
+      requesterNote: "استكمال توثيق جلسة الإجراء الداخلي",
+      status: "IN_PROGRESS",
+    }),
+    base({
+      id: "method-evidence",
+      sectionKey: "evidence",
+      contributorName: "خالد القحطاني",
+      departmentName: "إدارة الخدمات الرقمية",
+      dueDate: "2026-08-24T00:00:00.000Z",
+      priority: "HIGH",
+      requesterNote: "تجهيز وثيقة إثبات تطبيق المنهجية",
+      status: "IN_PROGRESS",
+    }),
+  ];
+}
 
-type SavedContact=Record<string,unknown>;
-export function SectionCollaboration({requirementId,path,contributions,users,contacts=[],canManage,preview=false}:{requirementId:string;path:string;contributions:ContributionView[];users:{id:string;name:string;email:string}[];contacts?:SavedContact[];canManage:boolean;preview?:boolean}){
-  const definition=getContributionDefinition(requirementId);
-  const [rows,setRows]=useState(()=>preview&&contributions.length?contributions:preview?(requirementId==="5-23-1-r3"?previewRequirement03Rows():requirementId==="5-23-2-r2"?previewMethodologyRows():previewRows(requirementId)):contributions);const [selected,setSelected]=useState<string|null>(null);const [notice,setNotice]=useState("");
-  const [createState,createAction]=useFormState(createContributionAction,{} as ContributionActionState);const [reviewState,reviewAction]=useFormState(reviewContributionAction,{} as ContributionActionState);
-  const team=useMemo(()=>Array.from(new Map(rows.filter(row=>row.status!=="CANCELLED").map(row=>[row.contributorEmail,row])).values()),[rows]);
-  useEffect(()=>{const listener=(event:Event)=>{const detail=(event as CustomEvent<SavedContact>).detail??contacts[0];if(!detail)return;setSelected("partnerContacts");setNotice("أُعيد استخدام بيانات جهة الاتصال المحفوظة. راجع النطاق ثم أنشئ الدعوة صراحة لمنح الوصول المحدود.");setTimeout(()=>{const values:Record<string,string>={name:String(detail.name||""),email:String(detail.email||""),jobTitle:String(detail.title||detail.role||""),departmentName:String(detail.departmentName||detail.organization||"")};for(const [name,value] of Object.entries(values)){const input=document.querySelector<HTMLInputElement>(`form input[name="${name}"]`);if(input)input.value=value;}},0);};window.addEventListener("invite-cooperation-contact",listener);return()=>window.removeEventListener("invite-cooperation-contact",listener);},[contacts]);
-  if(!definition)return null;
-  function previewAssign(fd:FormData){const sectionKey=String(fd.get("sectionKey"));const userId=String(fd.get("contributorUserId")||"")||null;setRows(current=>[...current,base({id:crypto.randomUUID(),sectionKey,contributorUserId:userId,contributorName:String(fd.get("name")||"مساهم جديد"),contributorEmail:String(fd.get("email")||"contributor@example.gov.sa"),jobTitle:String(fd.get("jobTitle")||"مساهم"),departmentName:String(fd.get("departmentName")||"إدارة الجهة"),dueDate:String(fd.get("dueDate")||"")||null,priority:String(fd.get("priority")||"MEDIUM") as ContributionView["priority"],requesterNote:String(fd.get("note")||"")||null,status:userId?"INVITATION_SENT":"NOT_SENT",invitationDelivery:userId?"NOT_REQUIRED":"PREPARED",assignedAt:new Date().toISOString()})]);setNotice("تم إنشاء إسناد معاينة محليًا فقط؛ لم يُرسل بريد ولم تُحفظ بيانات تشغيلية.");setSelected(null);}
-  function previewDecision(id:string,decision:string){setRows(current=>current.map(row=>row.id===id?{...row,status:decision==="ACCEPT"?"COMPLETED":decision==="RETURN"?"NEEDS_AMENDMENT":"CANCELLED",reviewedAt:new Date().toISOString(),completedAt:decision==="ACCEPT"?new Date().toISOString():null}:row));setNotice("تم تحديث حالة المعاينة محليًا فقط.");}
-  return <div className="space-y-5">
-    <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><div><CardTitle>فريق العمل / المساهمون</CardTitle><p className="mt-1 text-xs text-muted">إسناد محدود بالمتطلب والنطاق؛ لا ينشئ شخصية مستخدم خامسة.</p></div>{canManage?<Button size="sm" onClick={()=>setSelected(definition.sections[0])}><UserPlus className="h-4 w-4"/>إضافة مساهم</Button>:null}</div></CardHeader><CardContent>{team.length?<div className="grid gap-3 md:grid-cols-2">{team.map(row=><div key={row.contributorEmail} className="rounded-xl border p-4"><p className="font-semibold">{row.contributorName}</p><p className="text-xs text-muted">{row.jobTitle??"مساهم"} · {row.departmentName??"—"}</p><p className="mt-1 text-xs">{row.contributorEmail}</p><p className="mt-2 text-xs">نطاق المساهمة: {rows.filter(item=>item.contributorEmail===row.contributorEmail&&item.status!=="CANCELLED").map(item=>definition.labels[item.sectionKey]).join("، ")}</p><Badge className="mt-2" variant="neutral">{statusLabels[row.status]??row.status}</Badge></div>)}</div>:<p className="py-5 text-center text-sm text-muted">لم تتم إضافة مساهمين بعد.</p>}</CardContent></Card>
-    <div className="grid gap-3 lg:grid-cols-2">{definition.sections.map(key=>{const assigned=rows.filter(row=>row.sectionKey===key&&row.status!=="CANCELLED");return <Card key={key}><CardContent className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{definition.labels[key]}</p><p className="mt-1 text-xs text-muted">تعبئة مباشرة أو إسناد هذا النطاق فقط.</p></div><Badge variant={assigned.length?"warning":"neutral"}>{assigned.length?statusLabels[assigned[0].status]:"غير مسند"}</Badge></div>{assigned.map(row=><div key={row.id} className="mt-3 rounded-lg bg-slate-50 p-3 text-xs dark:bg-white/5"><p><b>المسؤول:</b> {row.contributorName} — {row.departmentName??"—"}</p><p className="mt-1"><b>الموعد:</b> {row.dueDate?new Date(row.dueDate).toLocaleDateString("ar-SA"):"غير محدد"} · <b>الأولوية:</b> {priorityLabels[row.priority]}</p><p className="mt-1"><b>الدعوة:</b> {row.invitationDelivery==="PREPARED"?"الرابط مجهز ولم يُرسل بريد":"مهمة داخل المنصة"}</p>{["SUBMITTED","UNDER_REVIEW","NEEDS_AMENDMENT"].includes(row.status)&&canManage?<form action={preview?undefined:reviewAction} onSubmit={preview?event=>{event.preventDefault();const fd=new FormData(event.currentTarget);previewDecision(row.id,String(fd.get("decision")));}:undefined} className="mt-3 space-y-2"><input type="hidden" name="id" value={row.id}/><input type="hidden" name="path" value={path}/><textarea name="notes" placeholder="ملاحظات المراجعة أو سبب الإعادة" className="min-h-16 w-full rounded-lg border bg-transparent p-2"/><div className="flex gap-2"><Button name="decision" value="ACCEPT" size="sm"><Check className="h-4 w-4"/>قبول</Button><Button name="decision" value="RETURN" size="sm" variant="outline">إعادة للتعديل</Button></div></form>:null}{canManage&&!['COMPLETED','CANCELLED'].includes(row.status)?<form action={preview?undefined:reviewAction} onSubmit={preview?event=>{event.preventDefault();previewDecision(row.id,"CANCEL");}:undefined} className="mt-2"><input type="hidden" name="id" value={row.id}/><input type="hidden" name="path" value={path}/><Button name="decision" value="CANCEL" size="sm" variant="ghost">إلغاء الإسناد</Button></form>:null}</div>)}<div className="mt-3 flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={()=>{document.getElementById("workspace-data")?.scrollIntoView({behavior:"smooth"});setNotice(`يمكنك تعبئة «${definition.labels[key]}» في قسم البيانات أدناه.`);}}><ClipboardCheck className="h-4 w-4"/>تعبئة بنفسي</Button>{canManage?<Button size="sm" onClick={()=>setSelected(key)}><Users className="h-4 w-4"/>إسناد التعبئة</Button>:null}</div></CardContent></Card>})}</div>
-    {selected?<div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true"><form action={preview?previewAssign:createAction} className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900"><div className="flex justify-between"><div><h2 className="text-lg font-bold">إسناد التعبئة إلى مساهم</h2><p className="text-xs text-muted">النطاق: {definition.labels[selected]}</p></div><button type="button" onClick={()=>setSelected(null)} aria-label="إغلاق"><X/></button></div><input type="hidden" name="requirementId" value={requirementId}/><input type="hidden" name="sectionKey" value={selected}/><input type="hidden" name="path" value={path}/><div className="mt-5 grid gap-4 sm:grid-cols-2"><label className="text-xs font-semibold">مستخدم موجود (اختياري)<select name="contributorUserId" className="mt-1 h-10 w-full rounded-lg border bg-transparent px-2"><option value="">دعوة برابط محدود</option>{users.map(user=><option key={user.id} value={user.id}>{user.name} — {user.email}</option>)}</select></label>{[["name","الاسم","text"],["email","البريد الإلكتروني","email"],["jobTitle","المسمى الوظيفي / الدور","text"],["departmentName","الإدارة أو القسم","text"],["dueDate","الموعد المستهدف","date"]].map(([name,label,type])=><label key={name} className="text-xs font-semibold">{label}<input name={name} type={type} required={name==="name"||name==="email"} className="mt-1 h-10 w-full rounded-lg border bg-transparent px-3"/></label>)}<label className="text-xs font-semibold">نوع المساهمة<select name="contributorRole" className="mt-1 h-10 w-full rounded-lg border bg-transparent px-2"><option value="RESPONSIBLE">مسؤول عن التعبئة</option><option value="SUPPORTING">مساهم داعم</option></select></label><label className="text-xs font-semibold">الأولوية<select name="priority" className="mt-1 h-10 w-full rounded-lg border bg-transparent px-2"><option value="MEDIUM">متوسطة</option><option value="HIGH">عالية</option><option value="URGENT">عاجلة</option><option value="LOW">منخفضة</option></select></label><label className="text-xs font-semibold sm:col-span-2">ملاحظة للمساهم<textarea name="note" className="mt-1 min-h-20 w-full rounded-lg border bg-transparent p-3"/></label></div><div className="mt-5 flex justify-end gap-2"><Button type="button" variant="outline" onClick={()=>setSelected(null)}>إلغاء</Button><Button><CalendarClock className="h-4 w-4"/>إنشاء الإسناد</Button></div></form></div>:null}
-    {(notice||createState.success||createState.error||reviewState.success||reviewState.error)?<p className="rounded-lg bg-primary-50 p-3 text-sm">{notice||createState.success||createState.error||reviewState.success||reviewState.error}</p>:null}{createState.invitationPath?<div className="flex items-center gap-2 rounded-lg border p-3 text-xs"><code className="min-w-0 flex-1 overflow-hidden text-ellipsis">{createState.invitationPath}</code><Button type="button" size="sm" variant="outline" onClick={()=>navigator.clipboard.writeText(`${location.origin}${createState.invitationPath}`)}><Copy className="h-4 w-4"/>نسخ الرابط</Button></div>:null}
-    <Card><CardHeader><CardTitle>المساهمون في استكمال المتطلب</CardTitle></CardHeader><CardContent><div className="overflow-x-auto"><table className="w-full min-w-[900px] text-xs"><thead><tr className="border-b text-muted">{["المساهم","الإدارة","نطاق المساهمة","من قام بالإسناد","تاريخ الإرسال","تاريخ الرد","مدة الاستجابة","الحالة النهائية"].map(label=><th key={label} className="p-2 text-start">{label}</th>)}</tr></thead><tbody>{rows.map(row=><tr key={row.id} className="border-b"><td className="p-2">{row.contributorName}</td><td className="p-2">{row.departmentName??"—"}</td><td className="p-2">{definition.labels[row.sectionKey]??row.sectionKey}</td><td className="p-2">{row.assignedByName}</td><td className="p-2">{new Date(row.assignedAt).toLocaleDateString("ar-SA")}</td><td className="p-2">{row.submittedAt?new Date(row.submittedAt).toLocaleDateString("ar-SA"):"—"}</td><td className="p-2">{row.submittedAt?`${Math.max(0,Math.ceil((new Date(row.submittedAt).getTime()-new Date(row.assignedAt).getTime())/86400000))} يوم`:"—"}</td><td className="p-2"><Badge variant="neutral">{statusLabels[row.status]??row.status}</Badge></td></tr>)}</tbody></table></div></CardContent></Card>
-  </div>;
+type SavedContact = Record<string, unknown>;
+export function SectionCollaboration({
+  requirementId,
+  path,
+  contributions,
+  users,
+  contacts = [],
+  canManage,
+  preview = false,
+  compact = false,
+}: {
+  requirementId: string;
+  path: string;
+  contributions: ContributionView[];
+  users: { id: string; name: string; email: string }[];
+  contacts?: SavedContact[];
+  canManage: boolean;
+  preview?: boolean;
+  compact?: boolean;
+}) {
+  const definition = getContributionDefinition(requirementId);
+  const [rows, setRows] = useState(() =>
+    preview && contributions.length
+      ? contributions
+      : preview
+        ? requirementId === "5-23-1-r3"
+          ? previewRequirement03Rows()
+          : requirementId === "5-23-2-r2"
+            ? previewMethodologyRows()
+            : previewRows(requirementId)
+        : contributions,
+  );
+  const [selected, setSelected] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
+  const [createState, createAction] = useFormState(
+    createContributionAction,
+    {} as ContributionActionState,
+  );
+  const [reviewState, reviewAction] = useFormState(
+    reviewContributionAction,
+    {} as ContributionActionState,
+  );
+  const team = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          rows
+            .filter((row) => row.status !== "CANCELLED")
+            .map((row) => [row.contributorEmail, row]),
+        ).values(),
+      ),
+    [rows],
+  );
+  useEffect(() => {
+    const listener = (event: Event) => {
+      const detail = (event as CustomEvent<SavedContact>).detail ?? contacts[0];
+      if (!detail) return;
+      setSelected("partnerContacts");
+      setNotice(
+        "أُعيد استخدام بيانات جهة الاتصال المحفوظة. راجع النطاق ثم أنشئ الدعوة صراحة لمنح الوصول المحدود.",
+      );
+      setTimeout(() => {
+        const values: Record<string, string> = {
+          name: String(detail.name || ""),
+          email: String(detail.email || ""),
+          jobTitle: String(detail.title || detail.role || ""),
+          departmentName: String(
+            detail.departmentName || detail.organization || "",
+          ),
+        };
+        for (const [name, value] of Object.entries(values)) {
+          const input = document.querySelector<HTMLInputElement>(
+            `form input[name="${name}"]`,
+          );
+          if (input) input.value = value;
+        }
+      }, 0);
+    };
+    window.addEventListener("invite-cooperation-contact", listener);
+    return () =>
+      window.removeEventListener("invite-cooperation-contact", listener);
+  }, [contacts]);
+  if (!definition) return null;
+  function previewAssign(fd: FormData) {
+    const sectionKey = String(fd.get("sectionKey"));
+    const userId = String(fd.get("contributorUserId") || "") || null;
+    setRows((current) => [
+      ...current,
+      base({
+        id: crypto.randomUUID(),
+        sectionKey,
+        contributorUserId: userId,
+        contributorName: String(fd.get("name") || "مساهم جديد"),
+        contributorEmail: String(
+          fd.get("email") || "contributor@example.gov.sa",
+        ),
+        jobTitle: String(fd.get("jobTitle") || "مساهم"),
+        departmentName: String(fd.get("departmentName") || "إدارة الجهة"),
+        dueDate: String(fd.get("dueDate") || "") || null,
+        priority: String(
+          fd.get("priority") || "MEDIUM",
+        ) as ContributionView["priority"],
+        requesterNote: String(fd.get("note") || "") || null,
+        status: userId ? "INVITATION_SENT" : "NOT_SENT",
+        invitationDelivery: userId ? "NOT_REQUIRED" : "PREPARED",
+        assignedAt: new Date().toISOString(),
+      }),
+    ]);
+    setNotice(
+      "تم إنشاء إسناد معاينة محليًا فقط؛ لم يُرسل بريد ولم تُحفظ بيانات تشغيلية.",
+    );
+    setSelected(null);
+  }
+  function previewDecision(id: string, decision: string) {
+    setRows((current) =>
+      current.map((row) =>
+        row.id === id
+          ? {
+              ...row,
+              status:
+                decision === "ACCEPT"
+                  ? "COMPLETED"
+                  : decision === "RETURN"
+                    ? "NEEDS_AMENDMENT"
+                    : "CANCELLED",
+              reviewedAt: new Date().toISOString(),
+              completedAt:
+                decision === "ACCEPT" ? new Date().toISOString() : null,
+            }
+          : row,
+      ),
+    );
+    setNotice("تم تحديث حالة المعاينة محليًا فقط.");
+  }
+  return (
+    <div className="space-y-5">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <CardTitle>فريق العمل / المساهمون</CardTitle>
+              <p className="mt-1 text-xs text-muted">
+                إسناد محدود بالمتطلب والنطاق؛ لا ينشئ شخصية مستخدم خامسة.
+              </p>
+            </div>
+            {canManage ? (
+              <Button
+                size="sm"
+                onClick={() => setSelected(definition.sections[0])}
+              >
+                <UserPlus className="h-4 w-4" />
+                إضافة مساهم
+              </Button>
+            ) : null}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {team.length ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              {team.map((row) => (
+                <div
+                  key={row.contributorEmail}
+                  className="rounded-xl border p-4"
+                >
+                  <p className="font-semibold">{row.contributorName}</p>
+                  <p className="text-xs text-muted">
+                    {row.jobTitle ?? "مساهم"} · {row.departmentName ?? "—"}
+                  </p>
+                  <p className="mt-1 text-xs">{row.contributorEmail}</p>
+                  <p className="mt-2 text-xs">
+                    نطاق المساهمة:{" "}
+                    {rows
+                      .filter(
+                        (item) =>
+                          item.contributorEmail === row.contributorEmail &&
+                          item.status !== "CANCELLED",
+                      )
+                      .map((item) => definition.labels[item.sectionKey])
+                      .join("، ")}
+                  </p>
+                  <Badge className="mt-2" variant="neutral">
+                    {statusLabels[row.status] ?? row.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="py-5 text-center text-sm text-muted">
+              لم تتم إضافة مساهمين بعد.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+      <div className={compact ? "space-y-2" : "grid gap-3 lg:grid-cols-2"}>
+        {definition.sections.map((key) => {
+          const assigned = rows.filter(
+            (row) => row.sectionKey === key && row.status !== "CANCELLED",
+          );
+          if (compact)
+            return (
+              <div
+                key={key}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-xs"
+              >
+                <div>
+                  <b>{definition.labels[key]}</b>
+                  <span className="mx-1 text-muted">·</span>
+                  <span className="text-muted">
+                    {assigned.length
+                      ? assigned.map((row) => row.contributorName).join("، ")
+                      : "تعبئة مباشرة"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={assigned.length ? "warning" : "neutral"}>
+                    {assigned.length
+                      ? statusLabels[assigned[0].status]
+                      : "غير مسند"}
+                  </Badge>
+                  {canManage ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelected(key)}
+                    >
+                      إسناد
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            );
+          return (
+            <Card key={key}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-bold">{definition.labels[key]}</p>
+                    <p className="mt-1 text-xs text-muted">
+                      تعبئة مباشرة أو إسناد هذا النطاق فقط.
+                    </p>
+                  </div>
+                  <Badge variant={assigned.length ? "warning" : "neutral"}>
+                    {assigned.length
+                      ? statusLabels[assigned[0].status]
+                      : "غير مسند"}
+                  </Badge>
+                </div>
+                {assigned.map((row) => (
+                  <div
+                    key={row.id}
+                    className="mt-3 rounded-lg bg-slate-50 p-3 text-xs dark:bg-white/5"
+                  >
+                    <p>
+                      <b>المسؤول:</b> {row.contributorName} —{" "}
+                      {row.departmentName ?? "—"}
+                    </p>
+                    <p className="mt-1">
+                      <b>الموعد:</b>{" "}
+                      {row.dueDate
+                        ? new Date(row.dueDate).toLocaleDateString("ar-SA")
+                        : "غير محدد"}{" "}
+                      · <b>الأولوية:</b> {priorityLabels[row.priority]}
+                    </p>
+                    <p className="mt-1">
+                      <b>الدعوة:</b>{" "}
+                      {row.invitationDelivery === "PREPARED"
+                        ? "الرابط مجهز ولم يُرسل بريد"
+                        : "مهمة داخل المنصة"}
+                    </p>
+                    {["SUBMITTED", "UNDER_REVIEW", "NEEDS_AMENDMENT"].includes(
+                      row.status,
+                    ) && canManage ? (
+                      <form
+                        action={preview ? undefined : reviewAction}
+                        onSubmit={
+                          preview
+                            ? (event) => {
+                                event.preventDefault();
+                                const fd = new FormData(event.currentTarget);
+                                previewDecision(
+                                  row.id,
+                                  String(fd.get("decision")),
+                                );
+                              }
+                            : undefined
+                        }
+                        className="mt-3 space-y-2"
+                      >
+                        <input type="hidden" name="id" value={row.id} />
+                        <input type="hidden" name="path" value={path} />
+                        <textarea
+                          name="notes"
+                          placeholder="ملاحظات المراجعة أو سبب الإعادة"
+                          className="min-h-16 w-full rounded-lg border bg-transparent p-2"
+                        />
+                        <div className="flex gap-2">
+                          <Button name="decision" value="ACCEPT" size="sm">
+                            <Check className="h-4 w-4" />
+                            قبول
+                          </Button>
+                          <Button
+                            name="decision"
+                            value="RETURN"
+                            size="sm"
+                            variant="outline"
+                          >
+                            إعادة للتعديل
+                          </Button>
+                        </div>
+                      </form>
+                    ) : null}
+                    {canManage &&
+                    !["COMPLETED", "CANCELLED"].includes(row.status) ? (
+                      <form
+                        action={preview ? undefined : reviewAction}
+                        onSubmit={
+                          preview
+                            ? (event) => {
+                                event.preventDefault();
+                                previewDecision(row.id, "CANCEL");
+                              }
+                            : undefined
+                        }
+                        className="mt-2"
+                      >
+                        <input type="hidden" name="id" value={row.id} />
+                        <input type="hidden" name="path" value={path} />
+                        <Button
+                          name="decision"
+                          value="CANCEL"
+                          size="sm"
+                          variant="ghost"
+                        >
+                          إلغاء الإسناد
+                        </Button>
+                      </form>
+                    ) : null}
+                  </div>
+                ))}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      document
+                        .getElementById("workspace-data")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                      setNotice(
+                        `يمكنك تعبئة «${definition.labels[key]}» في قسم البيانات أدناه.`,
+                      );
+                    }}
+                  >
+                    <ClipboardCheck className="h-4 w-4" />
+                    تعبئة بنفسي
+                  </Button>
+                  {canManage ? (
+                    <Button size="sm" onClick={() => setSelected(key)}>
+                      <Users className="h-4 w-4" />
+                      إسناد التعبئة
+                    </Button>
+                  ) : null}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+      {selected ? (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <form
+            action={preview ? previewAssign : createAction}
+            className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900"
+          >
+            <div className="flex justify-between">
+              <div>
+                <h2 className="text-lg font-bold">إسناد التعبئة إلى مساهم</h2>
+                <p className="text-xs text-muted">
+                  النطاق: {definition.labels[selected]}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelected(null)}
+                aria-label="إغلاق"
+              >
+                <X />
+              </button>
+            </div>
+            <input type="hidden" name="requirementId" value={requirementId} />
+            <input type="hidden" name="sectionKey" value={selected} />
+            <input type="hidden" name="path" value={path} />
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <label className="text-xs font-semibold">
+                مستخدم موجود (اختياري)
+                <select
+                  name="contributorUserId"
+                  className="mt-1 h-10 w-full rounded-lg border bg-transparent px-2"
+                >
+                  <option value="">دعوة برابط محدود</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} — {user.email}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {[
+                ["name", "الاسم", "text"],
+                ["email", "البريد الإلكتروني", "email"],
+                ["jobTitle", "المسمى الوظيفي / الدور", "text"],
+                ["departmentName", "الإدارة أو القسم", "text"],
+                ["dueDate", "الموعد المستهدف", "date"],
+              ].map(([name, label, type]) => (
+                <label key={name} className="text-xs font-semibold">
+                  {label}
+                  <input
+                    name={name}
+                    type={type}
+                    required={name === "name" || name === "email"}
+                    className="mt-1 h-10 w-full rounded-lg border bg-transparent px-3"
+                  />
+                </label>
+              ))}
+              <label className="text-xs font-semibold">
+                نوع المساهمة
+                <select
+                  name="contributorRole"
+                  className="mt-1 h-10 w-full rounded-lg border bg-transparent px-2"
+                >
+                  <option value="RESPONSIBLE">مسؤول عن التعبئة</option>
+                  <option value="SUPPORTING">مساهم داعم</option>
+                </select>
+              </label>
+              <label className="text-xs font-semibold">
+                الأولوية
+                <select
+                  name="priority"
+                  className="mt-1 h-10 w-full rounded-lg border bg-transparent px-2"
+                >
+                  <option value="MEDIUM">متوسطة</option>
+                  <option value="HIGH">عالية</option>
+                  <option value="URGENT">عاجلة</option>
+                  <option value="LOW">منخفضة</option>
+                </select>
+              </label>
+              <label className="text-xs font-semibold sm:col-span-2">
+                ملاحظة للمساهم
+                <textarea
+                  name="note"
+                  className="mt-1 min-h-20 w-full rounded-lg border bg-transparent p-3"
+                />
+              </label>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSelected(null)}
+              >
+                إلغاء
+              </Button>
+              <Button>
+                <CalendarClock className="h-4 w-4" />
+                إنشاء الإسناد
+              </Button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+      {notice ||
+      createState.success ||
+      createState.error ||
+      reviewState.success ||
+      reviewState.error ? (
+        <p className="rounded-lg bg-primary-50 p-3 text-sm">
+          {notice ||
+            createState.success ||
+            createState.error ||
+            reviewState.success ||
+            reviewState.error}
+        </p>
+      ) : null}
+      {createState.invitationPath ? (
+        <div className="flex items-center gap-2 rounded-lg border p-3 text-xs">
+          <code className="min-w-0 flex-1 overflow-hidden text-ellipsis">
+            {createState.invitationPath}
+          </code>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              navigator.clipboard.writeText(
+                `${location.origin}${createState.invitationPath}`,
+              )
+            }
+          >
+            <Copy className="h-4 w-4" />
+            نسخ الرابط
+          </Button>
+        </div>
+      ) : null}
+      {!compact ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>المساهمون في استكمال المتطلب</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px] text-xs">
+                <thead>
+                  <tr className="border-b text-muted">
+                    {[
+                      "المساهم",
+                      "الإدارة",
+                      "نطاق المساهمة",
+                      "من قام بالإسناد",
+                      "تاريخ الإرسال",
+                      "تاريخ الرد",
+                      "مدة الاستجابة",
+                      "الحالة النهائية",
+                    ].map((label) => (
+                      <th key={label} className="p-2 text-start">
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={row.id} className="border-b">
+                      <td className="p-2">{row.contributorName}</td>
+                      <td className="p-2">{row.departmentName ?? "—"}</td>
+                      <td className="p-2">
+                        {definition.labels[row.sectionKey] ?? row.sectionKey}
+                      </td>
+                      <td className="p-2">{row.assignedByName}</td>
+                      <td className="p-2">
+                        {new Date(row.assignedAt).toLocaleDateString("ar-SA")}
+                      </td>
+                      <td className="p-2">
+                        {row.submittedAt
+                          ? new Date(row.submittedAt).toLocaleDateString(
+                              "ar-SA",
+                            )
+                          : "—"}
+                      </td>
+                      <td className="p-2">
+                        {row.submittedAt
+                          ? `${Math.max(0, Math.ceil((new Date(row.submittedAt).getTime() - new Date(row.assignedAt).getTime()) / 86400000))} يوم`
+                          : "—"}
+                      </td>
+                      <td className="p-2">
+                        <Badge variant="neutral">
+                          {statusLabels[row.status] ?? row.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+    </div>
+  );
 }

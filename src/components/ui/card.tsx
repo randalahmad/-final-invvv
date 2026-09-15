@@ -11,14 +11,14 @@ Card.displayName = "Card";
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("flex items-center justify-between gap-2 p-5", className)} {...props} />
+    <div ref={ref} className={cn("flex items-center justify-between gap-3 p-5 pb-4", className)} {...props} />
   ),
 );
 CardHeader.displayName = "CardHeader";
 
 const CardTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
   ({ className, ...props }, ref) => (
-    <h3 ref={ref} className={cn("text-sm font-bold text-slate-800 dark:text-slate-100", className)} {...props} />
+    <h3 ref={ref} className={cn("text-sm font-bold text-foreground dark:text-slate-100", className)} {...props} />
   ),
 );
 CardTitle.displayName = "CardTitle";

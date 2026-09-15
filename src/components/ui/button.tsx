@@ -5,14 +5,14 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-white hover:bg-primary-600",
+        default: "bg-primary text-white shadow-sm shadow-primary/20 hover:-translate-y-px hover:bg-primary-600 hover:shadow-md",
         secondary: "bg-secondary text-white hover:bg-secondary-600",
-        outline: "border border-border bg-surface text-slate-800 hover:bg-slate-50 dark:bg-surface-dark dark:text-slate-100 dark:hover:bg-white/5",
-        ghost: "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/5",
+        outline: "border border-border bg-surface text-foreground hover:border-primary/30 hover:bg-primary-50/50 dark:bg-surface-dark dark:text-slate-100 dark:hover:bg-white/5",
+        ghost: "text-foreground-secondary hover:bg-primary-50 dark:text-slate-200 dark:hover:bg-white/5",
         danger: "bg-danger text-white hover:bg-danger/90",
       },
       size: {

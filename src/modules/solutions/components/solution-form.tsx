@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { AlertCircle } from "lucide-react";
 
@@ -18,6 +19,7 @@ import {
 
 const fieldClass =
   "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-border-dark dark:bg-surface-dark";
+const EMPTY_FIELD_ERRORS: Record<string, string[]> = {};
 
 export interface Option {
   id: string;
@@ -92,10 +94,18 @@ export function SolutionForm({
 }) {
   const action = mode === "create" ? createSolutionAction : updateSolutionAction;
   const [state, formAction] = useFormState<SolutionFormState, FormData>(action, {});
-  const fe = state.fieldErrors ?? {};
+  const fe = state.fieldErrors ?? EMPTY_FIELD_ERRORS;
+  const [step, setStep] = useState(0);
+  const steps = ["البيانات الأساسية", "التصنيف والملكية", "التنفيذ والتقدم", "الأثر والمؤشرات", "المراجعة والحفظ"];
+  useEffect(() => {
+    if (fe.nameAr || fe.description || fe.problemStatement) setStep(0);
+    else if (fe.owningDepartmentId) setStep(1);
+    else if (fe.targetEndDate || fe.durationMonths || fe.cost) setStep(2);
+    else if (fe.beneficiaryCount || fe.beneficiarySatisfactionPct) setStep(3);
+  }, [fe]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} noValidate className="flex flex-col gap-4">
       {state.error && (
         <div role="alert" className="flex items-center gap-2 rounded-xl bg-danger-bg px-3.5 py-2.5 text-sm text-danger">
           <AlertCircle className="h-4 w-4 shrink-0" />
@@ -104,6 +114,11 @@ export function SolutionForm({
       )}
       {mode === "edit" && <input type="hidden" name="solutionId" value={initial?.solutionId} />}
 
+      <nav className="sticky top-3 z-20 rounded-2xl border bg-surface/95 p-2 shadow-sm backdrop-blur" aria-label="خطوات تسجيل الحل">
+        <div className="grid grid-cols-2 gap-1 md:grid-cols-5">{steps.map((label,index)=><button key={label} type="button" onClick={()=>setStep(index)} className={`rounded-xl px-2 py-2 text-right text-xs transition ${step===index?"bg-primary-50 text-primary ring-1 ring-primary/20":"hover:bg-slate-50"}`}><span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px]">{index+1}</span><span className="font-semibold">{label}</span></button>)}</div>
+      </nav>
+
+      <section hidden={step!==0} className="space-y-4">
       <div className="flex flex-col gap-2">
         <Label htmlFor="nameAr">اسم الحل</Label>
         <Input id="nameAr" name="nameAr" required defaultValue={initial?.nameAr ?? ""} placeholder="اسم الحل الابتكاري" />
@@ -122,7 +137,9 @@ export function SolutionForm({
           <FieldError errors={fe.problemStatement} />
         </div>
       </div>
+      </section>
 
+      <section hidden={step!==1} className="space-y-4">
       <div className="rounded-xl border border-dashed p-4">
         <p className="mb-3 text-sm font-semibold">تشغيل محفظة 5.24.1</p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -138,7 +155,9 @@ export function SolutionForm({
           <div className="flex flex-col gap-2 lg:col-span-3"><Label htmlFor="duplicateContinuationReason">سبب المتابعة كسجل جديد عند ظهور تشابه</Label><textarea id="duplicateContinuationReason" name="duplicateContinuationReason" rows={2} className={fieldClass} defaultValue={initial?.duplicateReason??""} placeholder="يُطلب فقط إذا نبّه النظام إلى سجل محتمل التكرار"/></div>
         </div>
       </div>
+      </section>
 
+      <section hidden={step!==2} className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="flex flex-col gap-2">
           <Label htmlFor="owningDepartmentId">الإدارة المالكة</Label>
@@ -211,7 +230,9 @@ export function SolutionForm({
           <FieldError errors={fe.cost} />
         </div>
       </div>
+      </section>
 
+      <section hidden={step!==3} className="space-y-4">
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="targetBeneficiaries">الفئة المستفيدة</Label>
@@ -282,10 +303,10 @@ export function SolutionForm({
           </div>
         </div>
       </div>
+      </section>
 
-      <div>
-        <SubmitButton label={mode === "create" ? "حفظ كمسودة" : "حفظ التعديلات"} />
-      </div>
+      <section hidden={step!==4} className="space-y-4"><div className="rounded-2xl border bg-primary-50/40 p-4"><h2 className="font-bold">مراجعة قبل الحفظ</h2><div className="mt-3 grid gap-2 text-sm sm:grid-cols-2"><p><b>اسم الحل:</b> {initial?.nameAr||"سيُحفظ الاسم الذي أدخلته"}</p><p><b>نوع العملية:</b> {mode==="create"?"مسودة حل جديدة":"تحديث سجل قائم"}</p><p className="sm:col-span-2 text-muted">ستُراجع البيانات المدخلة والتحققات الحالية عند الحفظ. يمكن الرجوع لأي خطوة دون فقدان الحقول.</p></div></div><SubmitButton label={mode === "create" ? "حفظ كمسودة" : "حفظ التعديلات"} /></section>
+      <div className="flex items-center justify-between gap-2"><Button type="button" variant="outline" disabled={step===0} onClick={()=>setStep(current=>Math.max(0,current-1))}>السابق</Button>{step<4?<Button type="button" onClick={()=>setStep(current=>Math.min(4,current+1))}>التالي</Button>:null}</div>
     </form>
   );
 }

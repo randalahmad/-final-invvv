@@ -25,22 +25,27 @@ export function AppSidebar({
     ? navGroupsForPreviewPersona(persona)
     : navGroupsForPermissions(permissions);
   return (
-    <aside className="fixed inset-x-0 bottom-0 z-30 flex h-16 w-full shrink-0 flex-row overflow-x-auto bg-gradient-sidebar px-2 py-2 text-slate-200 print:hidden md:sticky md:top-0 md:h-screen md:w-64 md:flex-col md:overflow-y-auto md:overflow-x-hidden md:px-3.5 md:py-4">
-      {/* Brand — temporary text-based identity */}
-      <div className="mb-3.5 hidden border-b border-white/10 px-1 pb-4 pt-1.5 text-center md:block md:px-2 md:text-start">
-        <div className="text-sm font-bold text-white md:text-[14.5px]">{site.shortName}</div>
-        <div className="mt-1.5 hidden text-[11px] leading-relaxed text-slate-400 md:block">
+    <aside className="fixed inset-x-0 bottom-0 z-30 flex h-[4.5rem] w-full shrink-0 flex-row overflow-x-auto border-t border-border bg-gradient-sidebar px-2 py-2 text-slate-600 shadow-[0_-8px_25px_rgba(15,23,42,0.08)] print:hidden md:sticky md:top-0 md:h-screen md:w-[17.5rem] md:flex-col md:overflow-y-auto md:overflow-x-hidden md:border-l md:border-t-0 md:px-4 md:py-5 md:shadow-none">
+      <div className="mb-4 hidden border-b border-border px-2 pb-5 pt-1 md:block">
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary-50 text-xs font-bold text-primary ring-1 ring-primary/10">كـ</div>
+          <div>
+            <div className="text-sm font-bold text-foreground">{site.shortName}</div>
+            <div className="mt-0.5 text-[10px] font-medium tracking-wide text-muted">منصة مؤسسية للجاهزية والابتكار</div>
+          </div>
+        </div>
+        <div className="mt-3 hidden text-[11px] leading-relaxed text-muted md:block">
           {site.owner}
           <br />
           {site.ownerUnit}
         </div>
       </div>
 
-      <nav className="flex min-w-max flex-row gap-1 md:min-w-0 md:flex-col">
+      <nav className="flex min-w-max flex-row gap-1 md:min-w-0 md:flex-col md:gap-1.5">
         {visibleGroups.map((group) => {
           return (
           <div key={group.label} className="contents md:block">
-            <div className="hidden px-2.5 pb-1.5 pt-3.5 text-[10.5px] text-slate-400 md:block">{group.label}</div>
+            <div className="hidden px-3 pb-1.5 pt-4 text-[10px] font-semibold tracking-wide text-muted md:block">{group.label}</div>
             {group.items.map((item) => {
               const exactOnly = item.href === "/governance" || item.href === "/admin/users";
               const active = pathname === item.href || (!exactOnly && pathname.startsWith(item.href + "/"));
@@ -51,10 +56,10 @@ export function AppSidebar({
                   href={preview ? buildPreviewHref(item.href, persona) : item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "mb-0.5 flex h-12 w-12 shrink-0 items-center justify-center gap-2.5 rounded-lg px-2 py-2.5 text-[13.3px] transition-colors md:h-auto md:w-auto md:justify-start md:px-3",
+                    "mb-0.5 flex h-12 w-12 shrink-0 items-center justify-center gap-2.5 rounded-xl px-2 py-2.5 text-[13px] transition-all md:h-auto md:w-auto md:justify-start md:px-3.5 md:py-3",
                     active
-                      ? "bg-secondary font-semibold text-white shadow-lg shadow-secondary/30"
-                      : "text-slate-300 hover:bg-white/5 hover:text-white",
+                      ? "bg-primary-50 font-semibold text-primary ring-1 ring-primary/10"
+                      : "text-foreground-secondary hover:bg-primary-50/70 hover:text-primary",
                   )}
                 >
                   <Icon className="h-[18px] w-[18px] shrink-0" />

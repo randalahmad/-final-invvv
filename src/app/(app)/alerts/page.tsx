@@ -13,7 +13,7 @@ export default async function AlertsPage() {
   const alerts = await listAlertsInScope(ctx);
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="المهام والتنبيهات" description="المواعيد والإجراءات التي تحتاج إلى انتباهك ضمن نطاق صلاحياتك." />
+      <PageHeader title="التنبيهات" description="الإجراءات والمواعيد ضمن نطاق صلاحياتك." />
       <AlertsCenter alerts={alerts} />
     </div>
   );

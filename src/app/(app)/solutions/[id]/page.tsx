@@ -133,9 +133,36 @@ export default async function SolutionDetailsPage({ params }: { params: { id: st
         )}
       </div>
 
+      <Card id="next-action" className="border-primary/20">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs text-muted">الحالة الحالية</p>
+              <p className="mt-1 font-bold">{MATURITY_LABELS[solution.maturityStage]} · {IMPLEMENTATION_LABELS[solution.implementationStatus]}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">الإجراء التالي</p>
+              <p className="mt-1 font-bold">{solution.nextAction ?? "استكمال بيانات الحل"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">المالك</p>
+              <p className="mt-1 font-bold">{solution.owner?.name ?? "غير محدد"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted">الموعد المستهدف</p>
+              <p className="mt-1 font-bold">{solution.targetEndDate ? new Date(solution.targetEndDate).toLocaleDateString("ar-SA") : "—"}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <nav className="flex gap-2 overflow-x-auto pb-1 text-xs" aria-label="مساحة عمل الحل">
+        {[['نظرة عامة','#next-action'],['بيانات الحل','#solution-data'],['الجاهزية','#readiness'],['الزمن والسجل','#timeline']].map(([label,href])=><a key={label} href={href} className="whitespace-nowrap rounded-lg border px-3 py-2 hover:border-primary hover:text-primary">{label}</a>)}
+      </nav>
+
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="flex flex-col gap-5 lg:col-span-2">
-          <Card>
+          <Card id="solution-data">
             <CardHeader>
               <CardTitle>الوصف والمشكلة</CardTitle>
             </CardHeader>
@@ -237,11 +264,11 @@ export default async function SolutionDetailsPage({ params }: { params: { id: st
 
           <AwardsPanel solutionId={solution.id} awards={awards} canEdit={canEditAwards} />
 
-          <HistoryTimeline events={history} />
+          <div id="timeline"><HistoryTimeline events={history} /></div>
         </div>
 
         <div className="flex flex-col gap-5">
-          <CompletenessPanel completeness={completeness} />
+          <div id="readiness"><CompletenessPanel completeness={completeness} /></div>
           {canViewChallenges && linkedChallenges.length > 0 && (
             <Card>
               <CardHeader>

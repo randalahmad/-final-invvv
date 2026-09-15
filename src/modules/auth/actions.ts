@@ -8,6 +8,7 @@ import { loginSchema } from "./schema";
 import { authenticateCredentials } from "./authenticate";
 import { writeAudit, AUDIT } from "@/server/audit";
 import { requestMetadataFromHeaders } from "@/server/request-context";
+import { isDevelopmentRolePreviewEnabled, listDevelopmentRolePreviewOptions } from "./development-role-preview";
 
 export interface LoginState {
   error?: string;
@@ -78,4 +79,22 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
 
 export async function logoutAction(): Promise<void> {
   await signOut({ redirectTo: "/login" });
+}
+
+function safeRolePreviewRedirect(value: FormDataEntryValue | null): string {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) return "/dashboard";
+  return value;
+}
+
+/** Local development-only session switch. Auth.js still issues a normal session. */
+export async function switchDevelopmentRoleAction(formData: FormData): Promise<void> {
+  if (!isDevelopmentRolePreviewEnabled()) return;
+  const email = typeof formData.get("email") === "string" ? String(formData.get("email")) : "";
+  const options = await listDevelopmentRolePreviewOptions();
+  if (!options.some((option) => option.email === email)) return;
+
+  await signIn("credentials", {
+    devPreviewEmail: email,
+    redirectTo: safeRolePreviewRedirect(formData.get("callbackUrl")),
+  });
 }

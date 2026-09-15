@@ -75,5 +75,8 @@ export async function listAlertsInScope(actor: AccessContext): Promise<AlertItem
   const impactAlerts: AlertItemData[] = measurements.map((row)=>({id:`impact-${row.id}`,title:`قياس أثر متأخر: ${row.indicator.solution.nameAr}`,detail:`انتهت فترة مؤشر «${row.indicator.nameAr}» ولم يتم التحقق من القياس.`,tag:"نافذة قياس أثر",severity:"urgent",href:`/impact/${row.indicator.solutionId}`,dueDate:row.periodEnd?.toISOString()}));
   const taskAlerts: AlertItemData[] = tasks.map((t)=>({id:`task-${t.id}`,title:t.title,detail:`مهمة ${TASK_TAGS[t.type]??t.type} مرتبطة بالمتطلب ${t.assignment.requirement?.code??""}.`,tag:TASK_TAGS[t.type]??t.type,severity:t.dueDate&&t.dueDate<now?"urgent":"reminder",href:"/my-tasks",dueDate:t.dueDate?.toISOString()}));
   const evidenceAlerts: AlertItemData[] = staleEvidence.map((e)=>({id:`evidence-${e.id}`,title:e.title,detail:e.reviewStatus==="NEEDS_UPDATE"?"هذا الدليل يحتاج تحديثًا حسب قرار المراجع.":`انتهت صلاحية هذا الدليل في ${e.validUntil?new Date(e.validUntil).toLocaleDateString("ar-SA"):"—"}.`,tag:"دليل يحتاج تحديثًا",severity:"reminder",href:e.links[0]?.entityType==="INNOVATION_SOLUTION"?`/solutions/${e.links[0].entityId}`:"/evidence-repository"}));
-  return [...requirementAlerts,...taskAlerts,...evidenceAlerts,...impactAlerts,...stored];
+  return [...requirementAlerts,...taskAlerts,...evidenceAlerts,...impactAlerts,...stored].sort((a,b)=>{
+    if(a.severity!==b.severity)return a.severity==="urgent"?-1:1;
+    return (a.dueDate?new Date(a.dueDate).getTime():Number.MAX_SAFE_INTEGER)-(b.dueDate?new Date(b.dueDate).getTime():Number.MAX_SAFE_INTEGER);
+  });
 }

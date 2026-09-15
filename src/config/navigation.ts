@@ -1,4 +1,4 @@
-import { Activity, BarChart3, Bell, ClipboardCheck, FileCheck2, FolderSearch, Gauge, Landmark, ListTodo, ScrollText, Settings, ShieldCheck, Target, TrendingUp, UserCircle, Users, type LucideIcon } from "lucide-react";
+import { Activity, BarChart3, ClipboardCheck, FileCheck2, FolderSearch, Gauge, Landmark, ListTodo, ScrollText, Settings, ShieldCheck, Target, TrendingUp, UserCircle, Users, type LucideIcon } from "lucide-react";
 import type { PermissionKey } from "@/modules/auth/permissions";
 import { PREVIEW_PERSONA_PATHS, type PreviewPersonaKey } from "@/lib/ux-preview";
 
@@ -20,7 +20,6 @@ export const navGroups: NavGroup[] = [
     { href: "/evidence-matrix", label: "مصفوفة أدلة القياس", icon: FolderSearch, permissions: ["evidence.view"] },
     { href: "/evidence-repository", label: "مستودع الأدلة", icon: FolderSearch, permissions: ["evidence.view"] },
     { href: "/readiness-check", label: "فحص الجاهزية", icon: ShieldCheck, permissions: ["compliance.view"] },
-    { href: "/alerts", label: "التنبيهات", icon: Bell, permissions: ["alert.view"] },
     { href: "/reports", label: "التقارير / ملف الامتثال", icon: BarChart3, permissions: ["compliance.view"] },
     { href: "/account", label: "حسابي", icon: UserCircle },
   ] },

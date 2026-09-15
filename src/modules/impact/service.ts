@@ -11,8 +11,9 @@ export async function listImpactSolutions(actor: AccessContext) {
   const scope = await solutionScopeWhere(actor);
   return prisma.innovationSolution.findMany({
     where: { AND: [scope, { archivedAt: null }] }, orderBy: { updatedAt: "desc" },
-    select: { id: true, nameAr: true, maturityStage: true, implementationStatus: true, publishedAt: true,
+    select: { id: true, nameAr: true, maturityStage: true, implementationStatus: true, publishedAt: true, updatedAt: true,
       owningDepartment: { select: { nameAr: true, organization: { select: { nameAr: true } } } },
+      owner: { select: { name: true } },
       impactIndicators: { select: { id: true, type: true, baselineValue: true, targetValue: true, measurements: { where: { supersededBy: { none: {} } }, orderBy: { measuredAt: "desc" }, take: 1, select: { actualValue: true, verificationStatus: true, periodEnd: true } } } },
     },
   });

@@ -3,12 +3,55 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * Proposed digital identity for this product — not an official KA·CARE brand
+   * guide. All semantic values live here so an approved brand system can later
+   * replace them without changing components, workflows, or data behavior.
+   */
+  :root {
+    --font-platform: var(--font-ibm-plex-arabic);
+    --ui-primary: 0 118 168; /* #0076A8 */
+    --ui-primary-50: 234 246 250; /* #EAF6FA */
+    --ui-primary-100: 213 238 247;
+    --ui-primary-400: 0 118 168;
+    --ui-primary-600: 18 59 82; /* #123B52 */
+    --ui-primary-700: 18 59 82;
+    --ui-secondary: 18 59 82; /* #123B52 */
+    --ui-secondary-50: 234 246 250;
+    --ui-secondary-400: 102 119 128; /* #667780 */
+    --ui-secondary-600: 18 59 82;
+    --ui-accent: 0 118 168;
+    --ui-accent-soft: 234 246 250;
+    --ui-bg: 247 249 250; /* #F7F9FA */
+    --ui-bg-dark: 23 43 54;
+    --ui-sidebar: 255 255 255;
+    --ui-sidebar-light: 248 250 252;
+    --ui-sidebar-hover: 240 249 255;
+    --ui-surface: 255 255 255;
+    --ui-surface-dark: 30 48 60;
+    --ui-foreground: 23 43 54; /* #172B36 */
+    --ui-foreground-secondary: 102 119 128; /* #667780 */
+    --ui-border: 221 229 232; /* #DDE5E8 */
+    --ui-border-dark: 70 89 101;
+    --ui-muted: 102 119 128;
+    --ui-muted-dark: 190 202 207;
+    --ui-success: 33 134 91; /* #21865B */
+    --ui-success-bg: 238 248 242;
+    --ui-warning: 183 121 31; /* #B7791F */
+    --ui-warning-bg: 255 248 235;
+    --ui-danger: 194 65 65; /* #C24141 */
+    --ui-danger-bg: 254 242 242;
+    --ui-info: 37 99 235;
+    --ui-info-bg: 239 246 255;
+    --ui-shadow: 23 43 54;
+  }
+
   html {
     direction: rtl;
   }
 
   body {
-    @apply overflow-x-hidden bg-bg text-slate-800 antialiased;
+    @apply overflow-x-hidden bg-bg text-foreground antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
@@ -41,8 +84,20 @@
 
 @layer components {
   .card-surface {
-    @apply rounded-2xl border border-border bg-surface shadow-card transition-shadow duration-300
+    @apply rounded-2xl border border-border/90 bg-surface shadow-card transition-all duration-300
       dark:border-border-dark dark:bg-surface-dark;
+  }
+
+  .card-surface:hover {
+    @apply shadow-soft;
+  }
+
+  .surface-subtle {
+    @apply rounded-2xl border border-border/70 bg-white/70 dark:border-border-dark dark:bg-surface-dark/70;
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-bold tracking-[0.08em] text-primary;
   }
 
   .skeleton {

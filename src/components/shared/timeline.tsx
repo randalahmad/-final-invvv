@@ -1,0 +1,6 @@
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export function Timeline({ items }: { items: { title: string; description?: string; meta?: string; state?: "complete" | "current" | "upcoming" }[] }) {
+  return <ol className="space-y-0">{items.map((item, index) => { const state = item.state ?? "upcoming"; return <li className="relative flex gap-3 pb-5 last:pb-0" key={`${item.title}-${index}`}><span className={cn("relative z-10 grid h-6 w-6 shrink-0 place-items-center rounded-full border text-[10px]", state === "complete" && "border-success bg-success text-white", state === "current" && "border-primary bg-primary text-white ring-4 ring-primary/10", state === "upcoming" && "border-border bg-surface text-muted")}>{state === "complete" ? <Check className="h-3.5 w-3.5" /> : index + 1}</span>{index < items.length - 1 && <span className="absolute start-3 top-6 h-[calc(100%-1.1rem)] w-px bg-border" />}<div className="min-w-0 pt-0.5"><p className={cn("text-sm font-semibold", state === "upcoming" ? "text-muted" : "text-slate-800 dark:text-slate-100")}>{item.title}</p>{item.description && <p className="mt-0.5 text-xs leading-relaxed text-muted">{item.description}</p>}{item.meta && <p className="mt-1 text-[11px] font-medium text-primary">{item.meta}</p>}</div></li>; })}</ol>;
+}

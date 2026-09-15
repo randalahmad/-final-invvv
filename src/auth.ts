@@ -7,6 +7,7 @@ import { prisma } from "@/server/db";
 import { DEMO_MODE } from "@/server/demo-data";
 import { loginSchema } from "@/modules/auth/schema";
 import { authenticateCredentials } from "@/modules/auth/authenticate";
+import { authenticateDevelopmentRolePreview } from "@/modules/auth/development-role-preview";
 import { requestMetadataFromHeaders } from "@/server/request-context";
 
 /**
@@ -36,6 +37,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "كلمة المرور", type: "password" },
       },
       authorize: async (credentials, request) => {
+        const devPreviewEmail = typeof credentials?.devPreviewEmail === "string" ? credentials.devPreviewEmail : null;
+        if (devPreviewEmail) {
+          return await authenticateDevelopmentRolePreview(devPreviewEmail);
+        }
+
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 

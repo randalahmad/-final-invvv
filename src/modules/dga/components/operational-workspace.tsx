@@ -1,71 +1,2073 @@
 "use client";
-import {useEffect,useMemo,useState} from "react";import {useFormState} from "react-dom";import Link from "next/link";
-import {AlertCircle,ArrowLeft,CheckCircle2,Download,FileSignature,FileText,Plus,Save,Upload,X} from "lucide-react";
-import {Badge} from "@/components/ui/badge";import {Button} from "@/components/ui/button";import {Card,CardContent,CardHeader,CardTitle} from "@/components/ui/card";import {Progress} from "@/components/ui/progress";
-import {saveWorkspaceAction,uploadWorkspaceEvidenceAction,generateWorkspaceEvidenceAction,type WorkspaceActionState} from "../workspace-actions";
-import {deriveOperationalStatus,missingEvidence,missingWorkspaceFields,type WorkspaceData,type OperationalStatus} from "../workspace-status";
-import type {RequirementWorkspaceConfig,WorkspaceField,WorkspaceSection} from "../workspace-config";import type {DgaRequirementDefinition,DgaUnitDefinition} from "../types";
-import {GovernancePanel,type GovernanceView} from "@/modules/governance-workflow/components/governance-panel";import {SectionCollaboration} from "@/modules/requirement-contributions/components/section-collaboration";import {getContributionDefinition,type ContributionView} from "@/modules/requirement-contributions/types";
-import {CooperationManager} from "./cooperation-manager";
-import {AnnualPlanWorkspace} from "./annual-plan-workspace";
-import {MethodologyWorkspace} from "./methodology-workspace";
-import {OpenInnovationWorkspace} from "./open-innovation-workspace";
-import {CooperationActivationWorkspace} from "./cooperation-activation-workspace";
-import {CommitteeWorkspace} from "./committee-workspace";
-import {GovernanceOperationsWorkspace} from "./governance-operations-workspace";
-import {CultureActivitiesWorkspace} from "./culture-activities-workspace";
-import {DigitalInnovationMechanismWorkspace} from "./digital-innovation-mechanism-workspace";
-import {IntakeLinksWorkspace} from "./intake-links-workspace";
+import { useEffect, useMemo, useState } from "react";
+import { useFormState } from "react-dom";
+import Link from "next/link";
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  Download,
+  FileSignature,
+  FileText,
+  Plus,
+  Save,
+  Upload,
+  X,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import {
+  saveWorkspaceAction,
+  uploadWorkspaceEvidenceAction,
+  generateWorkspaceEvidenceAction,
+  type WorkspaceActionState,
+} from "../workspace-actions";
+import {
+  deriveOperationalStatus,
+  missingEvidence,
+  missingWorkspaceFields,
+  type WorkspaceData,
+  type OperationalStatus,
+} from "../workspace-status";
+import type {
+  RequirementWorkspaceConfig,
+  WorkspaceField,
+  WorkspaceSection,
+} from "../workspace-config";
+import type { DgaRequirementDefinition, DgaUnitDefinition } from "../types";
+import {
+  GovernancePanel,
+  type GovernanceView,
+} from "@/modules/governance-workflow/components/governance-panel";
+import { SectionCollaboration } from "@/modules/requirement-contributions/components/section-collaboration";
+import {
+  getContributionDefinition,
+  type ContributionView,
+} from "@/modules/requirement-contributions/types";
+import { CooperationManager } from "./cooperation-manager";
+import { AnnualPlanWorkspace } from "./annual-plan-workspace";
+import { MethodologyWorkspace } from "./methodology-workspace";
+import { OpenInnovationWorkspace } from "./open-innovation-workspace";
+import { CooperationActivationWorkspace } from "./cooperation-activation-workspace";
+import { CommitteeWorkspace } from "./committee-workspace";
+import { GovernanceOperationsWorkspace } from "./governance-operations-workspace";
+import { CultureActivitiesWorkspace } from "./culture-activities-workspace";
+import { DigitalInnovationMechanismWorkspace } from "./digital-innovation-mechanism-workspace";
+import { IntakeLinksWorkspace } from "./intake-links-workspace";
 
-type EvidenceRow={id:string;title:string;classification:string|null;fileName:string|null;version:number;reviewStatus:string;uploadedAt:string;uploader:string;relatedRecord?:string|null};
-const labels:Record<OperationalStatus,string>={NOT_STARTED:"لم تبدأ",IN_PROGRESS:"قيد التنفيذ",AWAITING_EVIDENCE:"بانتظار الإثبات",COMPLETED:"مكتملة"};
-const emptyRow=(section:WorkspaceSection)=>Object.fromEntries(section.fields.map(field=>[field.key,""]));
-const initialData=(config:RequirementWorkspaceConfig,data:WorkspaceData)=>({...data,...Object.fromEntries(config.sections.map(section=>[section.key,data[section.key]??(section.repeatable?[emptyRow(section)]:emptyRow(section))]))}) as WorkspaceData;
-const values=(data:WorkspaceData,key:string,field:string)=>{const value=data[key];return Array.isArray(value)?value.map(row=>String(row[field]??"")).filter(Boolean):[];};
+type EvidenceRow = {
+  id: string;
+  title: string;
+  classification: string | null;
+  fileName: string | null;
+  version: number;
+  reviewStatus: string;
+  uploadedAt: string;
+  uploader: string;
+  relatedRecord?: string | null;
+};
+const labels: Record<OperationalStatus, string> = {
+  NOT_STARTED: "لم تبدأ",
+  IN_PROGRESS: "قيد التنفيذ",
+  AWAITING_EVIDENCE: "بانتظار الإثبات",
+  COMPLETED: "مكتملة",
+};
+const emptyRow = (section: WorkspaceSection) =>
+  Object.fromEntries(section.fields.map((field) => [field.key, ""]));
+const initialData = (config: RequirementWorkspaceConfig, data: WorkspaceData) =>
+  ({
+    ...data,
+    ...Object.fromEntries(
+      config.sections.map((section) => [
+        section.key,
+        data[section.key] ??
+          (section.repeatable ? [emptyRow(section)] : emptyRow(section)),
+      ]),
+    ),
+  }) as WorkspaceData;
+const values = (data: WorkspaceData, key: string, field: string) => {
+  const value = data[key];
+  return Array.isArray(value)
+    ? value.map((row) => String(row[field] ?? "")).filter(Boolean)
+    : [];
+};
 
-function FieldControl({field,value,options,disabled,onChange}:{field:WorkspaceField;value:string;options?:string[];disabled:boolean;onChange:(value:string)=>void}){const cls="w-full rounded-lg border bg-transparent px-3 text-sm";const choices=options?.length?options:field.options;if(choices?.length)return <select disabled={disabled} value={value} onChange={event=>onChange(event.target.value)} className={`h-10 ${cls}`}><option value="">اختر</option>{choices.map(option=><option key={option} value={option}>{option}</option>)}</select>;if(field.type==="textarea")return <textarea disabled={disabled} value={value} onChange={event=>onChange(event.target.value)} className={`min-h-24 p-3 ${cls}`}/>;return <input disabled={disabled} type={field.type==="select"?"text":field.type??"text"} value={value} onChange={event=>onChange(event.target.value)} className={`h-10 ${cls}`}/>;}
-
-function Requirement02Context({referenceData}:{referenceData:WorkspaceData}){const goals=values(referenceData,"strategicGoals","name");const kpis=values(referenceData,"kpis","name");return <Card className="border-primary/20"><CardHeader><CardTitle>السياق المؤسسي المعاد استخدامه من المتطلب 01</CardTitle></CardHeader><CardContent><p className="text-xs leading-6 text-muted">اختر الهدف والمؤشر من البيانات المؤسسية المعتمدة في المتطلب 01 بدل إعادة إدخالهما. تعديل الأصل يتم من مساحة المتطلب 01.</p><div className="mt-4 grid gap-3 md:grid-cols-2"><div className="rounded-xl bg-primary-50 p-4"><p className="text-xs font-bold">الأهداف الاستراتيجية المتاحة</p>{goals.map(item=><p key={item} className="mt-2 text-xs">• {item}</p>)}</div><div className="rounded-xl bg-primary-50 p-4"><p className="text-xs font-bold">مؤشرات الأداء المتاحة</p>{kpis.map(item=><p key={item} className="mt-2 text-xs">• {item}</p>)}</div></div><div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs font-semibold"><span className="rounded-lg border p-2">المبادرة / المشروع</span><ArrowLeft className="h-4 w-4"/><span className="rounded-lg border p-2">الهدف الاستراتيجي</span><ArrowLeft className="h-4 w-4"/><span className="rounded-lg border p-2">مؤشر الأداء</span><ArrowLeft className="h-4 w-4"/><span className="rounded-lg border p-2">المسؤول</span></div></CardContent></Card>;}
-
-function InitiativeSummary({data,contributions}:{data:WorkspaceData;contributions:ContributionView[]}){const rows=Array.isArray(data.initiatives)?data.initiatives:[];return <Card><CardHeader><div className="flex items-center justify-between"><CardTitle>ملخص المبادرات والمشروعات</CardTitle><Badge variant="primary">{rows.length} مبادرة</Badge></div></CardHeader><CardContent className="grid gap-3 lg:grid-cols-2">{rows.map((row,index)=>{const required=["name","description","owningDepartment","owner","status","startDate","targetDate","lastUpdate"];const completion=Math.round(required.filter(key=>String(row[key]??"").trim()).length/required.length*100);const delegated=contributions.find(item=>item.sectionKey==="initiatives"&&!['COMPLETED','CANCELLED'].includes(item.status));return <div key={`${row.name}-${index}`} className="rounded-xl border p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{String(row.name||`مبادرة ${index+1}`)}</p><p className="mt-1 text-xs text-muted">{String(row.owningDepartment||"الإدارة غير محددة")} · {String(row.owner||"المسؤول غير محدد")}</p></div><Badge variant={completion===100?"success":"warning"}>{completion}%</Badge></div><p className="mt-3 text-xs"><b>الحالة:</b> {String(row.status||"غير محددة")}</p><p className="mt-1 text-xs"><b>حالة المساهمة:</b> {delegated?"بانتظار مساهمة خارجية":"تعبئة مباشرة"}</p><p className="mt-1 text-xs"><b>الإجراء التالي:</b> {completion<100?"استكمال بيانات المبادرة":"استكمال المواءمة والمؤشر والإثبات"}</p></div>})}</CardContent></Card>;}
-
-function CooperationSummary({data,contributions,evidence}:{data:WorkspaceData;contributions:ContributionView[];evidence:EvidenceRow[]}){const rows=Array.isArray(data.cooperations)?data.cooperations:[];return <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><div><CardTitle>علاقات التعاون المؤسسي</CardTitle><p className="mt-1 text-xs text-muted">العلاقة المؤسسية هي السجل الأساسي، والاتفاقية دليل مرتبط بها.</p></div><Badge variant="primary">{rows.length} علاقة</Badge></div></CardHeader><CardContent className="grid gap-3 lg:grid-cols-2">{rows.map((row,index)=>{const partner=String(row.partnerName||`جهة متعاونة ${index+1}`);const pending=contributions.filter(item=>item.requesterNote?.includes(partner)&&!["COMPLETED","CANCELLED"].includes(item.status));const agreement=(Array.isArray(data.agreements)?data.agreements:[]).find(item=>item.cooperationName===partner);const hasEvidence=evidence.some(item=>item.relatedRecord===partner);const endDate=String(row.endDate||"");const expired=endDate&&new Date(endDate)<new Date();return <div key={`${partner}-${index}`} className="rounded-xl border p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-bold">{partner}</p><p className="mt-1 text-xs text-muted">{String(row.partnerType||"نوع غير محدد")} · {String(row.locationType||"النطاق غير محدد")}</p></div><Badge variant={expired?"warning":"success"}>{expired?"منتهية":String(row.status||"قيد الاستكمال")}</Badge></div><div className="mt-3 grid gap-1 text-xs sm:grid-cols-2"><p><b>المجال:</b> {String(row.cooperationField||"—")}</p><p><b>الإدارة:</b> {String(row.owningDepartment||"—")}</p><p><b>المسؤول:</b> {String(row.internalOwner||"—")}</p><p><b>الاتفاقية:</b> {String(agreement?.status||"غير مكتملة")}</p><p><b>الإثبات:</b> {hasEvidence?"مرفوع وقيد المراجعة":"ناقص"}</p><p><b>ننتظر:</b> {pending.length?pending.map(item=>item.departmentName||item.contributorName).join("، "):"لا توجد مساهمة معلقة"}</p></div><p className="mt-3 rounded-lg bg-primary-50 p-2 text-xs"><b>الإجراء التالي:</b> {expired?"تحديث الاتفاقية أو توثيق انتهاء التعاون":!hasEvidence?"رفع الاتفاقية وربطها بسجل التعاون":pending.length?"متابعة المساهمات المعلقة":"إكمال المراجعة الداخلية"}</p></div>})}</CardContent></Card>;}
-
-export function OperationalWorkspace({unit,requirement,config,initial,initialEvidence,initialStatus:_,canEdit,preview=false,personaKey="admin",governance,contributions=[],referenceData={},initialEventId}:{unit:DgaUnitDefinition;requirement:DgaRequirementDefinition;config:RequirementWorkspaceConfig;initial:WorkspaceData;initialEvidence:EvidenceRow[];initialStatus:OperationalStatus;canEdit:boolean;preview?:boolean;personaKey?:string;governance?:GovernanceView;contributions?:ContributionView[];referenceData?:WorkspaceData;initialEventId?:string}){
-  if(requirement.id==="5-23-2-r3"||requirement.id==="5-23-2-r4"||requirement.id==="5-23-3-r3"||requirement.id==="5-23-3-r4"||requirement.id==="5-23-3-r5")config={...config,sections:[]};
-  const storageKey=`dga-workspace:${personaKey}:${requirement.id}`;const [data,setData]=useState(()=>initialData(config,initial));const [evidence,setEvidence]=useState(initialEvidence);const [evidenceTarget,setEvidenceTarget]=useState("");const [notice,setNotice]=useState("");
-  const [saveState,saveAction]=useFormState(saveWorkspaceAction,{} as WorkspaceActionState);const [uploadState,uploadAction]=useFormState(uploadWorkspaceEvidenceAction,{} as WorkspaceActionState);const [generateState,generateAction]=useFormState(generateWorkspaceEvidenceAction,{} as WorkspaceActionState);
-  useEffect(()=>{if(!preview)return;const value=localStorage.getItem(storageKey);if(value)try{const parsed=JSON.parse(value);setData(initialData(config,{...initial,...(parsed.data??{})}));setEvidence(parsed.evidence??[]);}catch{}},[preview,storageKey,config,initial]);
-  const counts=useMemo(()=>evidence.reduce<Record<string,number>>((acc,item)=>{if(item.classification)acc[item.classification]=(acc[item.classification]??0)+1;return acc;},{}),[evidence]);
-  const approvedCounts=useMemo(()=>evidence.reduce<Record<string,number>>((acc,item)=>{if(item.classification&&item.reviewStatus==="APPROVED")acc[item.classification]=(acc[item.classification]??0)+1;return acc;},{}),[evidence]);
-  const missingFields=missingWorkspaceFields(config,data);const missingFiles=missingEvidence(config,approvedCounts);const delegatedIncomplete=contributions.filter(item=>!["COMPLETED","CANCELLED"].includes(item.status)).map(item=>`المساهمة المسندة — ${config.sections.find(section=>section.key===item.sectionKey)?.title??item.sectionKey}: ${item.contributorName}`);const previewIncomplete=preview&&requirement.id==="5-23-1-r1"?["المساهمة المسندة — الأهداف الاستراتيجية: قيد العمل","المساهمة المسندة — المؤشرات KPIs: متأخرة"]:preview&&requirement.id==="5-23-1-r2"?["المساهمة المسندة — بيانات المبادرات: قيد العمل","المساهمة المسندة — مؤشرات أداء المبادرات: متأخرة"]:[];const contributionGaps=[...delegatedIncomplete,...previewIncomplete];const derived=deriveOperationalStatus(config,data,approvedCounts);const status=contributionGaps.length&&derived==="COMPLETED"?"IN_PROGRESS":derived;const total=config.sections.reduce((sum,section)=>sum+(section.repeatable?(section.minItems??1)*section.fields.filter(field=>field.required!==false).length:section.fields.filter(field=>field.required!==false).length),0)+config.evidence.reduce((sum,rule)=>sum+rule.minCount,0)+contributionGaps.length;const progress=Math.round(((total-missingFields.length-missingFiles.length-contributionGaps.length)/Math.max(total,1))*100);
-  const fieldOptions:Record<string,string[]>={initiativeName:values(data,"initiatives","name"),strategicObjective:values(referenceData,"strategicGoals","name"),kpiName:values(referenceData,"kpis","name"),cooperationName:values(data,"cooperations","partnerName")};
-  function update(section:WorkspaceSection,row:number|undefined,key:string,value:string){setData(current=>{const copy=structuredClone(current);if(section.repeatable){const rows=copy[section.key] as Record<string,unknown>[];rows[row??0]={...rows[row??0],[key]:value};}else copy[section.key]={...(copy[section.key] as Record<string,unknown>),[key]:value};return copy;});}
-  function add(section:WorkspaceSection){setData(current=>({...current,[section.key]:[...(current[section.key] as Record<string,unknown>[]),emptyRow(section)]}));}function remove(section:WorkspaceSection,index:number){setData(current=>({...current,[section.key]:(current[section.key] as Record<string,unknown>[]).filter((_,i)=>i!==index)}));}
-  function addCooperation(){const section=config.sections.find(item=>item.key==="cooperations");if(!section)return;add(section);setNotice("أضيف سجل تعاون جديد. أكمل بيانات الجهة والتعاون ثم احفظ التحديث.");setTimeout(()=>document.getElementById("workspace-data")?.scrollIntoView({behavior:"smooth"}),0);}
-  function addContact(partnerName:string){const section=config.sections.find(item=>item.key==="partnerContacts");if(!section)return;setData(current=>({...current,partnerContacts:[...((current.partnerContacts as Record<string,unknown>[])??[]),{...emptyRow(section),cooperationName:partnerName,organization:partnerName,status:"نشط",isPrimary:"لا"}]}));setNotice("أضيفت جهة اتصال جديدة للسجل. أكمل بياناتها ثم احفظ التحديث.");setTimeout(()=>document.getElementById("workspace-data")?.scrollIntoView({behavior:"smooth"}),0);}
-  function updateContact(index:number,patch:Record<string,string>){setData(current=>({...current,partnerContacts:((current.partnerContacts as Record<string,unknown>[])??[]).map((item,itemIndex)=>itemIndex===index?{...item,...patch}:item)}));}
-  function inviteContact(index:number,partnerName:string){const contact=((data.partnerContacts as Record<string,unknown>[])??[])[index];window.dispatchEvent(new CustomEvent("invite-cooperation-contact",{detail:{...contact,partnerName}}));document.getElementById("section-collaboration")?.scrollIntoView({behavior:"smooth"});}
-  function savePreview(){localStorage.setItem(storageKey,JSON.stringify({data,evidence}));setNotice("حُفظت المعاينة في هذا المتصفح فقط — لم تُحفظ تشغيليًا.");}function previewUpload(ruleKey:string,file:File|null,relatedRecord?:string){if(!file)return;const next:EvidenceRow={id:crypto.randomUUID(),title:config.evidence.find(rule=>rule.key===ruleKey)!.title,classification:ruleKey,fileName:file.name,version:(evidence.filter(item=>item.classification===ruleKey).at(0)?.version??0)+1,reviewStatus:"DRAFT",uploadedAt:new Date().toISOString(),uploader:"مستخدم وضع المعاينة",relatedRecord:relatedRecord||null};const rows=[next,...evidence];setEvidence(rows);localStorage.setItem(storageKey,JSON.stringify({data,evidence:rows}));setNotice("سُجل الملف للمعاينة محليًا فقط ولم يُرفع إلى خادم تشغيلي.");}
-  const detailSegment=requirement.id==="5-23-2-r4"?"activations":requirement.id==="5-23-3-r3"?"activities":requirement.id==="5-23-3-r4"?"mechanism":requirement.id==="5-23-3-r5"?"links":"events";const path=`${unit.href}/requirements/${requirement.id}${initialEventId?`/${detailSegment}/${initialEventId}`:""}`;
-  return <div className="space-y-5"><Link href={unit.href} className="text-sm font-semibold text-primary">العودة إلى {unit.name}</Link><Card><CardContent className="p-6"><div className="flex flex-wrap justify-between gap-4"><div className="max-w-4xl"><Badge variant="primary">المتطلب {requirement.number}</Badge><h1 className="mt-3 text-xl font-bold">{requirement.title}</h1><p className="mt-3 text-sm leading-7 text-muted">{requirement.applicationRequirement}</p></div><Badge className="self-start" variant={status==="COMPLETED"?"success":status==="NOT_STARTED"?"neutral":"warning"}>{labels[status]}</Badge></div><div className="mt-5 grid gap-3 border-t pt-4 text-xs sm:grid-cols-3"><span><b>المسؤول:</b> {requirement.owner}</span><span><b>آخر تحديث:</b> {requirement.lastUpdate}</span><span><b>نوع المساحة:</b> تشغيلية</span></div></CardContent></Card><Card><CardHeader><CardTitle>ما المطلوب؟</CardTitle></CardHeader><CardContent><p className="text-sm leading-7">{config.explanation}</p><div className="mt-4"><div className="flex justify-between text-xs"><span>تقدم الاستكمال</span><b>{Math.max(0,progress)}%</b></div><Progress className="mt-2" value={Math.max(0,progress)}/></div></CardContent></Card>
-  {requirement.id==="5-23-1-r2"?<><Requirement02Context referenceData={referenceData}/><InitiativeSummary data={data} contributions={preview?previewRowsForSummary():contributions}/></>:null}
-  {requirement.id==="5-23-1-r3"?<CooperationManager data={data} contributions={preview?previewR3RowsForSummary():contributions} evidence={evidence} canEdit={canEdit} onAddCooperation={addCooperation} onAddContact={addContact} onUpdateContact={updateContact} onInviteContact={inviteContact}/>:null}
-  {requirement.id==="5-23-2-r1"?<AnnualPlanWorkspace data={data} canEdit={canEdit} onChange={setData} personaKey={personaKey} users={governance?.users??[]}/>:null}
-  {requirement.id==="5-23-2-r2"?<MethodologyWorkspace data={data} canEdit={canEdit} onChange={setData} personaKey={personaKey} users={governance?.users??[]}/>:null}
-  {requirement.id==="5-23-2-r3"?<OpenInnovationWorkspace data={data} canEdit={canEdit} personaKey={personaKey} initialEventId={initialEventId} onChange={setData} contributions={contributions} evidence={evidence} annualPlanData={referenceData}/>:null}
-  {requirement.id==="5-23-2-r4"?<CooperationActivationWorkspace data={data} sourceData={referenceData} canEdit={canEdit} personaKey={personaKey} initialActivationId={initialEventId} onChange={setData} contributions={contributions} evidence={evidence}/>:null}
-  {requirement.id==="5-23-3-r1"?<CommitteeWorkspace data={data} canEdit={canEdit} onChange={setData} personaKey={personaKey} users={governance?.users??[]} evidence={evidence}/>:null}
-  {requirement.id==="5-23-3-r2"?<GovernanceOperationsWorkspace data={data} canEdit={canEdit} onChange={setData} personaKey={personaKey} users={governance?.users??[]} evidence={evidence} referenceData={referenceData}/>:null}
-  {requirement.id==="5-23-3-r3"?<CultureActivitiesWorkspace data={data} canEdit={canEdit} onChange={setData} personaKey={personaKey} users={governance?.users??[]} evidence={evidence} annualPlanData={referenceData} contributions={contributions} initialActivityId={initialEventId}/>:null}
-  {requirement.id==="5-23-3-r4"?<DigitalInnovationMechanismWorkspace data={data} canEdit={canEdit} onChange={setData} personaKey={personaKey} users={governance?.users??[]} evidence={evidence} referenceData={referenceData} contributions={contributions} initialVersionId={initialEventId}/>:null}
-  {requirement.id==="5-23-3-r5"?<IntakeLinksWorkspace data={data} canEdit={canEdit} onChange={setData} personaKey={personaKey} users={governance?.users??[]} evidence={evidence} referenceData={referenceData} initialLinkId={initialEventId} assignmentId={governance?.assignmentId??""} preview={preview}/>:null}
-  {getContributionDefinition(requirement.id)&&personaKey!=="partner"&&(canEdit||contributions.length)?<div id="section-collaboration" className="scroll-mt-24"><SectionCollaboration requirementId={requirement.id} path={path} contributions={contributions} users={governance?.users??[]} contacts={requirement.id==="5-23-1-r3"?(data.partnerContacts as Record<string,unknown>[])??[]:[]} canManage={canEdit} preview={preview}/></div>:null}
-  {requirement.id==="5-23-1-r3"&&canEdit?<Card><CardHeader><CardTitle>اتفاقية التعاون وإثباتها</CardTitle></CardHeader><CardContent><p className="mb-3 text-xs leading-6 text-muted">اختر سجل التعاون الذي تخصه الاتفاقية. سيبقى ملف الإثبات واحدًا ومربوطًا بالمتطلب وبسجل الاتفاقية نفسه؛ الرفع لا يعني المراجعة أو الاعتماد.</p>{preview?<div className="space-y-3"><select value={evidenceTarget} onChange={event=>setEvidenceTarget(event.target.value)} className="h-10 w-full rounded-lg border bg-transparent px-3 text-sm"><option value="">اختر سجل التعاون</option>{values(data,"cooperations","partnerName").map(name=><option key={name} value={name}>{name}</option>)}</select><label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border p-2 text-xs font-semibold"><Upload className="h-4 w-4"/>رفع/استبدال الاتفاقية<input className="sr-only" type="file" accept=".pdf,.docx" onChange={event=>previewUpload(config.evidence[0].key,event.target.files?.[0]??null,evidenceTarget)}/></label></div>:<form action={uploadAction} className="space-y-3"><input type="hidden" name="requirementId" value={requirement.id}/><input type="hidden" name="evidenceType" value={config.evidence[0].key}/><input type="hidden" name="path" value={path}/><select required name="relatedRecord" className="h-10 w-full rounded-lg border bg-transparent px-3 text-sm"><option value="">اختر سجل التعاون</option>{values(data,"cooperations","partnerName").map(name=><option key={name} value={name}>{name}</option>)}</select><input required name="file" type="file" accept=".pdf,.docx" className="block w-full text-xs"/><Button size="sm" variant="outline"><Upload className="h-4 w-4"/>رفع/استبدال الاتفاقية</Button></form>}</CardContent></Card>:null}
-  {requirement.id==="5-23-1-r2"&&canEdit?<Card><CardHeader><CardTitle>ربط إثبات بمبادرة محددة (اختياري)</CardTitle></CardHeader><CardContent><p className="mb-3 text-xs leading-6 text-muted">يبقى الإثبات ضمن هذا المتطلب، ويمكن تحديد المبادرة التي يخدمها لتسهيل المراجعة. رفع الملف لا يعني اكتمال المتطلب أو اعتماده.</p>{preview?<div className="space-y-3"><select value={evidenceTarget} onChange={event=>setEvidenceTarget(event.target.value)} className="h-10 w-full rounded-lg border bg-transparent px-3 text-sm"><option value="">إثبات عام للمتطلب</option>{values(data,"initiatives","name").map(name=><option key={name} value={name}>{name}</option>)}</select><label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border p-2 text-xs font-semibold"><Upload className="h-4 w-4"/>رفع إثبات مرتبط<input className="sr-only" type="file" accept=".pdf,.docx,.xlsx" onChange={event=>previewUpload(config.evidence[0].key,event.target.files?.[0]??null,evidenceTarget)}/></label></div>:<form action={uploadAction} className="space-y-3"><input type="hidden" name="requirementId" value={requirement.id}/><input type="hidden" name="evidenceType" value={config.evidence[0].key}/><input type="hidden" name="path" value={path}/><select name="relatedRecord" className="h-10 w-full rounded-lg border bg-transparent px-3 text-sm"><option value="">إثبات عام للمتطلب</option>{values(data,"initiatives","name").map(name=><option key={name} value={name}>{name}</option>)}</select><input required name="file" type="file" accept=".pdf,.docx,.xlsx" className="block w-full text-xs"/><Button size="sm" variant="outline"><Upload className="h-4 w-4"/>رفع الإثبات المرتبط</Button></form>}</CardContent></Card>:null}
-  <div id="workspace-data" className="grid scroll-mt-24 gap-5 xl:grid-cols-[1.35fr_.65fr]"><div className="space-y-5">{config.sections.map(section=><Card key={section.key}><CardHeader><div className="flex items-center justify-between"><CardTitle>{section.title}</CardTitle>{section.repeatable&&canEdit?<Button type="button" size="sm" variant="outline" onClick={()=>add(section)}><Plus className="h-4 w-4"/>إضافة سجل</Button>:null}</div>{section.minItems?<p className="text-xs text-muted">الحد الأدنى المطلوب: {section.minItems}</p>:null}</CardHeader><CardContent className="space-y-4">{(section.repeatable?(data[section.key] as Record<string,unknown>[]):[data[section.key] as Record<string,unknown>]).map((row,index)=><div key={index} className="relative grid gap-4 rounded-xl border p-4 sm:grid-cols-2">{section.repeatable&&canEdit&&(data[section.key] as unknown[]).length>1?<button type="button" onClick={()=>remove(section,index)} className="absolute left-3 top-3 text-muted" aria-label="حذف السجل"><X className="h-4 w-4"/></button>:null}{section.fields.map(field=><label key={field.key} className={field.type==="textarea"?"sm:col-span-2":""}><span className="mb-1.5 block text-xs font-semibold">{field.label}{field.required!==false?<span className="text-danger"> *</span>:null}</span><FieldControl field={field} value={String(row?.[field.key]??"")} options={fieldOptions[field.key]} disabled={!canEdit} onChange={value=>update(section,section.repeatable?index:undefined,field.key,value)}/></label>)}</div>)}</CardContent></Card>)}{canEdit?(preview?<Button onClick={savePreview}><Save className="h-4 w-4"/>حفظ كمسودة</Button>:<form action={saveAction}><input type="hidden" name="requirementId" value={requirement.id}/><input type="hidden" name="path" value={path}/><input type="hidden" name="workspaceData" value={JSON.stringify(data)}/><Button><Save className="h-4 w-4"/>حفظ التحديث</Button></form>):null}{notice||saveState.error||saveState.success?<p className="rounded-lg bg-primary-50 p-3 text-sm">{notice||saveState.error||saveState.success}</p>:null}</div>
-  <div className="space-y-5"><Card><CardHeader><CardTitle>مستندات الإثبات المطلوبة</CardTitle></CardHeader><CardContent className="space-y-4">{config.evidence.map(rule=><div key={rule.key} className="rounded-xl border p-4"><div className="flex gap-3"><FileText className="h-5 w-5 text-primary"/><div><p className="text-sm font-semibold">{rule.title}</p><p className="mt-1 text-xs text-muted">المرفوع {counts[rule.key]??0} من {rule.minCount}</p>{requirement.id==="5-23-1-r2"?<p className="mt-1 text-xs text-muted">يخدم أدلة المبادرات المسجلة في هذا المتطلب، ولا يعني الرفع اعتمادها.</p>:null}</div></div>{evidence.filter(item=>item.classification===rule.key).map(item=><div key={item.id} className="mt-3 rounded-lg bg-slate-50 p-3 text-xs"><b>{item.fileName}</b><p className="mt-1 text-muted">نسخة {item.version} · {item.uploader} · {new Date(item.uploadedAt).toLocaleDateString("ar-SA")} · {item.reviewStatus}</p>{!preview?<Link className="mt-2 inline-flex items-center gap-1 text-primary" href={`/api/requirement-evidence/${item.id}/download`}><Download className="h-3.5 w-3.5"/>عرض/تنزيل</Link>:null}</div>)}{canEdit?(preview?<label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-lg border p-2 text-xs font-semibold"><Upload className="h-4 w-4"/>رفع/استبدال الإثبات<input className="sr-only" type="file" accept=".pdf,.docx,.xlsx" onChange={event=>previewUpload(rule.key,event.target.files?.[0]??null)}/></label>:<form action={uploadAction} className="mt-3"><input type="hidden" name="requirementId" value={requirement.id}/><input type="hidden" name="evidenceType" value={rule.key}/><input type="hidden" name="path" value={path}/><input required name="file" type="file" accept=".pdf,.docx,.xlsx" className="block w-full text-xs"/><Button className="mt-2 w-full" size="sm" variant="outline"><Upload className="h-4 w-4"/>رفع/استبدال الإثبات</Button></form>):null}{canEdit&&!preview?<form action={generateAction} className="mt-2"><input type="hidden" name="requirementId" value={requirement.id}/><input type="hidden" name="evidenceType" value={rule.key}/><input type="hidden" name="path" value={path}/><Button type="submit" className="w-full" size="sm" disabled={missingFields.length>0}><FileSignature className="h-4 w-4"/>توليد مستند إثبات من بيانات المتطلب</Button></form>:null}</div>)}{uploadState.error||uploadState.success||generateState.error||generateState.success?<p className="text-xs">{uploadState.error||uploadState.success||generateState.error||generateState.success}</p>:null}</CardContent></Card><Card><CardHeader><CardTitle>النواقص</CardTitle></CardHeader><CardContent className="space-y-2">{[...missingFields,...missingFiles,...contributionGaps].length?[...missingFields,...missingFiles,...contributionGaps].map(item=><p key={item} className="flex gap-2 text-xs leading-5"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning"/>{item}</p>):<p className="flex gap-2 text-sm text-success"><CheckCircle2 className="h-5 w-5"/>اكتملت البيانات والإثباتات المطلوبة.</p>}</CardContent></Card><p className="rounded-lg bg-warning-bg p-3 text-xs leading-6 text-warning">اكتمال المتطلب داخل المنصة لا يمثل اعتمادًا رسميًا من هيئة الحكومة الرقمية.</p>{requirement.number!==String(unit.requirements.length).padStart(2,"0")?<Button asChild variant="outline" className="w-full"><Link href={`${unit.href}/requirements/${unit.requirements[Number(requirement.number)]?.id}`}>الانتقال للمتطلب التالي</Link></Button>:null}</div></div>{governance?<GovernancePanel data={governance} path={path} canEdit={canEdit} preview={preview}/>:null}</div>;
+function FieldControl({
+  field,
+  value,
+  options,
+  disabled,
+  onChange,
+}: {
+  field: WorkspaceField;
+  value: string;
+  options?: string[];
+  disabled: boolean;
+  onChange: (value: string) => void;
+}) {
+  const cls = "w-full rounded-lg border bg-transparent px-3 text-sm";
+  const choices = options?.length ? options : field.options;
+  if (choices?.length)
+    return (
+      <select
+        disabled={disabled}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={`h-10 ${cls}`}
+      >
+        <option value="">اختر</option>
+        {choices.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    );
+  if (field.type === "textarea")
+    return (
+      <textarea
+        disabled={disabled}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={`min-h-24 p-3 ${cls}`}
+      />
+    );
+  return (
+    <input
+      disabled={disabled}
+      type={field.type === "select" ? "text" : (field.type ?? "text")}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className={`h-10 ${cls}`}
+    />
+  );
 }
 
-function previewRowsForSummary():ContributionView[]{return [{id:"summary",sectionKey:"initiatives",contributorRole:"RESPONSIBLE",contributorUserId:"internal",contributorName:"نورة العتيبي",contributorEmail:"noura@example.gov.sa",jobTitle:null,departmentName:"إدارة التحول الرقمي",assignedByName:"مدير الابتكار",reviewerName:null,dueDate:"2026-08-24",priority:"HIGH",requesterNote:null,status:"IN_PROGRESS",invitationDelivery:"NOT_REQUIRED",assignedAt:"2026-08-18",invitationSentAt:"2026-08-18",openedAt:"2026-08-18",submittedAt:null,reviewedAt:null,completedAt:null,latestSubmission:null}];}
-function previewR3RowsForSummary():ContributionView[]{return [{id:"r3-summary-external",sectionKey:"partnerContacts",contributorRole:"SUPPORTING",contributorUserId:null,contributorName:"د. سارة المطيري",contributorEmail:"s.almotairi@example.edu.sa",jobTitle:"مديرة مركز الابتكار",departmentName:"جامعة المجمعة — شريك خارجي",assignedByName:"نورة العتيبي",reviewerName:null,dueDate:"2026-08-23",priority:"HIGH",requesterNote:"جامعة المجمعة — تأكيد بيانات جهة الاتصال",status:"INVITATION_SENT",invitationDelivery:"PREPARED",assignedAt:"2026-08-18",invitationSentAt:null,openedAt:null,submittedAt:null,reviewedAt:null,completedAt:null,latestSubmission:null}];}
+function Requirement02Context({
+  referenceData,
+}: {
+  referenceData: WorkspaceData;
+}) {
+  const goals = values(referenceData, "strategicGoals", "name");
+  const kpis = values(referenceData, "kpis", "name");
+  return (
+    <Card className="border-primary/20">
+      <CardHeader>
+        <CardTitle>السياق المؤسسي المعاد استخدامه من المتطلب 01</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-xs leading-6 text-muted">
+          اختر الهدف والمؤشر من البيانات المؤسسية المعتمدة في المتطلب 01 بدل
+          إعادة إدخالهما. تعديل الأصل يتم من مساحة المتطلب 01.
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="rounded-xl bg-primary-50 p-4">
+            <p className="text-xs font-bold">الأهداف الاستراتيجية المتاحة</p>
+            {goals.map((item) => (
+              <p key={item} className="mt-2 text-xs">
+                • {item}
+              </p>
+            ))}
+          </div>
+          <div className="rounded-xl bg-primary-50 p-4">
+            <p className="text-xs font-bold">مؤشرات الأداء المتاحة</p>
+            {kpis.map((item) => (
+              <p key={item} className="mt-2 text-xs">
+                • {item}
+              </p>
+            ))}
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs font-semibold">
+          <span className="rounded-lg border p-2">المبادرة / المشروع</span>
+          <ArrowLeft className="h-4 w-4" />
+          <span className="rounded-lg border p-2">الهدف الاستراتيجي</span>
+          <ArrowLeft className="h-4 w-4" />
+          <span className="rounded-lg border p-2">مؤشر الأداء</span>
+          <ArrowLeft className="h-4 w-4" />
+          <span className="rounded-lg border p-2">المسؤول</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function InitiativeSummary({
+  data,
+  contributions,
+}: {
+  data: WorkspaceData;
+  contributions: ContributionView[];
+}) {
+  const rows = Array.isArray(data.initiatives) ? data.initiatives : [];
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>ملخص المبادرات والمشروعات</CardTitle>
+          <Badge variant="primary">{rows.length} مبادرة</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-3 lg:grid-cols-2">
+        {rows.map((row, index) => {
+          const required = [
+            "name",
+            "description",
+            "owningDepartment",
+            "owner",
+            "status",
+            "startDate",
+            "targetDate",
+            "lastUpdate",
+          ];
+          const completion = Math.round(
+            (required.filter((key) => String(row[key] ?? "").trim()).length /
+              required.length) *
+              100,
+          );
+          const delegated = contributions.find(
+            (item) =>
+              item.sectionKey === "initiatives" &&
+              !["COMPLETED", "CANCELLED"].includes(item.status),
+          );
+          return (
+            <div key={`${row.name}-${index}`} className="rounded-xl border p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-bold">
+                    {String(row.name || `مبادرة ${index + 1}`)}
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    {String(row.owningDepartment || "الإدارة غير محددة")} ·{" "}
+                    {String(row.owner || "المسؤول غير محدد")}
+                  </p>
+                </div>
+                <Badge variant={completion === 100 ? "success" : "warning"}>
+                  {completion}%
+                </Badge>
+              </div>
+              <p className="mt-3 text-xs">
+                <b>الحالة:</b> {String(row.status || "غير محددة")}
+              </p>
+              <p className="mt-1 text-xs">
+                <b>حالة المساهمة:</b>{" "}
+                {delegated ? "بانتظار مساهمة خارجية" : "تعبئة مباشرة"}
+              </p>
+              <p className="mt-1 text-xs">
+                <b>الإجراء التالي:</b>{" "}
+                {completion < 100
+                  ? "استكمال بيانات المبادرة"
+                  : "استكمال المواءمة والمؤشر والإثبات"}
+              </p>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CooperationSummary({
+  data,
+  contributions,
+  evidence,
+}: {
+  data: WorkspaceData;
+  contributions: ContributionView[];
+  evidence: EvidenceRow[];
+}) {
+  const rows = Array.isArray(data.cooperations) ? data.cooperations : [];
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <CardTitle>علاقات التعاون المؤسسي</CardTitle>
+            <p className="mt-1 text-xs text-muted">
+              العلاقة المؤسسية هي السجل الأساسي، والاتفاقية دليل مرتبط بها.
+            </p>
+          </div>
+          <Badge variant="primary">{rows.length} علاقة</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-3 lg:grid-cols-2">
+        {rows.map((row, index) => {
+          const partner = String(row.partnerName || `جهة متعاونة ${index + 1}`);
+          const pending = contributions.filter(
+            (item) =>
+              item.requesterNote?.includes(partner) &&
+              !["COMPLETED", "CANCELLED"].includes(item.status),
+          );
+          const agreement = (
+            Array.isArray(data.agreements) ? data.agreements : []
+          ).find((item) => item.cooperationName === partner);
+          const hasEvidence = evidence.some(
+            (item) => item.relatedRecord === partner,
+          );
+          const endDate = String(row.endDate || "");
+          const expired = endDate && new Date(endDate) < new Date();
+          return (
+            <div key={`${partner}-${index}`} className="rounded-xl border p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-bold">{partner}</p>
+                  <p className="mt-1 text-xs text-muted">
+                    {String(row.partnerType || "نوع غير محدد")} ·{" "}
+                    {String(row.locationType || "النطاق غير محدد")}
+                  </p>
+                </div>
+                <Badge variant={expired ? "warning" : "success"}>
+                  {expired ? "منتهية" : String(row.status || "قيد الاستكمال")}
+                </Badge>
+              </div>
+              <div className="mt-3 grid gap-1 text-xs sm:grid-cols-2">
+                <p>
+                  <b>المجال:</b> {String(row.cooperationField || "—")}
+                </p>
+                <p>
+                  <b>الإدارة:</b> {String(row.owningDepartment || "—")}
+                </p>
+                <p>
+                  <b>المسؤول:</b> {String(row.internalOwner || "—")}
+                </p>
+                <p>
+                  <b>الاتفاقية:</b> {String(agreement?.status || "غير مكتملة")}
+                </p>
+                <p>
+                  <b>الإثبات:</b> {hasEvidence ? "مرفوع وقيد المراجعة" : "ناقص"}
+                </p>
+                <p>
+                  <b>ننتظر:</b>{" "}
+                  {pending.length
+                    ? pending
+                        .map(
+                          (item) => item.departmentName || item.contributorName,
+                        )
+                        .join("، ")
+                    : "لا توجد مساهمة معلقة"}
+                </p>
+              </div>
+              <p className="mt-3 rounded-lg bg-primary-50 p-2 text-xs">
+                <b>الإجراء التالي:</b>{" "}
+                {expired
+                  ? "تحديث الاتفاقية أو توثيق انتهاء التعاون"
+                  : !hasEvidence
+                    ? "رفع الاتفاقية وربطها بسجل التعاون"
+                    : pending.length
+                      ? "متابعة المساهمات المعلقة"
+                      : "إكمال المراجعة الداخلية"}
+              </p>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
+export function OperationalWorkspace({
+  unit,
+  requirement,
+  config,
+  initial,
+  initialEvidence,
+  initialStatus: _,
+  canEdit,
+  preview = false,
+  personaKey = "admin",
+  governance,
+  contributions = [],
+  referenceData = {},
+  initialEventId,
+}: {
+  unit: DgaUnitDefinition;
+  requirement: DgaRequirementDefinition;
+  config: RequirementWorkspaceConfig;
+  initial: WorkspaceData;
+  initialEvidence: EvidenceRow[];
+  initialStatus: OperationalStatus;
+  canEdit: boolean;
+  preview?: boolean;
+  personaKey?: string;
+  governance?: GovernanceView;
+  contributions?: ContributionView[];
+  referenceData?: WorkspaceData;
+  initialEventId?: string;
+}) {
+  if (
+    requirement.id === "5-23-2-r3" ||
+    requirement.id === "5-23-2-r4" ||
+    requirement.id === "5-23-3-r3" ||
+    requirement.id === "5-23-3-r4" ||
+    requirement.id === "5-23-3-r5"
+  )
+    config = { ...config, sections: [] };
+  const storageKey = `dga-workspace:${personaKey}:${requirement.id}`;
+  const [data, setData] = useState(() => initialData(config, initial));
+  const [evidence, setEvidence] = useState(initialEvidence);
+  const [evidenceTarget, setEvidenceTarget] = useState("");
+  const [notice, setNotice] = useState("");
+  const [activeStrategicStep, setActiveStrategicStep] = useState("overview");
+  const [recordEditor, setRecordEditor] = useState<{
+    section: WorkspaceSection;
+    index: number;
+  } | null>(null);
+  const [saveState, saveAction] = useFormState(
+    saveWorkspaceAction,
+    {} as WorkspaceActionState,
+  );
+  const [uploadState, uploadAction] = useFormState(
+    uploadWorkspaceEvidenceAction,
+    {} as WorkspaceActionState,
+  );
+  const [generateState, generateAction] = useFormState(
+    generateWorkspaceEvidenceAction,
+    {} as WorkspaceActionState,
+  );
+  useEffect(() => {
+    if (!preview) return;
+    const value = localStorage.getItem(storageKey);
+    if (value)
+      try {
+        const parsed = JSON.parse(value);
+        setData(initialData(config, { ...initial, ...(parsed.data ?? {}) }));
+        setEvidence(parsed.evidence ?? []);
+      } catch {}
+  }, [preview, storageKey, config, initial]);
+  const counts = useMemo(
+    () =>
+      evidence.reduce<Record<string, number>>((acc, item) => {
+        if (item.classification)
+          acc[item.classification] = (acc[item.classification] ?? 0) + 1;
+        return acc;
+      }, {}),
+    [evidence],
+  );
+  const approvedCounts = useMemo(
+    () =>
+      evidence.reduce<Record<string, number>>((acc, item) => {
+        if (item.classification && item.reviewStatus === "APPROVED")
+          acc[item.classification] = (acc[item.classification] ?? 0) + 1;
+        return acc;
+      }, {}),
+    [evidence],
+  );
+  const missingFields = missingWorkspaceFields(config, data);
+  const missingFiles = missingEvidence(config, approvedCounts);
+  const delegatedIncomplete = contributions
+    .filter((item) => !["COMPLETED", "CANCELLED"].includes(item.status))
+    .map(
+      (item) =>
+        `المساهمة المسندة — ${config.sections.find((section) => section.key === item.sectionKey)?.title ?? item.sectionKey}: ${item.contributorName}`,
+    );
+  const previewIncomplete =
+    preview && requirement.id === "5-23-1-r1"
+      ? [
+          "المساهمة المسندة — الأهداف الاستراتيجية: قيد العمل",
+          "المساهمة المسندة — المؤشرات KPIs: متأخرة",
+        ]
+      : preview && requirement.id === "5-23-1-r2"
+        ? [
+            "المساهمة المسندة — بيانات المبادرات: قيد العمل",
+            "المساهمة المسندة — مؤشرات أداء المبادرات: متأخرة",
+          ]
+        : [];
+  const contributionGaps = [...delegatedIncomplete, ...previewIncomplete];
+  const derived = deriveOperationalStatus(config, data, approvedCounts);
+  const status =
+    contributionGaps.length && derived === "COMPLETED"
+      ? "IN_PROGRESS"
+      : derived;
+  const total =
+    config.sections.reduce(
+      (sum, section) =>
+        sum +
+        (section.repeatable
+          ? (section.minItems ?? 1) *
+            section.fields.filter((field) => field.required !== false).length
+          : section.fields.filter((field) => field.required !== false).length),
+      0,
+    ) +
+    config.evidence.reduce((sum, rule) => sum + rule.minCount, 0) +
+    contributionGaps.length;
+  const progress = Math.round(
+    ((total -
+      missingFields.length -
+      missingFiles.length -
+      contributionGaps.length) /
+      Math.max(total, 1)) *
+      100,
+  );
+  const fieldOptions: Record<string, string[]> = {
+    initiativeName: values(data, "initiatives", "name"),
+    strategicObjective: values(referenceData, "strategicGoals", "name"),
+    kpiName: values(referenceData, "kpis", "name"),
+    cooperationName: values(data, "cooperations", "partnerName"),
+  };
+  function update(
+    section: WorkspaceSection,
+    row: number | undefined,
+    key: string,
+    value: string,
+  ) {
+    setData((current) => {
+      const copy = structuredClone(current);
+      if (section.repeatable) {
+        const rows = copy[section.key] as Record<string, unknown>[];
+        rows[row ?? 0] = { ...rows[row ?? 0], [key]: value };
+      } else
+        copy[section.key] = {
+          ...(copy[section.key] as Record<string, unknown>),
+          [key]: value,
+        };
+      return copy;
+    });
+  }
+  function add(section: WorkspaceSection) {
+    setData((current) => ({
+      ...current,
+      [section.key]: [
+        ...(current[section.key] as Record<string, unknown>[]),
+        emptyRow(section),
+      ],
+    }));
+  }
+  function remove(section: WorkspaceSection, index: number) {
+    setData((current) => ({
+      ...current,
+      [section.key]: (current[section.key] as Record<string, unknown>[]).filter(
+        (_, i) => i !== index,
+      ),
+    }));
+  }
+  function addCooperation() {
+    const section = config.sections.find((item) => item.key === "cooperations");
+    if (!section) return;
+    add(section);
+    setNotice(
+      "أضيف سجل تعاون جديد. أكمل بيانات الجهة والتعاون ثم احفظ التحديث.",
+    );
+    setTimeout(
+      () =>
+        document
+          .getElementById("workspace-data")
+          ?.scrollIntoView({ behavior: "smooth" }),
+      0,
+    );
+  }
+  function addContact(partnerName: string) {
+    const section = config.sections.find(
+      (item) => item.key === "partnerContacts",
+    );
+    if (!section) return;
+    setData((current) => ({
+      ...current,
+      partnerContacts: [
+        ...((current.partnerContacts as Record<string, unknown>[]) ?? []),
+        {
+          ...emptyRow(section),
+          cooperationName: partnerName,
+          organization: partnerName,
+          status: "نشط",
+          isPrimary: "لا",
+        },
+      ],
+    }));
+    setNotice("أضيفت جهة اتصال جديدة للسجل. أكمل بياناتها ثم احفظ التحديث.");
+    setTimeout(
+      () =>
+        document
+          .getElementById("workspace-data")
+          ?.scrollIntoView({ behavior: "smooth" }),
+      0,
+    );
+  }
+  function updateContact(index: number, patch: Record<string, string>) {
+    setData((current) => ({
+      ...current,
+      partnerContacts: (
+        (current.partnerContacts as Record<string, unknown>[]) ?? []
+      ).map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...patch } : item,
+      ),
+    }));
+  }
+  function inviteContact(index: number, partnerName: string) {
+    const contact = ((data.partnerContacts as Record<string, unknown>[]) ?? [])[
+      index
+    ];
+    window.dispatchEvent(
+      new CustomEvent("invite-cooperation-contact", {
+        detail: { ...contact, partnerName },
+      }),
+    );
+    document
+      .getElementById("section-collaboration")
+      ?.scrollIntoView({ behavior: "smooth" });
+  }
+  function savePreview() {
+    localStorage.setItem(storageKey, JSON.stringify({ data, evidence }));
+    setNotice("حُفظت المعاينة في هذا المتصفح فقط — لم تُحفظ تشغيليًا.");
+  }
+  function previewUpload(
+    ruleKey: string,
+    file: File | null,
+    relatedRecord?: string,
+  ) {
+    if (!file) return;
+    const next: EvidenceRow = {
+      id: crypto.randomUUID(),
+      title: config.evidence.find((rule) => rule.key === ruleKey)!.title,
+      classification: ruleKey,
+      fileName: file.name,
+      version:
+        (evidence.filter((item) => item.classification === ruleKey).at(0)
+          ?.version ?? 0) + 1,
+      reviewStatus: "DRAFT",
+      uploadedAt: new Date().toISOString(),
+      uploader: "مستخدم وضع المعاينة",
+      relatedRecord: relatedRecord || null,
+    };
+    const rows = [next, ...evidence];
+    setEvidence(rows);
+    localStorage.setItem(storageKey, JSON.stringify({ data, evidence: rows }));
+    setNotice("سُجل الملف للمعاينة محليًا فقط ولم يُرفع إلى خادم تشغيلي.");
+  }
+  const detailSegment =
+    requirement.id === "5-23-2-r4"
+      ? "activations"
+      : requirement.id === "5-23-3-r3"
+        ? "activities"
+        : requirement.id === "5-23-3-r4"
+          ? "mechanism"
+          : requirement.id === "5-23-3-r5"
+            ? "links"
+            : "events";
+  const path = `${unit.href}/requirements/${requirement.id}${initialEventId ? `/${detailSegment}/${initialEventId}` : ""}`;
+  if (
+    requirement.id.startsWith("5-23-1-") ||
+    requirement.id.startsWith("5-23-2-") ||
+    requirement.id.startsWith("5-23-3-")
+  ) {
+    const strategicSections = config.sections;
+    const stepForSection: Record<string, string> = Object.fromEntries(strategicSections.map((section) => [section.key, section.key]));
+    const steps = [
+      { id: "overview", label: "البيانات الأساسية" },
+      ...strategicSections.map((section) => ({
+        id: stepForSection[section.key],
+        label: section.title,
+      })),
+      { id: "evidence", label: "الأدلة" },
+      { id: "review", label: "المراجعة والإكمال" },
+    ];
+    const sectionMissing = (section: WorkspaceSection) =>
+      missingFields.filter((item) => item.startsWith(section.title));
+    const stepMissing = (id: string) => {
+      const section = strategicSections.find(
+        (item) => stepForSection[item.key] === id,
+      );
+      if (section) return sectionMissing(section);
+      if (id === "evidence") return missingFiles;
+      return contributionGaps;
+    };
+    const stepStatus = (id: string) => {
+      const remaining = stepMissing(id).length;
+      if (!remaining) return "مكتمل";
+      const section = strategicSections.find(
+        (item) => stepForSection[item.key] === id,
+      );
+      const hasData = section
+        ? Array.isArray(data[section.key])
+          ? (data[section.key] as Record<string, unknown>[]).some((row) =>
+              Object.values(row).some((value) => String(value ?? "").trim()),
+            )
+          : Object.values(
+              (data[section.key] as Record<string, unknown>) ?? {},
+            ).some((value) => String(value ?? "").trim())
+        : false;
+      return hasData ? "يحتاج استكمال" : "لم يبدأ";
+    };
+    const nextStep =
+      steps.find(
+        (step) => step.id !== "overview" && stepMissing(step.id).length > 0,
+      ) ?? steps.at(-1)!;
+    const openRecord = (section: WorkspaceSection, index?: number) => {
+      const rows = (data[section.key] as Record<string, unknown>[]) ?? [];
+      const firstBlank = rows.findIndex((row) =>
+        section.fields.every((field) => !String(row?.[field.key] ?? "").trim()),
+      );
+      const target = index ?? (firstBlank >= 0 ? firstBlank : rows.length);
+      if (index === undefined && firstBlank < 0) add(section);
+      setRecordEditor({ section, index: target });
+    };
+    const renderSection = (section: WorkspaceSection) => {
+      const rows =
+        (section.repeatable
+          ? (data[section.key] as Record<string, unknown>[])
+          : [data[section.key] as Record<string, unknown>]) ?? [];
+      const meaningful = rows
+        .map((row, index) => ({ row, index }))
+        .filter(({ row }) =>
+          Object.values(row ?? {}).some((value) => String(value ?? "").trim()),
+        );
+      const remaining = sectionMissing(section);
+      return (
+        <section
+          id={`strategic-${section.key}`}
+          className="scroll-mt-28 space-y-4"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold">{section.title}</h2>
+              <p className="mt-1 text-xs text-muted">
+                {remaining.length
+                  ? `${remaining.length} عناصر مطلوبة متبقية`
+                  : `اكتملت الحقول المطلوبة في هذه الخطوة`}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={remaining.length ? "warning" : "success"}>
+                {stepStatus(stepForSection[section.key])}
+              </Badge>
+              {section.repeatable && canEdit ? (
+                <Button size="sm" onClick={() => openRecord(section)}>
+                  <Plus className="h-4 w-4" />
+                  إضافة سجل
+                </Button>
+              ) : null}
+            </div>
+          </div>
+          {section.minItems ? (
+            <p className="text-xs text-muted">
+              الحد الأدنى التشغيلي: {section.minItems} سجل
+            </p>
+          ) : null}
+          <div className="space-y-2">
+            {meaningful.length ? (
+              meaningful.map(({ row, index }) => (
+                <div
+                  key={index}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-surface px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold">
+                      {String(
+                        row.name ??
+                          row.entityAlignment ??
+                          `${section.title} ${index + 1}`,
+                      )}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-muted">
+                      {String(
+                        row.description ??
+                          row.definition ??
+                          row.entityGoalLink ??
+                          row.entityAlignment ??
+                          "بيانات السجل محفوظة",
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={
+                        section.fields.filter(
+                          (field) =>
+                            field.required !== false &&
+                            !String(row[field.key] ?? "").trim(),
+                        ).length
+                          ? "warning"
+                          : "success"
+                      }
+                    >
+                      {section.fields.filter(
+                        (field) =>
+                          field.required !== false &&
+                          !String(row[field.key] ?? "").trim(),
+                      ).length
+                        ? "يحتاج استكمال"
+                        : "مكتمل"}
+                    </Badge>
+                    {canEdit ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openRecord(section, index)}
+                      >
+                        تعديل
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-xl border border-dashed p-5 text-center text-sm text-muted">
+                لا توجد بيانات مكتملة في هذه الخطوة بعد.
+                {canEdit && section.repeatable ? (
+                  <Button
+                    className="mx-auto mt-3"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openRecord(section)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    إضافة أول سجل
+                  </Button>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </section>
+      );
+    };
+    return (
+      <div className="space-y-4">
+        <Link href={unit.href} className="text-sm font-semibold text-primary">
+          العودة إلى {unit.name}
+        </Link>
+        <section className="rounded-2xl border bg-surface p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="primary">{config.code}</Badge>
+                <Badge
+                  variant={
+                    status === "COMPLETED"
+                      ? "success"
+                      : status === "NOT_STARTED"
+                        ? "neutral"
+                        : "warning"
+                  }
+                >
+                  {labels[status]}
+                </Badge>
+              </div>
+              <h1 className="mt-2 text-xl font-bold">{requirement.title}</h1>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => setActiveStrategicStep(nextStep.id)}
+            >
+              الخطوة التالية: {nextStep.label}
+            </Button>
+          </div>
+          <div className="mt-4 grid gap-3 border-t pt-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
+            <span>
+              <b>المسؤول:</b> {requirement.owner}
+            </span>
+            <span>
+              <b>آخر تحديث:</b> {requirement.lastUpdate}
+            </span>
+            <span>
+              <b>حالة الإثبات:</b> {missingFiles.length ? "ناقص" : "مكتمل"}
+            </span>
+            <span>
+              <b>المتبقي:</b>{" "}
+              {missingFields.length +
+                missingFiles.length +
+                contributionGaps.length}{" "}
+              عنصر
+            </span>
+          </div>
+          <div className="mt-4">
+            <div className="mb-1 flex justify-between text-xs">
+              <span>اكتمال المتطلب</span>
+              <b>{Math.max(0, progress)}%</b>
+            </div>
+            <Progress value={Math.max(0, progress)} />
+          </div>
+        </section>
+        <nav className="sticky top-3 z-20 rounded-2xl border bg-surface/95 p-2 shadow-sm backdrop-blur">
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-4 lg:grid-cols-7">
+            {steps.map((step, index) => {
+              const active = activeStrategicStep === step.id;
+              const remaining = stepMissing(step.id).length;
+              return (
+                <button
+                  key={step.id}
+                  type="button"
+                  onClick={() => setActiveStrategicStep(step.id)}
+                  className={`rounded-xl px-2 py-2 text-right text-xs transition ${active ? "bg-primary-50 text-primary ring-1 ring-primary/20" : "hover:bg-slate-50"}`}
+                >
+                  <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px]">
+                    {remaining ? (
+                      index + 1
+                    ) : (
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    )}
+                  </span>
+                  <span className="font-semibold">{step.label}</span>
+                  <span className="mr-1 text-muted">{stepStatus(step.id)}</span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+        <main
+          id="workspace-data"
+          className="rounded-2xl border bg-surface p-4 sm:p-5"
+        >
+          {activeStrategicStep === "overview" ? (
+            <section className="space-y-4">
+              <div>
+                <h2 className="text-lg font-bold">بيانات المتطلب</h2>
+                <p className="mt-1 max-w-3xl text-sm leading-6 text-muted">
+                  {config.explanation}
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border p-3 text-sm">
+                  <b>الحالة</b>
+                  <p className="mt-1 text-muted">{labels[status]}</p>
+                </div>
+                <div className="rounded-xl border p-3 text-sm">
+                  <b>المطلوب الآن</b>
+                  <p className="mt-1 text-muted">{nextStep.label}</p>
+                </div>
+                <div className="rounded-xl border p-3 text-sm">
+                  <b>التقدم</b>
+                  <p className="mt-1 text-muted">
+                    {Math.max(0, progress)}% مكتمل
+                  </p>
+                </div>
+              </div>
+              <Button onClick={() => setActiveStrategicStep(nextStep.id)}>
+                ابدأ الخطوة التالية
+              </Button>
+              {requirement.id === "5-23-1-r2" ? (
+                <>
+                  <Requirement02Context referenceData={referenceData} />
+                  <InitiativeSummary
+                    data={data}
+                    contributions={preview ? previewRowsForSummary() : contributions}
+                  />
+                </>
+              ) : null}
+              {requirement.id === "5-23-2-r1" ? (
+                <AnnualPlanWorkspace data={data} canEdit={canEdit} onChange={setData} personaKey={personaKey} users={governance?.users ?? []} />
+              ) : null}
+              {requirement.id === "5-23-2-r2" ? (
+                <MethodologyWorkspace data={data} canEdit={canEdit} onChange={setData} personaKey={personaKey} users={governance?.users ?? []} />
+              ) : null}
+              {requirement.id === "5-23-2-r3" ? (
+                <OpenInnovationWorkspace data={data} canEdit={canEdit} personaKey={personaKey} initialEventId={initialEventId} onChange={setData} contributions={contributions} evidence={evidence} annualPlanData={referenceData} />
+              ) : null}
+              {requirement.id === "5-23-2-r4" ? (
+                <CooperationActivationWorkspace data={data} sourceData={referenceData} canEdit={canEdit} personaKey={personaKey} initialActivationId={initialEventId} onChange={setData} contributions={contributions} evidence={evidence} />
+              ) : null}
+              {requirement.id === "5-23-3-r1" ? (
+                <CommitteeWorkspace data={data} canEdit={canEdit} onChange={setData} personaKey={personaKey} users={governance?.users ?? []} evidence={evidence} />
+              ) : null}
+              {requirement.id === "5-23-3-r2" ? (
+                <GovernanceOperationsWorkspace data={data} canEdit={canEdit} onChange={setData} personaKey={personaKey} users={governance?.users ?? []} evidence={evidence} referenceData={referenceData} />
+              ) : null}
+              {requirement.id === "5-23-3-r3" ? (
+                <CultureActivitiesWorkspace data={data} canEdit={canEdit} onChange={setData} personaKey={personaKey} users={governance?.users ?? []} evidence={evidence} annualPlanData={referenceData} contributions={contributions} initialActivityId={initialEventId} />
+              ) : null}
+              {requirement.id === "5-23-3-r4" ? (
+                <DigitalInnovationMechanismWorkspace data={data} canEdit={canEdit} onChange={setData} personaKey={personaKey} users={governance?.users ?? []} evidence={evidence} referenceData={referenceData} contributions={contributions} initialVersionId={initialEventId} />
+              ) : null}
+              {requirement.id === "5-23-3-r5" ? (
+                <IntakeLinksWorkspace data={data} canEdit={canEdit} onChange={setData} personaKey={personaKey} users={governance?.users ?? []} evidence={evidence} referenceData={referenceData} initialLinkId={initialEventId} assignmentId={governance?.assignmentId ?? ""} preview={preview} />
+              ) : null}
+            </section>
+          ) : null}
+          {strategicSections
+            .filter(
+              (section) => stepForSection[section.key] === activeStrategicStep,
+            )
+            .map((section) => (
+              <div key={section.key} className="space-y-5">
+                {requirement.id === "5-23-1-r3" && section.key === "cooperations" ? (
+                  <CooperationManager
+                    data={data}
+                    contributions={preview ? previewR3RowsForSummary() : contributions}
+                    evidence={evidence}
+                    canEdit={canEdit}
+                    onAddCooperation={addCooperation}
+                    onAddContact={addContact}
+                    onUpdateContact={updateContact}
+                    onInviteContact={inviteContact}
+                  />
+                ) : null}
+                {renderSection(section)}
+              </div>
+            ))}
+          {activeStrategicStep === "evidence" ? (
+            <section className="space-y-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold">الأدلة</h2>
+                  <p className="mt-1 text-xs text-muted">
+                    يتطلب المتطلب رفع الملف، وتبقى حالة اعتماده كما هي في مسار
+                    المراجعة.
+                  </p>
+                </div>
+                <Badge variant={missingFiles.length ? "warning" : "success"}>
+                  {missingFiles.length ? "يحتاج رفع" : "مكتمل"}
+                </Badge>
+              </div>
+              {config.evidence.map((rule) => {
+                const rows = evidence.filter(
+                  (item) => item.classification === rule.key,
+                );
+                return (
+                  <div key={rule.key} className="rounded-xl border p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold">{rule.title}</p>
+                        <p className="mt-1 text-xs text-muted">
+                          المرفوع {counts[rule.key] ?? 0} من {rule.minCount} ·
+                          المعتمد {approvedCounts[rule.key] ?? 0}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={
+                          (approvedCounts[rule.key] ?? 0) >= rule.minCount
+                            ? "success"
+                            : "warning"
+                        }
+                      >
+                        {(approvedCounts[rule.key] ?? 0) >= rule.minCount
+                          ? "معتمد"
+                          : "بانتظار الإثبات/المراجعة"}
+                      </Badge>
+                    </div>
+                    {rows.map((item) => (
+                      <div
+                        key={item.id}
+                        className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-50 p-3 text-xs"
+                      >
+                        <span>
+                          <b>{item.fileName}</b>
+                          <span className="mr-2 text-muted">
+                            نسخة {item.version} · {item.reviewStatus}
+                          </span>
+                        </span>
+                        {!preview ? (
+                          <Link
+                            className="font-semibold text-primary"
+                            href={`/api/requirement-evidence/${item.id}/download`}
+                          >
+                            عرض/تنزيل
+                          </Link>
+                        ) : null}
+                      </div>
+                    ))}
+                    {canEdit ? (
+                      preview ? (
+                        <div className="mt-3 space-y-2">
+                          {requirement.id === "5-23-1-r2" || requirement.id === "5-23-1-r3" ? (
+                            <select value={evidenceTarget} onChange={(event) => setEvidenceTarget(event.target.value)} className="h-10 w-full rounded-lg border bg-transparent px-3 text-sm">
+                              <option value="">{requirement.id === "5-23-1-r3" ? "اختر سجل التعاون" : "إثبات عام للمتطلب"}</option>
+                              {values(data, requirement.id === "5-23-1-r3" ? "cooperations" : "initiatives", requirement.id === "5-23-1-r3" ? "partnerName" : "name").map((name) => <option key={name} value={name}>{name}</option>)}
+                            </select>
+                          ) : null}
+                          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed p-3 text-sm font-semibold">
+                            <Upload className="h-4 w-4" />
+                            رفع أو استبدال الإثبات
+                            <input
+                              className="sr-only"
+                              type="file"
+                              accept=".pdf,.docx,.xlsx"
+                              onChange={(event) => previewUpload(rule.key, event.target.files?.[0] ?? null, evidenceTarget)}
+                            />
+                          </label>
+                        </div>
+                      ) : (
+                        <form action={uploadAction} className="mt-3">
+                          <input
+                            type="hidden"
+                            name="requirementId"
+                            value={requirement.id}
+                          />
+                          <input
+                            type="hidden"
+                            name="evidenceType"
+                            value={rule.key}
+                          />
+                          <input type="hidden" name="path" value={path} />
+                          {requirement.id === "5-23-1-r2" || requirement.id === "5-23-1-r3" ? (
+                            <select name="relatedRecord" required={requirement.id === "5-23-1-r3"} className="mb-2 h-10 w-full rounded-lg border bg-transparent px-3 text-sm">
+                              <option value="">{requirement.id === "5-23-1-r3" ? "اختر سجل التعاون" : "إثبات عام للمتطلب"}</option>
+                              {values(data, requirement.id === "5-23-1-r3" ? "cooperations" : "initiatives", requirement.id === "5-23-1-r3" ? "partnerName" : "name").map((name) => <option key={name} value={name}>{name}</option>)}
+                            </select>
+                          ) : null}
+                          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed p-3 text-sm font-semibold">
+                            <Upload className="h-4 w-4" />
+                            اختيار ملف ورفعه
+                            <input
+                              required
+                              name="file"
+                              type="file"
+                              accept=".pdf,.docx,.xlsx"
+                              className="sr-only"
+                              onChange={(event) =>
+                                event.currentTarget.form?.requestSubmit()
+                              }
+                            />
+                          </label>
+                        </form>
+                      )
+                    ) : null}
+                    {canEdit && !preview ? (
+                      <form action={generateAction} className="mt-2">
+                        <input
+                          type="hidden"
+                          name="requirementId"
+                          value={requirement.id}
+                        />
+                        <input
+                          type="hidden"
+                          name="evidenceType"
+                          value={rule.key}
+                        />
+                        <input type="hidden" name="path" value={path} />
+                        <Button
+                          type="submit"
+                          size="sm"
+                          variant="outline"
+                          disabled={missingFields.length > 0}
+                        >
+                          <FileSignature className="h-4 w-4" />
+                          توليد مستند إثبات من البيانات
+                        </Button>
+                      </form>
+                    ) : null}
+                  </div>
+                );
+              })}
+              {uploadState.error ||
+              uploadState.success ||
+              generateState.error ||
+              generateState.success ? (
+                <p className="rounded-lg bg-primary-50 p-3 text-sm">
+                  {uploadState.error ||
+                    uploadState.success ||
+                    generateState.error ||
+                    generateState.success}
+                </p>
+              ) : null}
+            </section>
+          ) : null}
+          {activeStrategicStep === "review" ? (
+            <section className="space-y-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold">المراجعة والإكمال</h2>
+                  <p className="mt-1 text-xs text-muted">
+                    تُعرض النواقص حسب خطوة العمل نفسها؛ لا تتغير قواعد التحقق.
+                  </p>
+                </div>
+                <Badge
+                  variant={
+                    missingFields.length +
+                    missingFiles.length +
+                    contributionGaps.length
+                      ? "warning"
+                      : "success"
+                  }
+                >
+                  {missingFields.length +
+                  missingFiles.length +
+                  contributionGaps.length
+                    ? "يحتاج استكمال"
+                    : "جاهز للمراجعة"}
+                </Badge>
+              </div>
+              <div className="space-y-2">
+                {[
+                  ...strategicSections.map((section) => ({
+                    id: stepForSection[section.key],
+                    label: section.title,
+                    items: sectionMissing(section),
+                  })),
+                  { id: "evidence", label: "الأدلة", items: missingFiles },
+                  { id: "review", label: "المساهمون", items: contributionGaps },
+                ]
+                  .filter((group) => group.items.length)
+                  .map((group) => (
+                    <details key={group.id} className="rounded-xl border">
+                      <summary className="flex cursor-pointer items-center justify-between p-3 text-sm font-semibold">
+                        <span>{group.label}</span>
+                        <Badge variant="warning">
+                          {group.items.length} متبقي
+                        </Badge>
+                      </summary>
+                      <div className="space-y-2 border-t p-3">
+                        {group.items.map((item) => (
+                          <button
+                            key={item}
+                            type="button"
+                            onClick={() => setActiveStrategicStep(group.id)}
+                            className="flex w-full items-start gap-2 text-right text-xs text-muted hover:text-primary"
+                          >
+                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                            {item}
+                          </button>
+                        ))}
+                      </div>
+                    </details>
+                  ))}
+              </div>
+              {getContributionDefinition(requirement.id) &&
+              personaKey !== "partner" &&
+              (canEdit || contributions.length) ? (
+                <SectionCollaboration
+                  requirementId={requirement.id}
+                  path={path}
+                  contributions={contributions}
+                  users={governance?.users ?? []}
+                  contacts={requirement.id === "5-23-1-r3" ? ((data.partnerContacts as Record<string, unknown>[]) ?? []) : []}
+                  canManage={canEdit}
+                  preview={preview}
+                  compact
+                />
+              ) : null}
+            </section>
+          ) : null}
+          {canEdit &&
+          activeStrategicStep !== "evidence" &&
+          activeStrategicStep !== "review" ? (
+            preview ? (
+              <Button onClick={savePreview}>
+                <Save className="h-4 w-4" />
+                حفظ كمسودة
+              </Button>
+            ) : (
+              <form action={saveAction}>
+                <input
+                  type="hidden"
+                  name="requirementId"
+                  value={requirement.id}
+                />
+                <input type="hidden" name="path" value={path} />
+                <input
+                  type="hidden"
+                  name="workspaceData"
+                  value={JSON.stringify(data)}
+                />
+                <Button>
+                  <Save className="h-4 w-4" />
+                  حفظ التحديث
+                </Button>
+              </form>
+            )
+          ) : null}
+          {notice || saveState.error || saveState.success ? (
+            <p className="rounded-lg bg-primary-50 p-3 text-sm">
+              {notice || saveState.error || saveState.success}
+            </p>
+          ) : null}
+        </main>
+        {recordEditor ? (
+          <div
+            className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-2xl bg-surface p-5 shadow-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold">
+                    {recordEditor.section.title}
+                  </h2>
+                  <p className="mt-1 text-xs text-muted">
+                    سجل {recordEditor.index + 1}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-lg p-1 text-muted"
+                  onClick={() => setRecordEditor(null)}
+                  aria-label="إغلاق"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                {recordEditor.section.fields.map((field) => {
+                  const value = String(
+                    ((
+                      data[recordEditor.section.key] as Record<
+                        string,
+                        unknown
+                      >[]
+                    )[recordEditor.index] ?? {})[field.key] ?? "",
+                  );
+                  const invalid = missingFields.includes(
+                    `${recordEditor.section.title} — السجل ${recordEditor.index + 1}: ${field.label}`,
+                  );
+                  return (
+                    <label
+                      key={field.key}
+                      className={
+                        field.type === "textarea" ? "sm:col-span-2" : ""
+                      }
+                    >
+                      <span className="mb-1.5 block text-xs font-semibold">
+                        {field.label}
+                        {field.required !== false ? (
+                          <span className="text-danger"> *</span>
+                        ) : null}
+                      </span>
+                      <FieldControl
+                        field={field}
+                        value={value}
+                        options={fieldOptions[field.key]}
+                        disabled={!canEdit}
+                        onChange={(value) =>
+                          update(
+                            recordEditor.section,
+                            recordEditor.index,
+                            field.key,
+                            value,
+                          )
+                        }
+                      />
+                      {invalid ? (
+                        <span className="mt-1 block text-xs text-danger">
+                          حقل مطلوب
+                        </span>
+                      ) : null}
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="mt-5 flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setRecordEditor(null)}
+                >
+                  إغلاق
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-5">
+      <Link href={unit.href} className="text-sm font-semibold text-primary">
+        العودة إلى {unit.name}
+      </Link>
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-wrap justify-between gap-4">
+            <div className="max-w-4xl">
+              <Badge variant="primary">المتطلب {requirement.number}</Badge>
+              <h1 className="mt-3 text-xl font-bold">{requirement.title}</h1>
+              <p className="mt-3 text-sm leading-7 text-muted">
+                {requirement.applicationRequirement}
+              </p>
+            </div>
+            <Badge
+              className="self-start"
+              variant={
+                status === "COMPLETED"
+                  ? "success"
+                  : status === "NOT_STARTED"
+                    ? "neutral"
+                    : "warning"
+              }
+            >
+              {labels[status]}
+            </Badge>
+          </div>
+          <div className="mt-5 grid gap-3 border-t pt-4 text-xs sm:grid-cols-3">
+            <span>
+              <b>المسؤول:</b> {requirement.owner}
+            </span>
+            <span>
+              <b>آخر تحديث:</b> {requirement.lastUpdate}
+            </span>
+            <span>
+              <b>نوع المساحة:</b> تشغيلية
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>ما المطلوب؟</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm leading-7">{config.explanation}</p>
+          <div className="mt-4">
+            <div className="flex justify-between text-xs">
+              <span>تقدم الاستكمال</span>
+              <b>{Math.max(0, progress)}%</b>
+            </div>
+            <Progress className="mt-2" value={Math.max(0, progress)} />
+          </div>
+        </CardContent>
+      </Card>
+      {requirement.id === "5-23-1-r2" ? (
+        <>
+          <Requirement02Context referenceData={referenceData} />
+          <InitiativeSummary
+            data={data}
+            contributions={preview ? previewRowsForSummary() : contributions}
+          />
+        </>
+      ) : null}
+      {requirement.id === "5-23-1-r3" ? (
+        <CooperationManager
+          data={data}
+          contributions={preview ? previewR3RowsForSummary() : contributions}
+          evidence={evidence}
+          canEdit={canEdit}
+          onAddCooperation={addCooperation}
+          onAddContact={addContact}
+          onUpdateContact={updateContact}
+          onInviteContact={inviteContact}
+        />
+      ) : null}
+      {requirement.id === "5-23-2-r1" ? (
+        <AnnualPlanWorkspace
+          data={data}
+          canEdit={canEdit}
+          onChange={setData}
+          personaKey={personaKey}
+          users={governance?.users ?? []}
+        />
+      ) : null}
+      {requirement.id === "5-23-2-r2" ? (
+        <MethodologyWorkspace
+          data={data}
+          canEdit={canEdit}
+          onChange={setData}
+          personaKey={personaKey}
+          users={governance?.users ?? []}
+        />
+      ) : null}
+      {requirement.id === "5-23-2-r3" ? (
+        <OpenInnovationWorkspace
+          data={data}
+          canEdit={canEdit}
+          personaKey={personaKey}
+          initialEventId={initialEventId}
+          onChange={setData}
+          contributions={contributions}
+          evidence={evidence}
+          annualPlanData={referenceData}
+        />
+      ) : null}
+      {requirement.id === "5-23-2-r4" ? (
+        <CooperationActivationWorkspace
+          data={data}
+          sourceData={referenceData}
+          canEdit={canEdit}
+          personaKey={personaKey}
+          initialActivationId={initialEventId}
+          onChange={setData}
+          contributions={contributions}
+          evidence={evidence}
+        />
+      ) : null}
+      {requirement.id === "5-23-3-r1" ? (
+        <CommitteeWorkspace
+          data={data}
+          canEdit={canEdit}
+          onChange={setData}
+          personaKey={personaKey}
+          users={governance?.users ?? []}
+          evidence={evidence}
+        />
+      ) : null}
+      {requirement.id === "5-23-3-r2" ? (
+        <GovernanceOperationsWorkspace
+          data={data}
+          canEdit={canEdit}
+          onChange={setData}
+          personaKey={personaKey}
+          users={governance?.users ?? []}
+          evidence={evidence}
+          referenceData={referenceData}
+        />
+      ) : null}
+      {requirement.id === "5-23-3-r3" ? (
+        <CultureActivitiesWorkspace
+          data={data}
+          canEdit={canEdit}
+          onChange={setData}
+          personaKey={personaKey}
+          users={governance?.users ?? []}
+          evidence={evidence}
+          annualPlanData={referenceData}
+          contributions={contributions}
+          initialActivityId={initialEventId}
+        />
+      ) : null}
+      {requirement.id === "5-23-3-r4" ? (
+        <DigitalInnovationMechanismWorkspace
+          data={data}
+          canEdit={canEdit}
+          onChange={setData}
+          personaKey={personaKey}
+          users={governance?.users ?? []}
+          evidence={evidence}
+          referenceData={referenceData}
+          contributions={contributions}
+          initialVersionId={initialEventId}
+        />
+      ) : null}
+      {requirement.id === "5-23-3-r5" ? (
+        <IntakeLinksWorkspace
+          data={data}
+          canEdit={canEdit}
+          onChange={setData}
+          personaKey={personaKey}
+          users={governance?.users ?? []}
+          evidence={evidence}
+          referenceData={referenceData}
+          initialLinkId={initialEventId}
+          assignmentId={governance?.assignmentId ?? ""}
+          preview={preview}
+        />
+      ) : null}
+      {getContributionDefinition(requirement.id) &&
+      personaKey !== "partner" &&
+      (canEdit || contributions.length) ? (
+        <div id="section-collaboration" className="scroll-mt-24">
+          <SectionCollaboration
+            requirementId={requirement.id}
+            path={path}
+            contributions={contributions}
+            users={governance?.users ?? []}
+            contacts={
+              requirement.id === "5-23-1-r3"
+                ? ((data.partnerContacts as Record<string, unknown>[]) ?? [])
+                : []
+            }
+            canManage={canEdit}
+            preview={preview}
+          />
+        </div>
+      ) : null}
+      {requirement.id === "5-23-1-r3" && canEdit ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>اتفاقية التعاون وإثباتها</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-3 text-xs leading-6 text-muted">
+              اختر سجل التعاون الذي تخصه الاتفاقية. سيبقى ملف الإثبات واحدًا
+              ومربوطًا بالمتطلب وبسجل الاتفاقية نفسه؛ الرفع لا يعني المراجعة أو
+              الاعتماد.
+            </p>
+            {preview ? (
+              <div className="space-y-3">
+                <select
+                  value={evidenceTarget}
+                  onChange={(event) => setEvidenceTarget(event.target.value)}
+                  className="h-10 w-full rounded-lg border bg-transparent px-3 text-sm"
+                >
+                  <option value="">اختر سجل التعاون</option>
+                  {values(data, "cooperations", "partnerName").map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border p-2 text-xs font-semibold">
+                  <Upload className="h-4 w-4" />
+                  رفع/استبدال الاتفاقية
+                  <input
+                    className="sr-only"
+                    type="file"
+                    accept=".pdf,.docx"
+                    onChange={(event) =>
+                      previewUpload(
+                        config.evidence[0].key,
+                        event.target.files?.[0] ?? null,
+                        evidenceTarget,
+                      )
+                    }
+                  />
+                </label>
+              </div>
+            ) : (
+              <form action={uploadAction} className="space-y-3">
+                <input
+                  type="hidden"
+                  name="requirementId"
+                  value={requirement.id}
+                />
+                <input
+                  type="hidden"
+                  name="evidenceType"
+                  value={config.evidence[0].key}
+                />
+                <input type="hidden" name="path" value={path} />
+                <select
+                  required
+                  name="relatedRecord"
+                  className="h-10 w-full rounded-lg border bg-transparent px-3 text-sm"
+                >
+                  <option value="">اختر سجل التعاون</option>
+                  {values(data, "cooperations", "partnerName").map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  required
+                  name="file"
+                  type="file"
+                  accept=".pdf,.docx"
+                  className="block w-full text-xs"
+                />
+                <Button size="sm" variant="outline">
+                  <Upload className="h-4 w-4" />
+                  رفع/استبدال الاتفاقية
+                </Button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+      {requirement.id === "5-23-1-r2" && canEdit ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>ربط إثبات بمبادرة محددة (اختياري)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-3 text-xs leading-6 text-muted">
+              يبقى الإثبات ضمن هذا المتطلب، ويمكن تحديد المبادرة التي يخدمها
+              لتسهيل المراجعة. رفع الملف لا يعني اكتمال المتطلب أو اعتماده.
+            </p>
+            {preview ? (
+              <div className="space-y-3">
+                <select
+                  value={evidenceTarget}
+                  onChange={(event) => setEvidenceTarget(event.target.value)}
+                  className="h-10 w-full rounded-lg border bg-transparent px-3 text-sm"
+                >
+                  <option value="">إثبات عام للمتطلب</option>
+                  {values(data, "initiatives", "name").map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border p-2 text-xs font-semibold">
+                  <Upload className="h-4 w-4" />
+                  رفع إثبات مرتبط
+                  <input
+                    className="sr-only"
+                    type="file"
+                    accept=".pdf,.docx,.xlsx"
+                    onChange={(event) =>
+                      previewUpload(
+                        config.evidence[0].key,
+                        event.target.files?.[0] ?? null,
+                        evidenceTarget,
+                      )
+                    }
+                  />
+                </label>
+              </div>
+            ) : (
+              <form action={uploadAction} className="space-y-3">
+                <input
+                  type="hidden"
+                  name="requirementId"
+                  value={requirement.id}
+                />
+                <input
+                  type="hidden"
+                  name="evidenceType"
+                  value={config.evidence[0].key}
+                />
+                <input type="hidden" name="path" value={path} />
+                <select
+                  name="relatedRecord"
+                  className="h-10 w-full rounded-lg border bg-transparent px-3 text-sm"
+                >
+                  <option value="">إثبات عام للمتطلب</option>
+                  {values(data, "initiatives", "name").map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  required
+                  name="file"
+                  type="file"
+                  accept=".pdf,.docx,.xlsx"
+                  className="block w-full text-xs"
+                />
+                <Button size="sm" variant="outline">
+                  <Upload className="h-4 w-4" />
+                  رفع الإثبات المرتبط
+                </Button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+      <div
+        id="workspace-data"
+        className="grid scroll-mt-24 gap-5 xl:grid-cols-[1.35fr_.65fr]"
+      >
+        <div className="space-y-5">
+          {config.sections.map((section) => (
+            <Card key={section.key}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>{section.title}</CardTitle>
+                  {section.repeatable && canEdit ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => add(section)}
+                    >
+                      <Plus className="h-4 w-4" />
+                      إضافة سجل
+                    </Button>
+                  ) : null}
+                </div>
+                {section.minItems ? (
+                  <p className="text-xs text-muted">
+                    الحد الأدنى المطلوب: {section.minItems}
+                  </p>
+                ) : null}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {(section.repeatable
+                  ? (data[section.key] as Record<string, unknown>[])
+                  : [data[section.key] as Record<string, unknown>]
+                ).map((row, index) => (
+                  <div
+                    key={index}
+                    className="relative grid gap-4 rounded-xl border p-4 sm:grid-cols-2"
+                  >
+                    {section.repeatable &&
+                    canEdit &&
+                    (data[section.key] as unknown[]).length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => remove(section, index)}
+                        className="absolute left-3 top-3 text-muted"
+                        aria-label="حذف السجل"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                    {section.fields.map((field) => (
+                      <label
+                        key={field.key}
+                        className={
+                          field.type === "textarea" ? "sm:col-span-2" : ""
+                        }
+                      >
+                        <span className="mb-1.5 block text-xs font-semibold">
+                          {field.label}
+                          {field.required !== false ? (
+                            <span className="text-danger"> *</span>
+                          ) : null}
+                        </span>
+                        <FieldControl
+                          field={field}
+                          value={String(row?.[field.key] ?? "")}
+                          options={fieldOptions[field.key]}
+                          disabled={!canEdit}
+                          onChange={(value) =>
+                            update(
+                              section,
+                              section.repeatable ? index : undefined,
+                              field.key,
+                              value,
+                            )
+                          }
+                        />
+                      </label>
+                    ))}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+          {canEdit ? (
+            preview ? (
+              <Button onClick={savePreview}>
+                <Save className="h-4 w-4" />
+                حفظ كمسودة
+              </Button>
+            ) : (
+              <form action={saveAction}>
+                <input
+                  type="hidden"
+                  name="requirementId"
+                  value={requirement.id}
+                />
+                <input type="hidden" name="path" value={path} />
+                <input
+                  type="hidden"
+                  name="workspaceData"
+                  value={JSON.stringify(data)}
+                />
+                <Button>
+                  <Save className="h-4 w-4" />
+                  حفظ التحديث
+                </Button>
+              </form>
+            )
+          ) : null}
+          {notice || saveState.error || saveState.success ? (
+            <p className="rounded-lg bg-primary-50 p-3 text-sm">
+              {notice || saveState.error || saveState.success}
+            </p>
+          ) : null}
+        </div>
+        <div className="space-y-5">
+          <Card>
+            <CardHeader>
+              <CardTitle>مستندات الإثبات المطلوبة</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {config.evidence.map((rule) => (
+                <div key={rule.key} className="rounded-xl border p-4">
+                  <div className="flex gap-3">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-semibold">{rule.title}</p>
+                      <p className="mt-1 text-xs text-muted">
+                        المرفوع {counts[rule.key] ?? 0} من {rule.minCount}
+                      </p>
+                      {requirement.id === "5-23-1-r2" ? (
+                        <p className="mt-1 text-xs text-muted">
+                          يخدم أدلة المبادرات المسجلة في هذا المتطلب، ولا يعني
+                          الرفع اعتمادها.
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                  {evidence
+                    .filter((item) => item.classification === rule.key)
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className="mt-3 rounded-lg bg-slate-50 p-3 text-xs"
+                      >
+                        <b>{item.fileName}</b>
+                        <p className="mt-1 text-muted">
+                          نسخة {item.version} · {item.uploader} ·{" "}
+                          {new Date(item.uploadedAt).toLocaleDateString(
+                            "ar-SA",
+                          )}{" "}
+                          · {item.reviewStatus}
+                        </p>
+                        {!preview ? (
+                          <Link
+                            className="mt-2 inline-flex items-center gap-1 text-primary"
+                            href={`/api/requirement-evidence/${item.id}/download`}
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            عرض/تنزيل
+                          </Link>
+                        ) : null}
+                      </div>
+                    ))}
+                  {canEdit ? (
+                    preview ? (
+                      <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-lg border p-2 text-xs font-semibold">
+                        <Upload className="h-4 w-4" />
+                        رفع/استبدال الإثبات
+                        <input
+                          className="sr-only"
+                          type="file"
+                          accept=".pdf,.docx,.xlsx"
+                          onChange={(event) =>
+                            previewUpload(
+                              rule.key,
+                              event.target.files?.[0] ?? null,
+                            )
+                          }
+                        />
+                      </label>
+                    ) : (
+                      <form action={uploadAction} className="mt-3">
+                        <input
+                          type="hidden"
+                          name="requirementId"
+                          value={requirement.id}
+                        />
+                        <input
+                          type="hidden"
+                          name="evidenceType"
+                          value={rule.key}
+                        />
+                        <input type="hidden" name="path" value={path} />
+                        <input
+                          required
+                          name="file"
+                          type="file"
+                          accept=".pdf,.docx,.xlsx"
+                          className="block w-full text-xs"
+                        />
+                        <Button
+                          className="mt-2 w-full"
+                          size="sm"
+                          variant="outline"
+                        >
+                          <Upload className="h-4 w-4" />
+                          رفع/استبدال الإثبات
+                        </Button>
+                      </form>
+                    )
+                  ) : null}
+                  {canEdit && !preview ? (
+                    <form action={generateAction} className="mt-2">
+                      <input
+                        type="hidden"
+                        name="requirementId"
+                        value={requirement.id}
+                      />
+                      <input
+                        type="hidden"
+                        name="evidenceType"
+                        value={rule.key}
+                      />
+                      <input type="hidden" name="path" value={path} />
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        size="sm"
+                        disabled={missingFields.length > 0}
+                      >
+                        <FileSignature className="h-4 w-4" />
+                        توليد مستند إثبات من بيانات المتطلب
+                      </Button>
+                    </form>
+                  ) : null}
+                </div>
+              ))}
+              {uploadState.error ||
+              uploadState.success ||
+              generateState.error ||
+              generateState.success ? (
+                <p className="text-xs">
+                  {uploadState.error ||
+                    uploadState.success ||
+                    generateState.error ||
+                    generateState.success}
+                </p>
+              ) : null}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>النواقص</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {[...missingFields, ...missingFiles, ...contributionGaps]
+                .length ? (
+                [...missingFields, ...missingFiles, ...contributionGaps].map(
+                  (item) => (
+                    <p key={item} className="flex gap-2 text-xs leading-5">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                      {item}
+                    </p>
+                  ),
+                )
+              ) : (
+                <p className="flex gap-2 text-sm text-success">
+                  <CheckCircle2 className="h-5 w-5" />
+                  اكتملت البيانات والإثباتات المطلوبة.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+          <p className="rounded-lg bg-warning-bg p-3 text-xs leading-6 text-warning">
+            اكتمال المتطلب داخل المنصة لا يمثل اعتمادًا رسميًا من هيئة الحكومة
+            الرقمية.
+          </p>
+          {requirement.number !==
+          String(unit.requirements.length).padStart(2, "0") ? (
+            <Button asChild variant="outline" className="w-full">
+              <Link
+                href={`${unit.href}/requirements/${unit.requirements[Number(requirement.number)]?.id}`}
+              >
+                الانتقال للمتطلب التالي
+              </Link>
+            </Button>
+          ) : null}
+        </div>
+      </div>
+      {governance ? (
+        <GovernancePanel
+          data={governance}
+          path={path}
+          canEdit={canEdit}
+          preview={preview}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function previewRowsForSummary(): ContributionView[] {
+  return [
+    {
+      id: "summary",
+      sectionKey: "initiatives",
+      contributorRole: "RESPONSIBLE",
+      contributorUserId: "internal",
+      contributorName: "نورة العتيبي",
+      contributorEmail: "noura@example.gov.sa",
+      jobTitle: null,
+      departmentName: "إدارة التحول الرقمي",
+      assignedByName: "مدير الابتكار",
+      reviewerName: null,
+      dueDate: "2026-08-24",
+      priority: "HIGH",
+      requesterNote: null,
+      status: "IN_PROGRESS",
+      invitationDelivery: "NOT_REQUIRED",
+      assignedAt: "2026-08-18",
+      invitationSentAt: "2026-08-18",
+      openedAt: "2026-08-18",
+      submittedAt: null,
+      reviewedAt: null,
+      completedAt: null,
+      latestSubmission: null,
+    },
+  ];
+}
+function previewR3RowsForSummary(): ContributionView[] {
+  return [
+    {
+      id: "r3-summary-external",
+      sectionKey: "partnerContacts",
+      contributorRole: "SUPPORTING",
+      contributorUserId: null,
+      contributorName: "د. سارة المطيري",
+      contributorEmail: "s.almotairi@example.edu.sa",
+      jobTitle: "مديرة مركز الابتكار",
+      departmentName: "جامعة المجمعة — شريك خارجي",
+      assignedByName: "نورة العتيبي",
+      reviewerName: null,
+      dueDate: "2026-08-23",
+      priority: "HIGH",
+      requesterNote: "جامعة المجمعة — تأكيد بيانات جهة الاتصال",
+      status: "INVITATION_SENT",
+      invitationDelivery: "PREPARED",
+      assignedAt: "2026-08-18",
+      invitationSentAt: null,
+      openedAt: null,
+      submittedAt: null,
+      reviewedAt: null,
+      completedAt: null,
+      latestSubmission: null,
+    },
+  ];
+}
