@@ -35,6 +35,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "البريد الإلكتروني", type: "email" },
         password: { label: "كلمة المرور", type: "password" },
+        devPreviewEmail: { label: "Development role preview", type: "hidden" },
       },
       authorize: async (credentials, request) => {
         const devPreviewEmail = typeof credentials?.devPreviewEmail === "string" ? credentials.devPreviewEmail : null;

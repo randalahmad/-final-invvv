@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import { useState } from "react";
 import { MonitorCog } from "lucide-react";
 
 import { switchDevelopmentRoleAction } from "@/modules/auth/actions";
@@ -10,7 +9,6 @@ import type { DevelopmentRolePreviewOption } from "@/modules/auth/development-ro
 export function DevelopmentRoleSwitcher({ options, activeEmail }: { options: DevelopmentRolePreviewOption[]; activeEmail: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isSwitching, setIsSwitching] = useState(false);
   const currentPath = `${pathname}${searchParams.size ? `?${searchParams.toString()}` : ""}`;
 
   if (!options.length) return null;
@@ -24,12 +22,10 @@ export function DevelopmentRoleSwitcher({ options, activeEmail }: { options: Dev
         id="development-role-preview"
         name="email"
         defaultValue={activeEmail}
-        disabled={isSwitching}
         onChange={(event) => {
-          setIsSwitching(true);
           event.currentTarget.form?.requestSubmit();
         }}
-        className="max-w-36 bg-transparent text-[12px] font-semibold text-text outline-none disabled:cursor-wait"
+        className="max-w-36 bg-transparent text-[12px] font-semibold text-text outline-none"
         aria-label="تغيير الواجهة وفق الدور"
       >
         {options.map((option) => <option key={option.email} value={option.email}>{option.label}</option>)}

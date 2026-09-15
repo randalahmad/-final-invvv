@@ -5,7 +5,7 @@ import type { AuthPrincipal } from "./authenticate";
 
 /**
  * Local-only development aid. It is intentionally disabled outside `next dev`
- * and only ever resolves the four seeded demo identities; it cannot select an
+ * and only ever resolves the allow-listed seeded demo identities; it cannot select an
  * arbitrary user or grant a role that is not already assigned in the system.
  */
 export function isDevelopmentRolePreviewEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
@@ -15,6 +15,7 @@ export function isDevelopmentRolePreviewEnabled(env: NodeJS.ProcessEnv = process
 const DEVELOPMENT_ROLE_ACCOUNTS = [
   { email: "admin@innovation.local", roleKey: ROLE_KEYS.SYSTEM_ADMIN, label: "مدير النظام" },
   { email: "editor@innovation.local", roleKey: ROLE_KEYS.INTERNAL_EDITOR, label: "محرر داخلي" },
+  { email: "innovator@innovation.local", roleKey: ROLE_KEYS.INTERNAL_EDITOR, label: "مبتكر" },
   { email: "partner@innovation.local", roleKey: ROLE_KEYS.EXTERNAL_PARTNER, label: "شريك خارجي" },
   { email: "viewer@innovation.local", roleKey: ROLE_KEYS.VIEWER, label: "مطّلع" },
 ] as const;

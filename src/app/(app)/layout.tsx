@@ -17,17 +17,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     user = await requireUser();
   }
   const permissions = user ? Array.from(user.permissions) : [];
+  const innovatorPreview = !preview && user?.email === "innovator@innovation.local" && isDevelopmentRolePreviewEnabled();
   const alerts = user && permissions.includes("alert.view") ? await (await import("@/modules/alerts/service")).listAlertsInScope(user) : [];
   const developmentRoleOptions = !preview && isDevelopmentRolePreviewEnabled() ? await listDevelopmentRolePreviewOptions() : [];
 
   return (
     <div className="flex min-h-screen w-screen max-w-[100vw] overflow-x-hidden bg-bg dark:bg-bg-dark">
-      <AppSidebar permissions={permissions} preview={preview} />
+      <AppSidebar permissions={permissions} preview={preview} innovatorPreview={innovatorPreview} />
       <div className="flex min-h-screen w-full min-w-0 max-w-full flex-1 flex-col pb-[4.5rem] md:w-[calc(100vw-17.5rem)] md:max-w-[calc(100vw-17.5rem)] md:pb-0">
         <Topbar
           userName={preview ? UX_PREVIEW_PERSONAS.internal.name : user!.name}
           userEmail={user?.email}
           preview={preview}
+          innovatorPreview={innovatorPreview}
           canViewCompliance={permissions.includes("compliance.view")}
           alerts={alerts}
           developmentRoleOptions={developmentRoleOptions}

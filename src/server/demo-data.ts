@@ -30,6 +30,7 @@ export const DEMO_PARTNER_ORG = { id: "demo-org-partner", nameAr: "مركز ال
 export const DEMO_USERS: DemoUser[] = [
   { id: "demo-admin", name: "مدير النظام (Demo)", email: "admin@innovation.local", jobTitle: "مدير منصة الابتكار المؤسسي", status: "ACTIVE", registrationStatus: "APPROVED", roleKey: ROLE_KEYS.SYSTEM_ADMIN, departmentId: null, organizationId: null },
   { id: "demo-editor", name: "محرر الابتكار الداخلي (Demo)", email: "editor@innovation.local", jobTitle: "محرر — إدارة الابتكار", status: "ACTIVE", registrationStatus: "APPROVED", roleKey: ROLE_KEYS.INTERNAL_EDITOR, departmentId: DEMO_DEPT.id, organizationId: DEMO_ORG.id },
+  { id: "demo-innovator", name: "سارة المبتكرة (Demo)", email: "innovator@innovation.local", jobTitle: "مبتكرة", status: "ACTIVE", registrationStatus: "APPROVED", roleKey: ROLE_KEYS.INTERNAL_EDITOR, departmentId: DEMO_DEPT.id, organizationId: DEMO_ORG.id },
   { id: "demo-partner", name: "منسّق الشراكة (Demo)", email: "partner@innovation.local", jobTitle: "منسّق شراكة خارجية", status: "ACTIVE", registrationStatus: "APPROVED", roleKey: ROLE_KEYS.EXTERNAL_PARTNER, departmentId: null, organizationId: DEMO_PARTNER_ORG.id },
   { id: "demo-viewer", name: "مطَّلع (Demo)", email: "viewer@innovation.local", jobTitle: "مطَّلع", status: "ACTIVE", registrationStatus: "APPROVED", roleKey: ROLE_KEYS.VIEWER, departmentId: null, organizationId: null },
 ];
@@ -92,7 +93,7 @@ export const DEMO_SOLUTIONS = [
 ].map((s) => ({
   ...s,
   description: null, problemStatement: null, source: "INTERNAL_PROPOSAL",
-  owningDepartmentId: DEMO_DEPT.id, strategicObjectiveId: null, ownerUserId: "demo-editor",
+  owningDepartmentId: DEMO_DEPT.id, strategicObjectiveId: null, ownerUserId: "demo-innovator",
   startDate: new Date(), targetEndDate: null, actualEndDate: null, durationMonths: 12,
   targetBeneficiaries: "المستفيدون من الخدمات الرقمية", technologies: "الذكاء الاصطناعي",
   completionPct: 60, evidenceReadinessPct: 40, risks: null, notes: null, status: "ACTIVE",
@@ -109,6 +110,7 @@ export const DEMO_SOLUTIONS = [
 export const DEMO_TASKS = [
   { id: "demo-task-1", title: "مراجعة بيانات 5.23.1.2 قبل الاعتماد", type: "REVIEW", status: "OPEN", priority: "HIGH", assignedToName: "مدير النظام (Demo)", assignedToUserId: "demo-admin", dueDate: new Date(Date.now() + 3 * 86400000), requestedById: "demo-editor", nextAction: "إتمام المراجعة", assignmentId: "demo-ra-2" },
   { id: "demo-task-2", title: "استكمال حقول اتفاقية التعاون 5.23.1.3", type: "PREPARE", status: "IN_PROGRESS", priority: "MEDIUM", assignedToName: "محرر الابتكار الداخلي (Demo)", assignedToUserId: "demo-editor", dueDate: new Date(Date.now() - 1 * 86400000), requestedById: "demo-admin", nextAction: "استكمال البيانات الناقصة", assignmentId: "demo-ra-3" },
+  { id: "demo-task-innovator", title: "استكمال وصف المشكلة وإرفاق دليل المستخدمين", type: "PREPARE", status: "IN_PROGRESS", priority: "HIGH", assignedToName: "سارة المبتكرة (Demo)", assignedToUserId: "demo-innovator", dueDate: new Date(Date.now() + 3 * 86400000), requestedById: "demo-admin", nextAction: "إكمال بيانات الفكرة", assignmentId: "demo-ra-3" },
 ].map((t, i) => ({
   ...t,
   createdAt: new Date(), updatedAt: new Date(),

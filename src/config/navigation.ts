@@ -1,4 +1,4 @@
-import { Activity, BarChart3, ClipboardCheck, FileCheck2, FolderSearch, Gauge, Landmark, ListTodo, ScrollText, Settings, ShieldCheck, Target, TrendingUp, UserCircle, Users, type LucideIcon } from "lucide-react";
+import { Activity, BarChart3, ClipboardCheck, FileCheck2, FolderSearch, Gauge, Landmark, ListTodo, Map, ScrollText, Settings, ShieldCheck, Target, TrendingUp, UserCircle, Users, type LucideIcon } from "lucide-react";
 import type { PermissionKey } from "@/modules/auth/permissions";
 import { PREVIEW_PERSONA_PATHS, type PreviewPersonaKey } from "@/lib/ux-preview";
 
@@ -34,8 +34,15 @@ export function navGroupsForPermissions(permissions: Iterable<PermissionKey>): N
   const permissionSet = new Set(permissions);
   return navGroups.map((group) => ({ ...group, items: group.items.filter((item) => !item.permissions?.length || item.permissions.some((permission) => permissionSet.has(permission))) })).filter((group) => group.items.length > 0);
 }
+export function navGroupsForInnovatorPreview(): NavGroup[] {
+  return [{ label: "مساحتي", items: [
+    { href: "/journey", label: "رحلتي الابتكارية", icon: Map },
+    { href: "/solutions", label: "حلولي الابتكارية", icon: FileCheck2, permissions: ["solution.view"] },
+    { href: "/account", label: "ملفي", icon: UserCircle },
+  ] }];
+}
 export function navGroupsForPreviewPersona(persona: PreviewPersonaKey): NavGroup[] {
   const allowed = new Set(PREVIEW_PERSONA_PATHS[persona]);
   return navGroups.map((group) => ({ ...group, items: group.items.filter((item) => allowed.has(item.href)) })).filter((group) => group.items.length > 0);
 }
-export const routeTitles: Record<string, string> = { "/dashboard": "الرئيسية", "/strategy": "التوجه الاستراتيجي", "/activities": "منهجيات الابتكار", "/governance": "حوكمة وتفعيل الابتكار", "/solutions": "حصر الحلول الابتكارية", "/impact": "قياس أثر الحلول", "/partners": "الجهات والشراكات", "/challenges": "التحديات", "/my-tasks": "مهامي", "/reviews": "مركز المراجعات والاعتمادات", "/evidence-matrix": "مصفوفة أدلة القياس", "/evidence-repository": "مستودع الأدلة", "/readiness-check": "فحص الجاهزية", "/alerts": "التنبيهات", "/reports": "التقارير / ملف الامتثال", "/account": "حسابي", "/admin/users": "المستخدمون والصلاحيات", "/audit": "سجل التدقيق", "/settings": "إعدادات النظام" };
+export const routeTitles: Record<string, string> = { "/dashboard": "الرئيسية", "/journey": "رحلتي الابتكارية", "/strategy": "التوجه الاستراتيجي", "/activities": "منهجيات الابتكار", "/governance": "حوكمة وتفعيل الابتكار", "/solutions": "حصر الحلول الابتكارية", "/impact": "قياس أثر الحلول", "/partners": "الجهات والشراكات", "/challenges": "التحديات", "/my-tasks": "مهامي", "/reviews": "مركز المراجعات والاعتمادات", "/evidence-matrix": "مصفوفة أدلة القياس", "/evidence-repository": "مستودع الأدلة", "/readiness-check": "فحص الجاهزية", "/alerts": "التنبيهات", "/reports": "التقارير / ملف الامتثال", "/account": "حسابي", "/admin/users": "المستخدمون والصلاحيات", "/audit": "سجل التدقيق", "/settings": "إعدادات النظام" };

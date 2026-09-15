@@ -213,6 +213,16 @@ async function main() {
     scopeId: deptDigital.id,
     membership: { organizationId: owner.id, departmentId: deptDigital.id },
   });
+  const innovator = await seedDemoUser({
+    id: "user-innovator",
+    email: "innovator@innovation.local",
+    name: "سارة المبتكرة",
+    jobTitle: "مبتكرة",
+    roleKey: ROLE_KEYS.INTERNAL_EDITOR,
+    scopeType: "DEPARTMENT",
+    scopeId: deptDigital.id,
+    membership: { organizationId: owner.id, departmentId: deptDigital.id },
+  });
   const partnerUser = await seedDemoUser({
     id: "user-partner",
     email: "partner@innovation.local",
@@ -235,6 +245,7 @@ async function main() {
   });
 
   const editorId = editor?.id ?? admin.id; // fall back to admin when demo users are skipped
+  const innovatorId = innovator?.id ?? editorId;
 
   // ---- 5) Strategy: one objective -----------------------------------------
   const objective = await prisma.strategicObjective.upsert({
@@ -274,7 +285,7 @@ async function main() {
       titleAr: "نظام تنبيهات الصيانة الاستباقية",
       description: "فكرة تجريبية للبذرة",
       activityId: activity.id,
-      submittedById: editorId,
+      submittedById: innovatorId,
       departmentId: deptDigital.id,
       status: "SUBMITTED",
     },
@@ -293,7 +304,7 @@ async function main() {
       ideaId: idea.id,
       owningDepartmentId: deptDigital.id,
       strategicObjectiveId: objective.id,
-      ownerUserId: editorId,
+      ownerUserId: innovatorId,
       maturityStage: "PILOT",
       implementationStatus: "IN_PROGRESS",
       targetBeneficiaries: "فرق التشغيل والصيانة وإدارة الأصول",
@@ -313,7 +324,7 @@ async function main() {
       ideaId: idea.id,
       owningDepartmentId: deptDigital.id,
       strategicObjectiveId: objective.id,
-      ownerUserId: editorId,
+      ownerUserId: innovatorId,
       maturityStage: "PILOT",
       implementationStatus: "IN_PROGRESS",
       targetBeneficiaries: "فرق التشغيل والصيانة وإدارة الأصول",
@@ -362,7 +373,7 @@ async function main() {
         source: "INTERNAL_PROPOSAL",
         owningDepartmentId: deptDigital.id,
         strategicObjectiveId: objective.id,
-        ownerUserId: editorId,
+        ownerUserId: innovatorId,
         maturityStage: item.maturityStage,
         implementationStatus: item.implementationStatus,
         targetBeneficiaries: item.targetBeneficiaries,
@@ -377,7 +388,7 @@ async function main() {
         source: "INTERNAL_PROPOSAL",
         owningDepartmentId: deptDigital.id,
         strategicObjectiveId: objective.id,
-        ownerUserId: editorId,
+        ownerUserId: innovatorId,
         maturityStage: item.maturityStage,
         implementationStatus: item.implementationStatus,
         targetBeneficiaries: item.targetBeneficiaries,

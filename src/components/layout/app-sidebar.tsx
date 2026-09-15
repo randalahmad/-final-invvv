@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
-import { navGroupsForPermissions, navGroupsForPreviewPersona } from "@/config/navigation";
+import { navGroupsForInnovatorPreview, navGroupsForPermissions, navGroupsForPreviewPersona } from "@/config/navigation";
 import { site } from "@/config/site";
 import type { PermissionKey } from "@/modules/auth/permissions";
 import { previewPersonaFromSearch } from "@/lib/ux-preview";
@@ -14,14 +14,18 @@ import { useSearchParams } from "next/navigation";
 export function AppSidebar({
   permissions = [],
   preview = false,
+  innovatorPreview = false,
 }: {
   permissions?: PermissionKey[];
   preview?: boolean;
+  innovatorPreview?: boolean;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const persona = previewPersonaFromSearch(searchParams.get("previewRole"));
-  const visibleGroups = preview
+  const visibleGroups = innovatorPreview
+    ? navGroupsForInnovatorPreview()
+    : preview
     ? navGroupsForPreviewPersona(persona)
     : navGroupsForPermissions(permissions);
   return (
