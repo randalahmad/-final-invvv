@@ -3,12 +3,16 @@ import Link from "next/link";
 
 import { site } from "@/config/site";
 import { LoginForm } from "@/modules/auth/components/login-form";
+import { DevelopmentPreviewEntry } from "@/modules/auth/components/development-preview-entry";
+import { isDevelopmentRolePreviewEnabled } from "@/modules/auth/development-role-preview";
 
 export const metadata: Metadata = {
   title: "تسجيل الدخول",
 };
 
 export default function LoginPage() {
+  if (isDevelopmentRolePreviewEnabled()) return <DevelopmentPreviewEntry />;
+
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-bg px-4">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">

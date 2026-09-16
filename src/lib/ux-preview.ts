@@ -2,10 +2,16 @@ import { DEFAULT_ROLE_PERMISSIONS, ROLE_KEYS, type PermissionKey } from "@/modul
 
 export interface RuntimeModes { uxPreview: boolean; demo: boolean; production: boolean; }
 
-/** UX Preview wins over Demo; neither non-operational mode may run in Production. */
+/**
+ * UX Preview wins over Demo. Production remains protected unless an isolated
+ * public-preview deployment explicitly opts in with both preview flags. That
+ * deployment is fixture-only: middleware blocks Auth.js and rewrites app
+ * routes to the non-operational UX preview surface.
+ */
 export function resolveRuntimeModes(env: NodeJS.ProcessEnv = process.env): RuntimeModes {
   const production = env.VERCEL_ENV === "production" || (!env.VERCEL_ENV && env.NODE_ENV === "production");
-  const uxPreview = env.UX_PREVIEW_MODE === "true" && !production;
+  const isolatedPublicPreview = production && env.PUBLIC_UX_PREVIEW_DEPLOYMENT === "true";
+  const uxPreview = env.UX_PREVIEW_MODE === "true" && (!production || isolatedPublicPreview);
   const implicitLocalDemo = !env.VERCEL_ENV && env.NODE_ENV !== "production" && !env.DATABASE_URL;
   const demo = !production && !uxPreview && (env.DEMO_MODE === "true" || implicitLocalDemo);
   return { uxPreview, demo, production };

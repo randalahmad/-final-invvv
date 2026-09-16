@@ -98,3 +98,20 @@ export async function switchDevelopmentRoleAction(formData: FormData): Promise<v
     redirectTo: safeRolePreviewRedirect(formData.get("callbackUrl")),
   });
 }
+
+/**
+ * Local development-only entry point. This deliberately still creates a real
+ * Auth.js session for an allow-listed seeded identity; it only removes the
+ * need to type demo credentials on the local login screen.
+ */
+export async function enterDevelopmentPreviewAction(): Promise<void> {
+  if (!isDevelopmentRolePreviewEnabled()) return;
+  const options = await listDevelopmentRolePreviewOptions();
+  const defaultIdentity = options.find((option) => option.email === "innovator@innovation.local") ?? options[0];
+  if (!defaultIdentity) return;
+
+  await signIn("credentials", {
+    devPreviewEmail: defaultIdentity.email,
+    redirectTo: defaultIdentity.email === "innovator@innovation.local" ? "/journey" : "/dashboard",
+  });
+}
