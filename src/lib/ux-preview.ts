@@ -21,6 +21,7 @@ export function isUxPreviewMode(): boolean { return resolveRuntimeModes().uxPrev
 export const UX_PREVIEW_PERSONAS = {
   admin: { label: "مدير النظام", name: "مدير النظام", email: "admin@innovation.local", role: ROLE_KEYS.SYSTEM_ADMIN },
   internal: { label: "محرر داخلي", name: "محرر الابتكار الداخلي", email: "editor@innovation.local", role: ROLE_KEYS.INTERNAL_EDITOR },
+  innovator: { label: "مبتكر", name: "سارة المبتكرة", email: "innovator@innovation.local", role: ROLE_KEYS.INTERNAL_EDITOR },
   partner: { label: "شريك خارجي", name: "منسق الشراكة الخارجية", email: "partner@innovation.local", role: ROLE_KEYS.EXTERNAL_PARTNER },
   viewer: { label: "مطّلع", name: "مطّلع", email: "viewer@innovation.local", role: ROLE_KEYS.VIEWER },
 } as const;
@@ -29,6 +30,7 @@ export function buildPreviewHref(path: string, persona: PreviewPersonaKey): stri
 export const PREVIEW_PERSONA_PATHS: Record<PreviewPersonaKey, readonly string[]> = {
   admin: ["/dashboard", "/strategy", "/activities", "/governance", "/solutions", "/impact", "/my-tasks", "/reviews", "/evidence-matrix", "/evidence-repository", "/readiness-check", "/compliance", "/alerts", "/reports", "/account", "/admin/users", "/audit", "/settings"],
   internal: ["/dashboard", "/strategy", "/activities", "/governance", "/solutions", "/impact", "/my-tasks", "/evidence-matrix", "/evidence-repository", "/readiness-check", "/compliance", "/alerts", "/reports", "/account"],
+  innovator: ["/journey", "/solutions", "/account"],
   partner: ["/dashboard", "/strategy", "/activities", "/solutions", "/impact", "/my-tasks", "/evidence-matrix", "/evidence-repository", "/account"],
   viewer: ["/dashboard", "/activities", "/solutions", "/impact", "/compliance", "/reports", "/account"],
 };

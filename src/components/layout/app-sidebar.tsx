@@ -23,7 +23,7 @@ export function AppSidebar({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const persona = previewPersonaFromSearch(searchParams.get("previewRole"));
-  const visibleGroups = innovatorPreview
+  const visibleGroups = innovatorPreview || (preview && persona === "innovator")
     ? navGroupsForInnovatorPreview()
     : preview
     ? navGroupsForPreviewPersona(persona)
