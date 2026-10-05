@@ -23,6 +23,7 @@ export function AppSidebar({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const persona = previewPersonaFromSearch(searchParams.get("previewRole"));
+  const previewAccount = searchParams.get("previewAccount");
   const visibleGroups = innovatorPreview || (preview && persona === "innovator")
     ? navGroupsForInnovatorPreview()
     : preview
@@ -57,7 +58,7 @@ export function AppSidebar({
               return (
                 <Link
                   key={item.href}
-                  href={preview ? buildPreviewHref(item.href, persona) : item.href}
+                  href={preview ? buildPreviewHref(item.href, persona, previewAccount) : item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "mb-0.5 flex h-12 w-12 shrink-0 items-center justify-center gap-2.5 rounded-xl px-2 py-2.5 text-[13px] transition-all md:h-auto md:w-auto md:justify-start md:px-3.5 md:py-3",

@@ -26,7 +26,7 @@ export const UX_PREVIEW_PERSONAS = {
   viewer: { label: "مطّلع", name: "مطّلع", email: "viewer@innovation.local", role: ROLE_KEYS.VIEWER },
 } as const;
 export type PreviewPersonaKey = keyof typeof UX_PREVIEW_PERSONAS;
-export function buildPreviewHref(path: string, persona: PreviewPersonaKey): string { const [pathname, query = ""] = path.split("?"); const params = new URLSearchParams(query); params.set("previewRole", persona); return `${pathname}?${params.toString()}`; }
+export function buildPreviewHref(path: string, persona: PreviewPersonaKey, previewAccount?: string | null): string { const [pathname, query = ""] = path.split("?"); const params = new URLSearchParams(query); params.set("previewRole", persona); if (persona === "innovator" && previewAccount) params.set("previewAccount", previewAccount); return `${pathname}?${params.toString()}`; }
 export const PREVIEW_PERSONA_PATHS: Record<PreviewPersonaKey, readonly string[]> = {
   admin: ["/dashboard", "/strategy", "/activities", "/governance", "/solutions", "/impact", "/my-tasks", "/reviews", "/evidence-matrix", "/evidence-repository", "/readiness-check", "/compliance", "/alerts", "/reports", "/account", "/admin/users", "/audit", "/settings"],
   internal: ["/dashboard", "/strategy", "/activities", "/governance", "/solutions", "/impact", "/my-tasks", "/evidence-matrix", "/evidence-repository", "/readiness-check", "/compliance", "/alerts", "/reports", "/account"],

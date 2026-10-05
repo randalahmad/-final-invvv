@@ -17,12 +17,14 @@ export default async function middleware(request: NextRequest) {
     }
     const url = request.nextUrl.clone();
     const requestedRole = request.nextUrl.searchParams.get("previewRole");
+    const previewAccount = request.nextUrl.searchParams.get("previewAccount");
     const previewRole = !requestedRole && process.env.PUBLIC_UX_PREVIEW_DEPLOYMENT === "true"
       ? "innovator"
       : previewPersonaFromSearch(requestedRole);
     if (url.pathname === "/" || url.pathname.startsWith("/login") || url.pathname.startsWith("/register")) {
       const home = new URL(previewRole === "innovator" ? "/journey" : "/dashboard", request.url);
       home.searchParams.set("previewRole", previewRole);
+      if (previewRole === "innovator" && previewAccount) home.searchParams.set("previewAccount", previewAccount);
       return NextResponse.redirect(home);
     }
     if (!requestedRole) {
@@ -32,6 +34,7 @@ export default async function middleware(request: NextRequest) {
     if (!canPreviewPersonaAccessPath(previewRole, request.nextUrl.pathname)) {
       const home = new URL(previewRole === "innovator" ? "/journey" : "/dashboard", request.url);
       home.searchParams.set("previewRole", previewRole);
+      if (previewRole === "innovator" && previewAccount) home.searchParams.set("previewAccount", previewAccount);
       return NextResponse.redirect(home);
     }
     url.pathname = "/ux-preview";
@@ -39,6 +42,7 @@ export default async function middleware(request: NextRequest) {
     url.searchParams.set("path", request.nextUrl.pathname);
     url.searchParams.set("role", previewRole);
     url.searchParams.set("previewRole", previewRole);
+    if (previewRole === "innovator" && previewAccount) url.searchParams.set("previewAccount", previewAccount);
     return NextResponse.rewrite(url);
   }
   if (request.nextUrl.pathname.startsWith("/api/auth")) return NextResponse.next();

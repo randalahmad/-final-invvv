@@ -12,8 +12,9 @@ type PreviewLinkProps = LinkProps & Omit<AnchorHTMLAttributes<HTMLAnchorElement>
 export function PreviewLink({ href, ...props }: PreviewLinkProps) {
   const searchParams = useSearchParams();
   const persona = previewPersonaFromSearch(searchParams.get("previewRole"));
+  const previewAccount = searchParams.get("previewAccount");
   const value = typeof href === "string" && href.startsWith("/")
-    ? buildPreviewHref(href, persona)
+    ? buildPreviewHref(href, persona, previewAccount)
     : href;
   return <Link href={value} {...props} />;
 }

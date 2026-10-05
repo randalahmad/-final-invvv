@@ -17,6 +17,7 @@ import { SolutionPortfolioPreview, SolutionPortfolioUtilityPreview, SolutionWork
 import { CreateIntakePagePreview, IntakeDecisionsPreview, IntakeHomePreview, IntakeInboxPreview, MySubmissionsPreview, SubmissionReviewPreview } from "@/modules/solutions/components/intake-preview";
 import { ImpactPortfolioPreview, ImpactWorkspacePreview } from "@/modules/impact/components/impact-preview";
 import { InnovatorJourneyPreview } from "./innovator-journey-preview";
+import { InnovatorAccountManager } from "./innovator-account-manager";
 
 const strategies = [["SO-01","رفع كفاءة تبني الحلول الابتكارية","إدارة الابتكار","نشط","72%"],["SO-02","تعزيز الشراكات البحثية والتقنية","مركز الشراكات","نشط","58%"],["SO-03","بناء ثقافة الابتكار المؤسسي","الموارد البشرية","مسودة","35%"]];
 const programs = [["هاكاثون المدن المستدامة 2026","هاكاثون","جارٍ","مركز الابتكار","15 أغسطس 2026"],["برنامج مسرعة الحلول الحكومية","برنامج","مخطط","إدارة التحول المؤسسي","1 سبتمبر 2026"],["ورشة تصميم الخدمات حول المستفيد","ورشة عمل","مكتمل","إدارة تجربة المستفيد","28 يوليو 2026"]];
@@ -111,7 +112,7 @@ export function PreviewScreen({path,persona}:{path:string;persona:PreviewPersona
   if(path==="/compliance")return can("compliance.view")?<Phase3Compliance/>:unavailable();
   if(path==="/alerts")return can("alert.view")?<Alerts/>:unavailable();
   if(path==="/reports")return can("compliance.view")?<Reports/>:unavailable();
-  if(path==="/admin/users")return can("user.manage")?<Collection title="المستخدمون والصلاحيات" description="أربع فئات رئيسية؛ تتحدد مسؤوليات المستخدم الداخلي من خلال الدور + النطاق + الإجراء." action="إضافة مستخدم" headers={["فئة المستخدم","الدور","النطاق","الإجراءات المتاحة","الحالة"]} rows={[["مدير النظام / مالك المنصة","مدير النظام","كامل المنصة","إدارة المستخدمين والإعدادات","نشط"],["مستخدم داخلي / مسؤول ابتكار","مسؤول برنامج","هاكاثون المدن المستدامة","عرض، تحديث، إحالة للمراجعة","نشط"],["شريك خارجي","منسق شراكة","السجلات المشتركة فقط","عرض وإرفاق مستند","نشط"],["مطّلع / قيادة","قارئ تنفيذي","المؤشرات والتقارير المنشورة","عرض فقط","نشط"]]}/>:unavailable();
+  if(path==="/admin/users")return can("user.manage")?<InnovatorAccountManager/>:unavailable();
   if(path==="/audit")return can("audit.view")?<Collection title="سجل التدقيق" description="سجل توضيحي للعمليات — للقراءة فقط." action="تصدير" headers={["التاريخ","المستخدم","العملية","السجل"]} rows={[["اليوم 10:30","نورة العتيبي","تحديث بيانات","المساعد الرقمي"],["أمس 14:15","سارة القحطاني","إضافة وثيقة","هاكاثون المدن المستدامة"]]}/>:unavailable();
   return <div className="py-20 text-center"><h1 className="text-lg font-bold">هذه الشاشة غير مشمولة في المعاينة الحالية</h1><Button asChild className="mt-4" variant="outline"><Link href="/dashboard">العودة إلى لوحة العمل <ArrowLeft className="h-4 w-4"/></Link></Button></div>;
 }
