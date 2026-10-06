@@ -10,6 +10,11 @@ beforeEach(() => { process.env.UX_PREVIEW_MODE = "true"; process.env.VERCEL_ENV 
 afterEach(() => { process.env.UX_PREVIEW_MODE = previousMode; process.env.VERCEL_ENV = previousVercelEnv; });
 
 describe("preview persona URL authority middleware", () => {
+  it("allows the preview-only readiness API to reach its own safety gate", async () => {
+    const response = await middleware(new NextRequest("https://preview.local/api/ux-preview/idea-readiness", { method: "POST" })) as NextResponse;
+    expect(response.headers.get("location")).toBeNull();
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+  });
   it("initializes a missing persona exactly once from the documented default", async () => {
     const request = new NextRequest("https://preview.local/reports");
     const response = await middleware(request) as NextResponse;

@@ -8,6 +8,7 @@ export default async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/solution-intake/")) return NextResponse.next();
   if (request.nextUrl.pathname.startsWith("/contribute/")) return NextResponse.next();
   if (request.nextUrl.pathname.startsWith("/submit/") && isUxPreviewMode()) return NextResponse.next();
+  if (request.nextUrl.pathname === "/api/ux-preview/idea-readiness" && isUxPreviewMode()) return NextResponse.next();
   if (isUxPreviewMode()) {
     // Internal rewrite target: render it once instead of feeding it back into
     // the public preview routing layer.
