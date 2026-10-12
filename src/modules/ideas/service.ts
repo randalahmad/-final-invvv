@@ -11,6 +11,7 @@ import {
   effectiveScopes,
 } from "@/server/authorization";
 import { createIdeaSchema, updateIdeaSchema } from "./schema";
+import { enqueueIdeaScreening, runIdeaScreening } from "./screening/service";
 
 /** Business-rule failures (authorization failures use AuthorizationError). */
 export type IdeaErrorCode = "VALIDATION" | "NOT_DRAFT" | "INVALID_TRANSITION" | "NOT_AUTHOR" | "BAD_ACTIVITY" | "RESTORE_UNAVAILABLE";
@@ -120,6 +121,13 @@ export async function updateDraftIdea(actor: AccessContext, ideaId: string, raw:
 }
 
 /** DRAFT → SUBMITTED (author-initiated). */
+/**
+ * Submits a DRAFT idea (author only). Right after the status transition
+ * commits, a preliminary AI screening pass is enqueued and run (see
+ * modules/ideas/screening/service.ts) -- purely advisory, never blocking: a
+ * missing/failing AI provider marks the screening FAILED but never fails
+ * this submission.
+ */
 export async function submitIdea(actor: AccessContext, ideaId: string): Promise<void> {
   requirePermission(actor, IDEA_VIEW);
   const idea = await loadInScope(actor, ideaId);
@@ -140,7 +148,15 @@ export async function submitIdea(actor: AccessContext, ideaId: string): Promise<
       },
       tx,
     );
+    await enqueueIdeaScreening(tx, ideaId, actor.userId);
   });
+
+  try {
+    await runIdeaScreening(ideaId, actor.userId);
+  } catch {
+    /* runIdeaScreening already captures its own failure state; a submit must
+       never fail because the advisory AI pass could not run. */
+  }
 }
 
 /** → WITHDRAWN (author-initiated, only before a final decision). */

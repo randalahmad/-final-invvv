@@ -79,6 +79,10 @@ export const ROLE_KEYS = {
   INTERNAL_EDITOR: "INTERNAL_EDITOR",
   EXTERNAL_PARTNER: "EXTERNAL_PARTNER",
   VIEWER: "VIEWER",
+  // Submits their OWN ideas only -- never sees other authors' ideas, even in
+  // the same department (enforced in src/server/authorization/scope.ts's
+  // canSeeIdeasBeyondOwn, not by this permission bundle alone).
+  INNOVATOR: "INNOVATOR",
 } as const;
 
 export type RoleKey = (typeof ROLE_KEYS)[keyof typeof ROLE_KEYS];
@@ -140,6 +144,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     PERMISSIONS.COMPLIANCE_VIEW,
     PERMISSIONS.ALERT_VIEW,
   ],
+  INNOVATOR: [
+    // Only idea.view -- visibility is further narrowed to own-authored ideas
+    // in scope.ts, not expressed here.
+    PERMISSIONS.IDEA_VIEW,
+  ],
 };
 
 export const DEFAULT_ROLES: { key: RoleKey; nameAr: string; description: string }[] = [
@@ -147,4 +156,5 @@ export const DEFAULT_ROLES: { key: RoleKey; nameAr: string; description: string 
   { key: ROLE_KEYS.INTERNAL_EDITOR, nameAr: "محرر داخلي", description: "تحرير سجلات نطاقه المخصّص" },
   { key: ROLE_KEYS.EXTERNAL_PARTNER, nameAr: "شريك خارجي", description: "وصول مقيّد لاتفاقياته واجتماعاته" },
   { key: ROLE_KEYS.VIEWER, nameAr: "مطّلع", description: "اطلاع للقراءة فقط" },
+  { key: ROLE_KEYS.INNOVATOR, nameAr: "مبتكر", description: "يقدّم أفكاره/مشاريعه الخاصة فقط ويتابع حالتها" },
 ];

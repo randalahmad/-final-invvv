@@ -68,3 +68,14 @@ export function can(ctx: AccessContext | null, permission: PermissionKey): boole
 export function hasPlatformScope(ctx: AccessContext | null): boolean {
   return !!ctx?.scopes.some((s) => s.scopeType === "PLATFORM");
 }
+
+/**
+ * True for a real INNOVATOR-role account -- one holding ONLY `idea.view`
+ * (see permissions.ts's DEFAULT_ROLE_PERMISSIONS.INNOVATOR), never a
+ * hardcoded email or preview fixture. Such an account has nothing to do on
+ * the operational/enterprise screens (no solution/compliance/impact/etc.
+ * permission at all), so it gets a dedicated "my ideas" home instead.
+ */
+export function isInnovatorOnlyAccount(ctx: AccessContext | null): boolean {
+  return !!ctx && ctx.permissions.size === 1 && ctx.permissions.has("idea.view" as PermissionKey);
+}

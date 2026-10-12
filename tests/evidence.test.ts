@@ -10,6 +10,7 @@ import {
   approveEvidence,
   rejectEvidence,
   archiveEvidence,
+  replaceEvidenceFile,
   linkEvidence,
   unlinkEvidence,
   listEvidenceLinks,
@@ -29,7 +30,12 @@ const PDF = "application/pdf";
 
 const pdfBytes = (extra = "x") => Buffer.concat([Buffer.from("%PDF-1.7\n"), Buffer.from(extra)]);
 const zipBytes = () => Buffer.concat([Buffer.from([0x50, 0x4b, 0x03, 0x04]), Buffer.from("docx-body")]);
-const FILE = { fileName: "memo.pdf", mimeType: PDF, bytes: pdfBytes() };
+let fileSeq = 0;
+// A factory, not a fixed object: every call returns distinct byte content
+// (still a valid minimal PDF), so the new duplicate-content guard in
+// evidence/service.ts never collides between unrelated test cases that
+// happen to reuse the same solution.
+const FILE = () => ({ fileName: "memo.pdf", mimeType: PDF, bytes: pdfBytes(`seed-${++fileSeq}`) });
 
 let admin: AccessContext, editor: AccessContext, partner: AccessContext, viewer: AccessContext;
 let adminId = "", partnerId = "";
@@ -70,7 +76,7 @@ async function makeSolution(deptId: string, opts: { published?: boolean } = {}) 
 
 /** Upload → SUBMITTED → UNDER_REVIEW helper. */
 async function evidenceUnderReview(solutionId: string) {
-  const { id } = await uploadEvidence(admin, solutionId, { title: "دليل اختبار" }, FILE);
+  const { id } = await uploadEvidence(admin, solutionId, { title: "دليل اختبار" }, FILE());
   await submitEvidence(admin, id);
   await startEvidenceReview(admin, id);
   return id;
@@ -112,13 +118,14 @@ beforeAll(async () => {
 
 describe("upload", () => {
   it("1. uploads evidence as DRAFT/UPLOADED with metadata and a solution link", async () => {
-    const { id } = await uploadEvidence(editor, solA, { title: "محضر اعتماد", description: "وصف" }, FILE);
+    const file = FILE();
+    const { id } = await uploadEvidence(editor, solA, { title: "محضر اعتماد", description: "وصف" }, file);
     const ev = await prisma.evidence.findUniqueOrThrow({ where: { id } });
     expect(ev.reviewStatus).toBe("DRAFT");
     expect(ev.fileProcessingStatus).toBe("UPLOADED");
     expect(ev.fileName).toBe("memo.pdf");
     expect(ev.mimeType).toBe(PDF);
-    expect(ev.sizeBytes).toBe(FILE.bytes.length);
+    expect(ev.sizeBytes).toBe(file.bytes.length);
     expect(ev.notes).toBe("وصف"); // description → notes mapping
     expect(ev.uploadedById).toBe(editor.userId);
     const link = await prisma.evidenceLink.findFirst({ where: { evidenceId: id, entityType: "INNOVATION_SOLUTION" } });
@@ -127,20 +134,20 @@ describe("upload", () => {
 
   it("2. rejects an unsupported file type", async () => {
     await expectEvidenceErr(
-      () => uploadEvidence(editor, solA, { title: "ملف غير مدعوم" }, { ...FILE, mimeType: "image/png", fileName: "x.png" }),
+      () => uploadEvidence(editor, solA, { title: "ملف غير مدعوم" }, { ...FILE(), mimeType: "image/png", fileName: "x.png" }),
       "UNSUPPORTED_FILE",
     );
   });
 
   it("3. rejects a file over the size ceiling", async () => {
     await expectEvidenceErr(
-      () => uploadEvidence(editor, solA, { title: "ملف كبير" }, { ...FILE, bytes: Buffer.concat([Buffer.from("%PDF-1.7\n"), Buffer.alloc(30 * 1024 * 1024)]) }),
+      () => uploadEvidence(editor, solA, { title: "ملف كبير" }, { ...FILE(), bytes: Buffer.concat([Buffer.from("%PDF-1.7\n"), Buffer.alloc(30 * 1024 * 1024)]) }),
       "FILE_TOO_LARGE",
     );
   });
 
   it("4. rejects invalid metadata", async () => {
-    await expectEvidenceErr(() => uploadEvidence(editor, solA, { title: "x" }, FILE), "VALIDATION");
+    await expectEvidenceErr(() => uploadEvidence(editor, solA, { title: "x" }, FILE()), "VALIDATION");
   });
 
   it("5. accepts DOCX and XLSX", () => {
@@ -163,13 +170,13 @@ describe("upload", () => {
 
 describe("lifecycle", () => {
   it("6. DRAFT → SUBMITTED", async () => {
-    const { id } = await uploadEvidence(editor, solA, { title: "للتقديم" }, FILE);
+    const { id } = await uploadEvidence(editor, solA, { title: "للتقديم" }, FILE());
     await submitEvidence(editor, id);
     expect((await prisma.evidence.findUniqueOrThrow({ where: { id } })).reviewStatus).toBe("SUBMITTED");
   });
 
   it("7. SUBMITTED → UNDER_REVIEW requires evidence.approve", async () => {
-    const { id } = await uploadEvidence(admin, solA, { title: "مراجعة" }, FILE);
+    const { id } = await uploadEvidence(admin, solA, { title: "مراجعة" }, FILE());
     await submitEvidence(admin, id);
     await expectAuthz(() => startEvidenceReview(editor, id), "FORBIDDEN"); // editor lacks evidence.approve
     await startEvidenceReview(admin, id);
@@ -202,7 +209,7 @@ describe("lifecycle", () => {
   });
 
   it("11. invalid transitions are rejected", async () => {
-    const { id } = await uploadEvidence(admin, solA, { title: "انتقال غير صالح" }, FILE);
+    const { id } = await uploadEvidence(admin, solA, { title: "انتقال غير صالح" }, FILE());
     await expectEvidenceErr(() => approveEvidence(admin, id), "INVALID_TRANSITION"); // DRAFT → APPROVED
     await submitEvidence(admin, id);
     await expectEvidenceErr(() => submitEvidence(admin, id), "INVALID_TRANSITION"); // re-submit
@@ -211,16 +218,16 @@ describe("lifecycle", () => {
 
 describe("scope & role enforcement", () => {
   it("12. editor cannot read evidence of another department's solution", async () => {
-    await uploadEvidence(admin, solB, { title: "دليل قسم آخر" }, FILE);
+    await uploadEvidence(admin, solB, { title: "دليل قسم آخر" }, FILE());
     await expectAuthz(() => listSolutionEvidence(editor, solB), "OUT_OF_SCOPE");
   });
 
   it("13. editor cannot upload to another department's solution", async () => {
-    await expectAuthz(() => uploadEvidence(editor, solB, { title: "ممنوع" }, FILE), "OUT_OF_SCOPE");
+    await expectAuthz(() => uploadEvidence(editor, solB, { title: "ممنوع" }, FILE()), "OUT_OF_SCOPE");
   });
 
   it("14. viewer cannot upload (no evidence.upload)", async () => {
-    await expectAuthz(() => uploadEvidence(viewer, solPublished, { title: "ممنوع" }, FILE), "FORBIDDEN");
+    await expectAuthz(() => uploadEvidence(viewer, solPublished, { title: "ممنوع" }, FILE()), "FORBIDDEN");
   });
 
   it("15. viewer cannot approve", async () => {
@@ -238,19 +245,19 @@ describe("partner restrictions", () => {
   it("17. partner without a share cannot read or upload", async () => {
     const sol = await makeSolution(DEPT_A);
     await expectAuthz(() => listSolutionEvidence(partner, sol), "OUT_OF_SCOPE");
-    await expectAuthz(() => uploadEvidence(partner, sol, { title: "ممنوع" }, FILE), "OUT_OF_SCOPE");
+    await expectAuthz(() => uploadEvidence(partner, sol, { title: "ممنوع" }, FILE()), "OUT_OF_SCOPE");
   });
 
   it("18. partner with a share lacking evidence.create cannot upload", async () => {
     const sol = await makeSolution(DEPT_A);
     await shareTo(sol, ["update_fields"]);
-    await expectAuthz(() => uploadEvidence(partner, sol, { title: "ممنوع" }, FILE), "ACTION_NOT_ALLOWED");
+    await expectAuthz(() => uploadEvidence(partner, sol, { title: "ممنوع" }, FILE()), "ACTION_NOT_ALLOWED");
   });
 
   it("19. partner with evidence.create in an active share can upload", async () => {
     const sol = await makeSolution(DEPT_A);
     await shareTo(sol, ["evidence.create"]);
-    const { id } = await uploadEvidence(partner, sol, { title: "دليل الشريك" }, FILE);
+    const { id } = await uploadEvidence(partner, sol, { title: "دليل الشريك" }, FILE());
     const ev = await prisma.evidence.findUniqueOrThrow({ where: { id } });
     expect(ev.uploadedById).toBe(partner.userId);
     expect(ev.reviewStatus).toBe("DRAFT");
@@ -259,26 +266,26 @@ describe("partner restrictions", () => {
   it("20. an EXPIRED share blocks partner upload", async () => {
     const sol = await makeSolution(DEPT_A);
     await shareTo(sol, ["evidence.create"], { expired: true });
-    await expectAuthz(() => uploadEvidence(partner, sol, { title: "منتهية" }, FILE), "OUT_OF_SCOPE");
+    await expectAuthz(() => uploadEvidence(partner, sol, { title: "منتهية" }, FILE()), "OUT_OF_SCOPE");
   });
 
   it("21. a REVOKED share blocks partner upload", async () => {
     const sol = await makeSolution(DEPT_A);
     await shareTo(sol, ["evidence.create"], { revoked: true });
-    await expectAuthz(() => uploadEvidence(partner, sol, { title: "ملغاة" }, FILE), "OUT_OF_SCOPE");
+    await expectAuthz(() => uploadEvidence(partner, sol, { title: "ملغاة" }, FILE()), "OUT_OF_SCOPE");
   });
 
   it("22. partner cannot approve evidence", async () => {
     const sol = await makeSolution(DEPT_A);
     await shareTo(sol, ["evidence.create"]);
-    const { id } = await uploadEvidence(partner, sol, { title: "دليل" }, FILE);
+    const { id } = await uploadEvidence(partner, sol, { title: "دليل" }, FILE());
     await expectAuthz(() => approveEvidence(partner, id), "FORBIDDEN");
   });
 });
 
 describe("viewer published-only reads", () => {
   it("23. viewer sees only APPROVED evidence on a published solution", async () => {
-    const draft = await uploadEvidence(admin, solPublished, { title: "غير معتمد" }, FILE);
+    const draft = await uploadEvidence(admin, solPublished, { title: "غير معتمد" }, FILE());
     const approvedId = await evidenceUnderReview(solPublished);
     await approveEvidence(admin, approvedId);
 
@@ -289,7 +296,7 @@ describe("viewer published-only reads", () => {
   });
 
   it("24. viewer cannot open non-approved evidence directly", async () => {
-    const { id } = await uploadEvidence(admin, solPublished, { title: "مسودة مخفية" }, FILE);
+    const { id } = await uploadEvidence(admin, solPublished, { title: "مسودة مخفية" }, FILE());
     await expectEvidenceErr(() => getEvidenceById(viewer, id), "NOT_FOUND");
   });
 
@@ -300,7 +307,7 @@ describe("viewer published-only reads", () => {
 
 describe("linking", () => {
   it("26. links evidence to a compliance requirement", async () => {
-    const { id } = await uploadEvidence(admin, solA, { title: "للربط" }, FILE);
+    const { id } = await uploadEvidence(admin, solA, { title: "للربط" }, FILE());
     const req = await prisma.complianceRequirement.findFirstOrThrow();
     await linkEvidence(admin, id, { entityType: "COMPLIANCE_REQUIREMENT", entityId: req.id, requirementId: req.id });
     const links = await listEvidenceLinks(admin, id);
@@ -308,7 +315,7 @@ describe("linking", () => {
   });
 
   it("27. duplicate links are blocked", async () => {
-    const { id } = await uploadEvidence(admin, solA, { title: "ربط مكرر" }, FILE);
+    const { id } = await uploadEvidence(admin, solA, { title: "ربط مكرر" }, FILE());
     const obj = await prisma.strategicObjective.findFirstOrThrow();
     await linkEvidence(admin, id, { entityType: "STRATEGIC_OBJECTIVE", entityId: obj.id });
     await expectEvidenceErr(
@@ -318,7 +325,7 @@ describe("linking", () => {
   });
 
   it("28. a non-existent target is rejected", async () => {
-    const { id } = await uploadEvidence(admin, solA, { title: "مرجع خاطئ" }, FILE);
+    const { id } = await uploadEvidence(admin, solA, { title: "مرجع خاطئ" }, FILE());
     await expectEvidenceErr(
       () => linkEvidence(admin, id, { entityType: "INNOVATION_ACTIVITY", entityId: "does-not-exist" }),
       "BAD_REFERENCE",
@@ -326,7 +333,7 @@ describe("linking", () => {
   });
 
   it("29. the owning-solution link cannot be removed, other links can", async () => {
-    const { id } = await uploadEvidence(admin, solA, { title: "فصل الربط" }, FILE);
+    const { id } = await uploadEvidence(admin, solA, { title: "فصل الربط" }, FILE());
     const links = await listEvidenceLinks(admin, id);
     const owner = links.find((l) => l.entityType === "INNOVATION_SOLUTION")!;
     await expectEvidenceErr(() => unlinkEvidence(admin, owner.id), "INVALID_TRANSITION");
@@ -346,7 +353,7 @@ describe("evidence readiness (evidence only)", () => {
 
     const a = await evidenceUnderReview(sol);
     await approveEvidence(admin, a);
-    await uploadEvidence(admin, sol, { title: "قيد الإعداد" }, FILE); // tracked, not approved
+    await uploadEvidence(admin, sol, { title: "قيد الإعداد" }, FILE()); // tracked, not approved
 
     const rate = await computeEvidenceApprovalRate(sol);
     expect(rate.approved).toBe(1);
@@ -384,8 +391,8 @@ describe("registry & timeline", () => {
 
   it("33. search filters by title", async () => {
     const sol = await makeSolution(DEPT_A);
-    await uploadEvidence(admin, sol, { title: "تقرير الأثر السنوي" }, FILE);
-    await uploadEvidence(admin, sol, { title: "محضر لجنة" }, FILE);
+    await uploadEvidence(admin, sol, { title: "تقرير الأثر السنوي" }, FILE());
+    await uploadEvidence(admin, sol, { title: "محضر لجنة" }, FILE());
     const rows = await listSolutionEvidence(admin, sol, { q: "الأثر" });
     expect(rows).toHaveLength(1);
     expect(rows[0].title).toContain("الأثر");
@@ -395,7 +402,7 @@ describe("registry & timeline", () => {
     const sol = await makeSolution(DEPT_A);
     const approved = await evidenceUnderReview(sol);
     await approveEvidence(admin, approved);
-    await uploadEvidence(admin, sol, { title: "مسودة" }, FILE);
+    await uploadEvidence(admin, sol, { title: "مسودة" }, FILE());
     const rows = await listSolutionEvidence(admin, sol, { reviewStatus: "APPROVED" });
     expect(rows.map((r) => r.id)).toEqual([approved]);
   });
@@ -416,7 +423,7 @@ describe("registry & timeline", () => {
 describe("audit", () => {
   it("36. every write is audited against the EVIDENCE entity type", async () => {
     const sol = await makeSolution(DEPT_A);
-    const { id } = await uploadEvidence(admin, sol, { title: "تدقيق" }, FILE);
+    const { id } = await uploadEvidence(admin, sol, { title: "تدقيق" }, FILE());
     const req = await prisma.complianceRequirement.findFirstOrThrow();
     await linkEvidence(admin, id, { entityType: "COMPLIANCE_REQUIREMENT", entityId: req.id });
 
@@ -430,5 +437,58 @@ describe("audit", () => {
     await rejectEvidence(admin, id, "الوثيقة غير موقّعة");
     const row = await prisma.auditLog.findFirstOrThrow({ where: { entityType: "EVIDENCE", entityId: id, action: "EVIDENCE_REJECTED" } });
     expect((row.metadata as { note?: string }).note).toBe("الوثيقة غير موقّعة");
+  });
+});
+
+describe("duplicate content prevention", () => {
+  it("38. a byte-for-byte duplicate upload to the same solution is rejected", async () => {
+    const sol = await makeSolution(DEPT_A);
+    const file = FILE();
+    await uploadEvidence(admin, sol, { title: "الأول" }, file);
+    await expectEvidenceErr(
+      () => uploadEvidence(admin, sol, { title: "نسخة مكررة" }, { ...file }),
+      "DUPLICATE",
+    );
+  });
+
+  it("39. the same file content is allowed on a DIFFERENT solution (dedup is per-entity)", async () => {
+    const solX = await makeSolution(DEPT_A);
+    const solY = await makeSolution(DEPT_A);
+    const file = FILE();
+    await uploadEvidence(admin, solX, { title: "دليل أول" }, file);
+    const { id } = await uploadEvidence(admin, solY, { title: "دليل آخر بنفس المحتوى" }, { ...file });
+    expect(id).toBeTruthy();
+  });
+
+  it("40. archiving the original lifts the duplicate guard (archived content is excluded)", async () => {
+    const sol = await makeSolution(DEPT_A);
+    const file = FILE();
+    const { id: firstId } = await uploadEvidence(admin, sol, { title: "الأصل" }, file);
+    await archiveEvidence(admin, firstId);
+    const { id: secondId } = await uploadEvidence(admin, sol, { title: "بعد الأرشفة" }, { ...file });
+    expect(secondId).toBeTruthy();
+  });
+
+  it("41. rejects before writing to storage -- no Evidence row is created on a duplicate", async () => {
+    const sol = await makeSolution(DEPT_A);
+    const file = FILE();
+    await uploadEvidence(admin, sol, { title: "الأول" }, file);
+    const before = await prisma.evidence.count();
+    await expectEvidenceErr(() => uploadEvidence(admin, sol, { title: "مكرر" }, { ...file }), "DUPLICATE");
+    const after = await prisma.evidence.count();
+    expect(after).toBe(before);
+  });
+
+  it("42. replacing a file with a duplicate of ANOTHER evidence item on the same solution is rejected, but re-saving its own current content is not", async () => {
+    const sol = await makeSolution(DEPT_A);
+    const fileA = FILE();
+    const fileB = FILE();
+    const { id: idA } = await uploadEvidence(admin, sol, { title: "دليل أ" }, fileA);
+    const { id: idB } = await uploadEvidence(admin, sol, { title: "دليل ب" }, fileB);
+    // Replacing B's file with A's exact content is a duplicate within this solution.
+    await expectEvidenceErr(() => replaceEvidenceFile(admin, idB, { ...fileA }), "DUPLICATE");
+    // Replacing B's file with ITS OWN current content must not be flagged as a duplicate of itself.
+    const result = await replaceEvidenceFile(admin, idB, { ...fileB });
+    expect(result.version).toBe(2);
   });
 });

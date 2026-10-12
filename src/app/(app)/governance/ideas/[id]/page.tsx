@@ -10,6 +10,8 @@ import { listIdeaEvaluations, listInfoRequests, computeReviewFlags } from "@/mod
 import { IDEA_STATUS_LABELS } from "@/modules/ideas/schema";
 import { getIdeaDecisionHistory, computeDecisionFlags } from "@/modules/ideas/decision-service";
 import { getLinkedSolution } from "@/modules/ideas/conversion-service";
+import { getIdeaScreening } from "@/modules/ideas/screening/service";
+import { AiScreeningCard, type AiScreeningCardData } from "@/modules/ideas/screening/components/ai-screening-card";
 import { IdeaActionBar } from "@/modules/ideas/components/idea-actions";
 import { ReviewPanel } from "@/modules/ideas/components/review-panel";
 import { EvaluationTimeline } from "@/modules/ideas/components/evaluation-timeline";
@@ -33,12 +35,35 @@ export default async function IdeaDetailsPage({ params }: { params: { id: string
   }
 
   const flags = computeIdeaActionFlags(ctx, { status: idea.status, submittedById: idea.submittedById, departmentId: idea.departmentId });
-  const [evaluations, infoRequests, decisions, linkedSolution] = await Promise.all([
+  // The AI screening result is for the reviewing employee only -- never
+  // shown to the idea's own author/innovator, even on their own idea.
+  const canSeeScreening = can(ctx, "idea.evaluate") || can(ctx, "idea.decide");
+  const [evaluations, infoRequests, decisions, linkedSolution, screening] = await Promise.all([
     listIdeaEvaluations(ctx, idea.id),
     listInfoRequests(ctx, idea.id),
     getIdeaDecisionHistory(ctx, idea.id),
     getLinkedSolution(ctx, idea.id),
+    canSeeScreening ? getIdeaScreening(ctx, idea.id) : Promise.resolve(null),
   ]);
+  const screeningData: AiScreeningCardData | null = screening
+    ? {
+        status: screening.status,
+        provider: screening.provider,
+        model: screening.model,
+        score: screening.score,
+        recommendation: screening.recommendation,
+        summaryAr: screening.summaryAr,
+        error: screening.error,
+        completedAt: screening.completedAt,
+        findings: screening.findings.map((f) => ({
+          id: f.id,
+          criterionKey: f.criterionKey,
+          labelAr: f.labelAr,
+          verdict: f.verdict,
+          noteAr: f.noteAr,
+        })),
+      }
+    : null;
   const reviewFlags = computeReviewFlags(ctx, { status: idea.status, submittedById: idea.submittedById }, can(ctx, "idea.evaluate"));
   const decisionFlags = computeDecisionFlags(
     ctx,
@@ -95,6 +120,8 @@ export default async function IdeaDetailsPage({ params }: { params: { id: string
           </p>
         </CardContent>
       </Card>
+
+      {canSeeScreening && <AiScreeningCard data={screeningData} />}
 
       <Card>
         <CardHeader>

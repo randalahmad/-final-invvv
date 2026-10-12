@@ -4,18 +4,23 @@ import { prisma } from "@/server/db";
 import type { AuthPrincipal } from "./authenticate";
 
 /**
- * Local-only development aid. It is intentionally disabled outside `next dev`
- * and only ever resolves the allow-listed seeded demo identities; it cannot select an
- * arbitrary user or grant a role that is not already assigned in the system.
+ * Local-only development aid: an in-app "quick switch account" shortcut
+ * (topbar widget) plus a forced /journey redirect for the innovator demo
+ * identity specifically. OFF by default -- even in local dev -- because it
+ * is exactly the one-click persona-switching pattern this project
+ * deliberately moved away from in favor of real, separate per-account login
+ * (see DEMO_MODE in demo-data.ts / authenticate.ts). Opt in explicitly with
+ * DEV_ROLE_SWITCHER="true" only if you specifically want this shortcut while
+ * developing locally.
  */
 export function isDevelopmentRolePreviewEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.NODE_ENV === "development" && env.UX_PREVIEW_MODE !== "true";
+  return env.NODE_ENV === "development" && env.UX_PREVIEW_MODE !== "true" && env.DEV_ROLE_SWITCHER === "true";
 }
 
 const DEVELOPMENT_ROLE_ACCOUNTS = [
   { email: "admin@innovation.local", roleKey: ROLE_KEYS.SYSTEM_ADMIN, label: "مدير النظام" },
   { email: "editor@innovation.local", roleKey: ROLE_KEYS.INTERNAL_EDITOR, label: "محرر داخلي" },
-  { email: "innovator@innovation.local", roleKey: ROLE_KEYS.INTERNAL_EDITOR, label: "مبتكر" },
+  { email: "innovator@innovation.local", roleKey: ROLE_KEYS.INNOVATOR, label: "مبتكر" },
   { email: "partner@innovation.local", roleKey: ROLE_KEYS.EXTERNAL_PARTNER, label: "شريك خارجي" },
   { email: "viewer@innovation.local", roleKey: ROLE_KEYS.VIEWER, label: "مطّلع" },
 ] as const;

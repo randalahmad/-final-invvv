@@ -1,4 +1,4 @@
-import { Activity, BarChart3, ClipboardCheck, FileCheck2, FolderSearch, Gauge, Landmark, ListTodo, Map, ScrollText, Settings, ShieldCheck, Target, TrendingUp, UserCircle, Users, type LucideIcon } from "lucide-react";
+import { Activity, BarChart3, ClipboardCheck, FileCheck2, FolderSearch, Gauge, Landmark, Lightbulb, ListTodo, Map, ScrollText, Settings, ShieldCheck, Target, TrendingUp, UserCircle, Users, type LucideIcon } from "lucide-react";
 import type { PermissionKey } from "@/modules/auth/permissions";
 import { PREVIEW_PERSONA_PATHS, type PreviewPersonaKey } from "@/lib/ux-preview";
 
@@ -39,6 +39,14 @@ export function navGroupsForInnovatorPreview(): NavGroup[] {
     { href: "/journey", label: "رحلتي الابتكارية", icon: Map },
     { href: "/solutions", label: "حلولي الابتكارية", icon: FileCheck2, permissions: ["solution.view"] },
     { href: "/account", label: "ملفي", icon: UserCircle },
+  ] }];
+}
+/** Real INNOVATOR-role sidebar (idea.view only, own ideas) -- not the UX_PREVIEW_MODE/dev-preview fixture above. */
+export function navGroupsForInnovator(): NavGroup[] {
+  return [{ label: "مساحتي", items: [
+    { href: "/journey", label: "رحلتي الابتكارية", icon: Map },
+    { href: "/governance/ideas", label: "جميع أفكاري", icon: Lightbulb },
+    { href: "/account", label: "حسابي", icon: UserCircle },
   ] }];
 }
 export function navGroupsForPreviewPersona(persona: PreviewPersonaKey): NavGroup[] {

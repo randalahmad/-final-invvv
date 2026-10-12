@@ -337,6 +337,32 @@ enum DocumentAnalysisStatus {
   FAILED
 }
 
+/// Preliminary AI idea screening (advisory only -- see IdeaScreening's own
+/// doc comment). Mirrors DocumentAnalysisStatus's QUEUED/PROCESSING/
+/// COMPLETED/FAILED life cycle exactly.
+enum IdeaScreeningStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+/// A provider's advisory recommendation to the human evaluator -- never an
+/// actual accept/reject decision on the idea itself.
+enum IdeaScreeningRecommendation {
+  PROCEED
+  NEEDS_INFO
+  REJECT
+}
+
+/// Per-criterion verdict within one screening pass.
+enum IdeaScreeningVerdict {
+  STRONG
+  ACCEPTABLE
+  WEAK
+  CONCERN
+}
+
 enum DocumentFormat {
   PDF
   DOCX
@@ -1101,6 +1127,7 @@ model Idea {
   decisions    IdeaDecision[]
   infoRequests IdeaInfoRequest[]
   solution     InnovationSolution? @relation("SolutionFromIdea")
+  aiScreening  IdeaScreening?
 
   @@index([status])
   @@index([departmentId])
@@ -1877,6 +1904,52 @@ model EvidenceLink {
   @@unique([evidenceId, entityType, entityId])
   @@index([entityType, entityId])
   @@map("evidence_links")
+}
+
+/// Preliminary, ADVISORY-ONLY AI screening of a just-submitted idea. A
+/// provider only ever proposes a recommendation here -- it NEVER sets
+/// Idea.status, writes an IdeaEvaluation/IdeaDecision, or otherwise acts on
+/// the idea. Only a human holding idea.evaluate/idea.decide can act on what
+/// this record shows (same invariant as DocumentAnalysis for evidence --
+/// see docs/document-analysis.md).
+model IdeaScreening {
+  id             String                       @id @default(cuid())
+  ideaId         String                       @unique
+  idea           Idea                         @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  status         IdeaScreeningStatus          @default(QUEUED)
+  provider       String?
+  model          String?
+  promptVersion  String?
+  queuedAt       DateTime                     @default(now())
+  startedAt      DateTime?
+  completedAt    DateTime?
+  failedAt       DateTime?
+  error          String?
+  score          Int? // 0-100, advisory only -- never a compliance/readiness figure
+  recommendation IdeaScreeningRecommendation?
+  summaryAr      String? // short Arabic rationale shown to the evaluator
+  reviewedById   String? // soft ref -> User.id -- set once an evaluator has seen it
+  reviewedAt     DateTime?
+  findings       IdeaScreeningFinding[]
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+
+  @@index([status])
+  @@map("idea_screenings")
+}
+
+model IdeaScreeningFinding {
+  id           String               @id @default(cuid())
+  screeningId  String
+  screening    IdeaScreening        @relation(fields: [screeningId], references: [id], onDelete: Cascade)
+  criterionKey String // e.g. "completeness", "strategic_alignment", "feasibility_signal", "possible_duplicate", "risk_flags"
+  labelAr      String
+  verdict      IdeaScreeningVerdict
+  noteAr       String?
+  createdAt    DateTime             @default(now())
+
+  @@index([screeningId])
+  @@map("idea_screening_findings")
 }
 
 // ---------------------------------------------------------------------------

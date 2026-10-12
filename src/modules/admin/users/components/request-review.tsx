@@ -33,6 +33,7 @@ const ROLE_LABEL: Record<string, string> = {
   EXTERNAL_PARTNER: "شريك خارجي",
   VIEWER: "مطّلع",
   SYSTEM_ADMIN: "مدير النظام",
+  INNOVATOR: "مبتكر",
 };
 const REG_BADGE: Record<string, string> = { PENDING: "قيد الانتظار", APPROVED: "معتمد", REJECTED: "مرفوض" };
 const STATUS_LABEL: Record<string, string> = { ACTIVE: "نشط", INACTIVE: "غير مفعّل", SUSPENDED: "موقوف" };
@@ -80,6 +81,7 @@ export function PendingRequestCard({ user, orgs, depts }: { user: UserRow; orgs:
                 <option value="INTERNAL_EDITOR">محرر داخلي</option>
                 <option value="EXTERNAL_PARTNER">شريك خارجي</option>
                 <option value="VIEWER">مطّلع</option>
+                <option value="INNOVATOR">مبتكر</option>
               </select>
             </div>
             <div className="flex flex-col gap-1">

@@ -2,8 +2,17 @@ import type { LinkedEntityType, Prisma } from "@prisma/client";
 
 import { prisma } from "@/server/db";
 import type { AccessContext } from "@/server/access-context";
+import { PERMISSIONS } from "@/modules/auth/permissions";
 import { AuthorizationError } from "./errors";
 import { getActiveShareSolutionIds } from "./share";
+
+/** Department/org-wide idea visibility is reserved for actors who can act on
+ *  ideas beyond their own -- an INNOVATOR (idea.view only) never qualifies,
+ *  even though their account carries a DEPARTMENT scope grant (needed only
+ *  to create an idea in that department at all). */
+function canSeeIdeasBeyondOwn(ctx: AccessContext): boolean {
+  return ctx.permissions.has(PERMISSIONS.IDEA_EVALUATE) || ctx.permissions.has(PERMISSIONS.IDEA_DECIDE);
+}
 
 export interface EffectiveScopes {
   platform: boolean;
@@ -136,8 +145,10 @@ async function requireIdeaScope(ctx: AccessContext, entityId: string): Promise<v
   if (!idea) throw new AuthorizationError("NOT_FOUND");
 
   if (idea.submittedById && idea.submittedById === ctx.userId) return; // author always
-  if (idea.departmentId && es.departmentIds.includes(idea.departmentId)) return;
-  if (idea.department && es.organizationIds.includes(idea.department.organizationId)) return;
+  if (canSeeIdeasBeyondOwn(ctx)) {
+    if (idea.departmentId && es.departmentIds.includes(idea.departmentId)) return;
+    if (idea.department && es.organizationIds.includes(idea.department.organizationId)) return;
+  }
 
   throw new AuthorizationError("OUT_OF_SCOPE");
 }
@@ -151,8 +162,10 @@ export function ideaScopeWhere(ctx: AccessContext): Prisma.IdeaWhereInput {
   const es = effectiveScopes(ctx);
   if (es.platform) return {};
   const or: Prisma.IdeaWhereInput[] = [{ submittedById: ctx.userId }];
-  if (es.departmentIds.length) or.push({ departmentId: { in: es.departmentIds } });
-  if (es.organizationIds.length) or.push({ department: { organizationId: { in: es.organizationIds } } });
+  if (canSeeIdeasBeyondOwn(ctx)) {
+    if (es.departmentIds.length) or.push({ departmentId: { in: es.departmentIds } });
+    if (es.organizationIds.length) or.push({ department: { organizationId: { in: es.organizationIds } } });
+  }
   return { OR: or };
 }
 

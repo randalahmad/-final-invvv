@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /** Roles an admin may assign when approving a PUBLIC registration (never SYSTEM_ADMIN). */
-export const APPROVABLE_ROLES = ["INTERNAL_EDITOR", "EXTERNAL_PARTNER", "VIEWER"] as const;
+export const APPROVABLE_ROLES = ["INTERNAL_EDITOR", "EXTERNAL_PARTNER", "VIEWER", "INNOVATOR"] as const;
 
 const SCOPE_TYPES = ["PLATFORM", "ORGANIZATION", "DEPARTMENT", "AGREEMENT", "SOLUTION", "PUBLISHED"] as const;
 

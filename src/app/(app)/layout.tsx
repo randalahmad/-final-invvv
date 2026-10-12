@@ -3,6 +3,7 @@ import { Topbar } from "@/components/layout/topbar";
 import { isUxPreviewMode, UX_PREVIEW_PERSONAS } from "@/lib/ux-preview";
 import { isDevelopmentRolePreviewEnabled, listDevelopmentRolePreviewOptions } from "@/modules/auth/development-role-preview";
 import type { AccessContext } from "@/server/access-context";
+import { isInnovatorOnlyAccount } from "@/server/access-context";
 
 /**
  * Authenticated application shell. Server Component: `requireUser()` enforces the
@@ -17,19 +18,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     user = await requireUser();
   }
   const permissions = user ? Array.from(user.permissions) : [];
-  const innovatorPreview = !preview && user?.email === "innovator@innovation.local" && isDevelopmentRolePreviewEnabled();
+  // A real INNOVATOR-role account (see isInnovatorOnlyAccount) gets a
+  // dedicated, minimal "My Ideas" chrome instead of the full operational
+  // nav, which would be empty/meaningless for it anyway.
+  const isInnovatorAccount = !preview && isInnovatorOnlyAccount(user);
   const alerts = user && permissions.includes("alert.view") ? await (await import("@/modules/alerts/service")).listAlertsInScope(user) : [];
   const developmentRoleOptions = !preview && isDevelopmentRolePreviewEnabled() ? await listDevelopmentRolePreviewOptions() : [];
 
   return (
     <div className="flex min-h-screen w-screen max-w-[100vw] overflow-x-hidden bg-bg dark:bg-bg-dark">
-      <AppSidebar permissions={permissions} preview={preview} innovatorPreview={innovatorPreview} />
+      <AppSidebar permissions={permissions} preview={preview} isInnovatorAccount={isInnovatorAccount} />
       <div className="flex min-h-screen w-full min-w-0 max-w-full flex-1 flex-col pb-[4.5rem] md:w-[calc(100vw-17.5rem)] md:max-w-[calc(100vw-17.5rem)] md:pb-0">
         <Topbar
           userName={preview ? UX_PREVIEW_PERSONAS.internal.name : user!.name}
           userEmail={user?.email}
           preview={preview}
-          innovatorPreview={innovatorPreview}
+          isInnovatorAccount={isInnovatorAccount}
           canViewCompliance={permissions.includes("compliance.view")}
           alerts={alerts}
           developmentRoleOptions={developmentRoleOptions}

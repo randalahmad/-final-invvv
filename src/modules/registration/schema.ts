@@ -5,7 +5,7 @@ import { z } from "zod";
  * SYSTEM_ADMIN is deliberately excluded and is rejected server-side even if a
  * crafted request submits it.
  */
-export const PUBLIC_REQUESTABLE_ROLES = ["INTERNAL_EDITOR", "EXTERNAL_PARTNER", "VIEWER"] as const;
+export const PUBLIC_REQUESTABLE_ROLES = ["INTERNAL_EDITOR", "EXTERNAL_PARTNER", "VIEWER", "INNOVATOR"] as const;
 export type PublicRequestableRole = (typeof PUBLIC_REQUESTABLE_ROLES)[number];
 
 const ORG_TYPES = ["UNIVERSITY", "COMPANY", "GOVERNMENT", "PARTNER", "OTHER"] as const;

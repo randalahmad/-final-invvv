@@ -306,6 +306,40 @@ export function validateFile(file: EvidenceFileInput): ValidatedFile {
 }
 
 /**
+ * Reject a byte-for-byte duplicate of an existing (non-archived) evidence
+ * file already attached to the same record (entityType/entityId). Scoped per
+ * record, not global -- the same file content is fine on two different
+ * solutions/activities/documents. `excludeEvidenceId` lets replaceEvidenceFile
+ * compare against every OTHER evidence item on the record without flagging
+ * the record's own current file as a duplicate of itself.
+ */
+async function assertNoDuplicateEvidence(
+  entityType: LinkedEntityType,
+  entityId: string,
+  checksum: string,
+  excludeEvidenceId?: string,
+): Promise<void> {
+  const existing = await prisma.evidenceLink.findFirst({
+    where: {
+      entityType,
+      entityId,
+      evidence: {
+        checksum,
+        archivedAt: null,
+        ...(excludeEvidenceId ? { id: { not: excludeEvidenceId } } : {}),
+      },
+    },
+    select: { evidence: { select: { fileName: true } } },
+  });
+  if (existing) {
+    throw new EvidenceError(
+      "DUPLICATE",
+      `هذا الملف مرفوع مسبقًا لنفس السجل بالاسم "${existing.evidence.fileName ?? ""}" — لا حاجة لرفعه مرة أخرى`,
+    );
+  }
+}
+
+/**
  * Register an evidence item against a solution. Creates the Evidence record
  * (reviewStatus=DRAFT, fileProcessingStatus=UPLOADED) plus its
  * INNOVATION_SOLUTION link, audits, and refreshes evidence readiness.
@@ -320,6 +354,7 @@ export async function uploadEvidence(
   const parsed = evidenceMetadataSchema.safeParse(raw);
   if (!parsed.success) throw new EvidenceError("VALIDATION", "invalid", parsed.error.flatten().fieldErrors);
   const validated = validateFile(file);
+  await assertNoDuplicateEvidence("INNOVATION_SOLUTION", solutionId, validated.checksum);
   const meta: EvidenceMetadataInput = parsed.data;
 
   // Consistency strategy: put the binary first, then persist metadata. If the
@@ -488,6 +523,7 @@ export async function uploadActivityEvidence(
   const parsed = evidenceMetadataSchema.safeParse(raw);
   if (!parsed.success) throw new EvidenceError("VALIDATION", "invalid", parsed.error.flatten().fieldErrors);
   const validated = validateFile(file);
+  await assertNoDuplicateEvidence("INNOVATION_ACTIVITY", activityId, validated.checksum);
   const meta: EvidenceMetadataInput = parsed.data;
 
   // buildEvidenceKey is reused exactly as-is (unmodified) — its "solutionId"
@@ -760,6 +796,7 @@ export async function replaceEvidenceFile(
   }
 
   const validated = validateFile(file);
+  await assertNoDuplicateEvidence("INNOVATION_SOLUTION", solutionId, validated.checksum, evidenceId);
   const nextVersion = current.version + 1;
   const key = buildEvidenceKey({ solutionId, version: nextVersion, fileName: validated.fileName });
   const storage = await getStorage();
@@ -981,6 +1018,7 @@ export async function uploadStrategyDocumentEvidence(
   const parsed = evidenceMetadataSchema.safeParse(raw);
   if (!parsed.success) throw new EvidenceError("VALIDATION", "invalid", parsed.error.flatten().fieldErrors);
   const validated = validateFile(file);
+  await assertNoDuplicateEvidence("STRATEGY_DOCUMENT", documentId, validated.checksum);
   const meta: EvidenceMetadataInput = parsed.data;
 
   const key = buildEntityEvidenceKey({ namespace: "strategy-documents", entityId: documentId, fileName: validated.fileName });

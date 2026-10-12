@@ -17,6 +17,7 @@ import {
   archiveStrategyDocument,
   StrategyError,
 } from "./service";
+import { EvidenceError } from "@/modules/evidence/service";
 
 export interface StrategyFormState {
   error?: string;
@@ -38,12 +39,28 @@ const MSG: Record<string, string> = {
   DUPLICATE_DOCUMENT: "توجد وثيقة نشطة بالفعل لهذا الإسناد — أرشفها أولًا لاستبدالها",
 };
 
+function evidenceMessage(e: EvidenceError): string {
+  const EVIDENCE_MSG: Record<string, string> = {
+    VALIDATION: "يرجى تصحيح بيانات الملف",
+    INVALID_TRANSITION: "لا يمكن تنفيذ هذا الإجراء على الدليل في حالته الحالية",
+    UNSUPPORTED_FILE: "نوع الملف غير مدعوم",
+    FILE_TOO_LARGE: "حجم الملف يتجاوز الحد المسموح",
+    DUPLICATE: e.message,
+    BAD_REFERENCE: "المرجع المحدد غير موجود",
+    NOT_FOUND: "الدليل غير موجود",
+    STORAGE_FAILED: "تعذّر تخزين الملف",
+    NO_BINARY: "لا يوجد ملف مرتبط",
+  };
+  return EVIDENCE_MSG[e.code] ?? e.message ?? "تعذّر رفع الملف";
+}
 function toFormState(e: unknown): StrategyFormState {
+  if (e instanceof EvidenceError) return { error: evidenceMessage(e), fieldErrors: e.fieldErrors };
   if (e instanceof StrategyError) return { error: MSG[e.code] ?? "تعذّر تنفيذ الإجراء", fieldErrors: e.fieldErrors };
   if (isAuthorizationError(e)) return { error: MSG[e.code] ?? "غير مصرّح" };
   throw e; // re-throw NEXT_REDIRECT / unknown
 }
 function toActionState(e: unknown): StrategyActionState {
+  if (e instanceof EvidenceError) return { error: evidenceMessage(e) };
   if (e instanceof StrategyError) return { error: MSG[e.code] ?? "تعذّر تنفيذ الإجراء" };
   if (isAuthorizationError(e)) return { error: MSG[e.code] ?? "غير مصرّح" };
   throw e;

@@ -218,7 +218,7 @@ async function main() {
     email: "innovator@innovation.local",
     name: "سارة المبتكرة",
     jobTitle: "مبتكرة",
-    roleKey: ROLE_KEYS.INTERNAL_EDITOR,
+    roleKey: ROLE_KEYS.INNOVATOR,
     scopeType: "DEPARTMENT",
     scopeId: deptDigital.id,
     membership: { organizationId: owner.id, departmentId: deptDigital.id },

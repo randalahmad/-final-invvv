@@ -16,6 +16,7 @@ export {
   loadAccessContextByUserId,
   can,
   hasPlatformScope,
+  isInnovatorOnlyAccount,
   type AccessContext,
   type ScopeGrant,
 } from "@/server/access-context";

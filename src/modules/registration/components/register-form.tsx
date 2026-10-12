@@ -13,6 +13,7 @@ const ROLE_OPTIONS = [
   { value: "INTERNAL_EDITOR", label: "محرر داخلي — إدارة سجلات نطاقه" },
   { value: "EXTERNAL_PARTNER", label: "شريك خارجي — وصول مقيّد للاتفاقيات المشتركة" },
   { value: "VIEWER", label: "مطّلع — قراءة فقط للمحتوى المنشور" },
+  { value: "INNOVATOR", label: "مبتكر — يقدّم أفكاره الخاصة ويتابع حالتها" },
 ] as const;
 
 const ORG_TYPE_OPTIONS = [
@@ -122,7 +123,7 @@ export function RegisterForm() {
         </div>
       )}
 
-      {role === "INTERNAL_EDITOR" && (
+      {(role === "INTERNAL_EDITOR" || role === "INNOVATOR") && (
         <div className="flex flex-col gap-2">
           <Label htmlFor="requestedDepartmentId">الإدارة المطلوبة</Label>
           <Input id="requestedDepartmentId" name="requestedDepartmentId" placeholder="اسم أو معرّف الإدارة المطلوبة" />
