@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BarChart3, BriefcaseBusiness, Download, Eye, FileCheck2, Filter, Gauge, Lightbulb, Route, Target, Users } from "lucide-react";
+import { BarChart3, BriefcaseBusiness, Download, Eye, FileCheck2, Filter, Gauge, Lightbulb, RotateCcw, Route, Target, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,16 @@ function Bars({ rows }: { rows: { label: string; value: number; total: number; c
 }
 
 function ReportTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
+  if (!rows.length) return <div className="p-8 text-center text-sm text-muted">لا توجد نتائج مطابقة للمرشحات الحالية.</div>;
   return <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-start"><thead><tr className="border-b bg-slate-50 text-[11px] text-muted">{headers.map((header) => <th key={header} className="px-4 py-3 text-start font-semibold">{header}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={`${row[0]}-${index}`} className="border-b border-border/60 last:border-0">{row.map((cell, cellIndex) => <td key={`${index}-${cellIndex}`} className={`px-4 py-3 text-xs ${cellIndex === 0 ? "font-semibold" : "text-slate-600"}`}>{cell}</td>)}</tr>)}</tbody></table></div>;
+}
+
+function exportRows(report: ReportKey, rows: ReportRow[]): string[][] {
+  if (report === "impact") return [["الحل أو البرنامج", "الأثر المتوقع", "المؤشر", "خط الأساس", "المستهدف", "النتيجة", "الفترة", "التحقق"], ...previewScenario.impacts.map((row) => [...row])];
+  if (report === "readiness") return [["المعيار", "الوحدة", "الجاهزية", "الأدلة الناقصة", "الإجراءات المطلوبة"], ...DGA_UNITS.map((unit) => [unit.code, unit.name, `${unit.readiness}%`, String(unit.missingEvidence), String(unit.actionRequired)])];
+  if (report === "innovators") return [["المبتكر", "الإدارة", "السجل", "المرحلة", "الحالة", "التقدم"], ...Array.from(new Map(rows.map((row) => [row.owner, row])).values()).map((row) => [row.owner, row.department, row.name, row.stage, row.status, `${row.progress}%`])];
+  if (report === "journey") return [["المرحلة", "عدد السجلات"], ...Array.from(new Map(rows.map((row) => [row.stage, rows.filter((item) => item.stage === row.stage).length])).entries()).map(([stage, count]) => [stage, String(count)])];
+  return [["المعرف", "السجل", "الإدارة", "البرنامج/المشروع", "الحالة", "المالك", "المرحلة", "التقدم", "التاريخ"], ...rows.map((row) => [row.id, row.name, row.department, row.project, row.status, row.owner, row.stage, `${row.progress}%`, row.date])];
 }
 
 export function InnovationReportsCenter() {
@@ -59,7 +68,7 @@ export function InnovationReportsCenter() {
   const reportLabel = reports.find((report) => report.key === active)?.label ?? "التقرير";
 
   function exportCsv() {
-    const rows = [["المعرف", "السجل", "الإدارة", "البرنامج/المشروع", "الحالة", "المالك", "التاريخ"], ...filtered.map((row) => [row.id, row.name, row.department, row.project, row.status, row.owner, row.date])];
+    const rows = exportRows(active, filtered);
     const csv = `\uFEFF${rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n")}`;
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const anchor = document.createElement("a"); anchor.href = url; anchor.download = `innovation-report-${active}.csv`; anchor.click(); URL.revokeObjectURL(url);
@@ -67,12 +76,13 @@ export function InnovationReportsCenter() {
   }
 
   function previewReport() { setNotice(`معاينة «${reportLabel}» جاهزة للطباعة وفق المرشحات الحالية.`); window.setTimeout(() => window.print(), 100); }
+  function resetFilters() { setFrom("2026-01-01"); setTo("2026-12-31"); setDepartment("الكل"); setProject("الكل"); setStatus("الكل"); setNotice(""); }
 
   return <div className="space-y-5 print:space-y-3">
     <PageHeader title="مركز تقارير الابتكار" description="تقارير مترابطة لقراءة المحفظة والرحلة والمبتكرين والأثر والجاهزية من بيانات المعاينة الحالية." action={<div className="flex gap-2"><Button variant="outline" onClick={previewReport}><Eye className="h-4 w-4"/>معاينة التقرير</Button><Button onClick={exportCsv}><Download className="h-4 w-4"/>تصدير CSV</Button></div>}/>
     {notice ? <div className="rounded-xl border border-primary/20 bg-primary-50 p-3 text-sm text-primary-800 print:hidden">{notice}</div> : null}
 
-    <Card className="print:hidden"><CardContent className="p-4"><div className="mb-3 flex items-center gap-2 text-sm font-bold"><Filter className="h-4 w-4 text-primary"/>مرشحات التقرير</div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5"><label className="text-xs text-muted">من تاريخ<Input className="mt-1.5" type="date" value={from} onChange={(event) => setFrom(event.target.value)}/></label><label className="text-xs text-muted">إلى تاريخ<Input className="mt-1.5" type="date" value={to} onChange={(event) => setTo(event.target.value)}/></label><label className="text-xs text-muted">الإدارة<select className={`mt-1.5 w-full ${selectClass}`} value={department} onChange={(event) => setDepartment(event.target.value)}><option>الكل</option>{departments.map((item) => <option key={item}>{item}</option>)}</select></label><label className="text-xs text-muted">المشروع / البرنامج<select className={`mt-1.5 w-full ${selectClass}`} value={project} onChange={(event) => setProject(event.target.value)}><option>الكل</option>{Array.from(new Set(portfolioRows.map((row) => row.project))).map((item) => <option key={item}>{item}</option>)}</select></label><label className="text-xs text-muted">الحالة<select className={`mt-1.5 w-full ${selectClass}`} value={status} onChange={(event) => setStatus(event.target.value)}><option>الكل</option>{Array.from(new Set(portfolioRows.map((row) => row.status))).map((item) => <option key={item}>{item}</option>)}</select></label></div></CardContent></Card>
+    <Card className="print:hidden"><CardContent className="p-4"><div className="mb-3 flex items-center justify-between gap-3"><div className="flex items-center gap-2 text-sm font-bold"><Filter className="h-4 w-4 text-primary"/>مرشحات التقرير</div><Button type="button" variant="ghost" size="sm" onClick={resetFilters}><RotateCcw className="h-4 w-4"/>إعادة الضبط</Button></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5"><label className="text-xs text-muted">من تاريخ<Input className="mt-1.5" type="date" value={from} onChange={(event) => setFrom(event.target.value)}/></label><label className="text-xs text-muted">إلى تاريخ<Input className="mt-1.5" type="date" value={to} onChange={(event) => setTo(event.target.value)}/></label><label className="text-xs text-muted">الإدارة<select className={`mt-1.5 w-full ${selectClass}`} value={department} onChange={(event) => setDepartment(event.target.value)}><option>الكل</option>{departments.map((item) => <option key={item}>{item}</option>)}</select></label><label className="text-xs text-muted">المشروع / البرنامج<select className={`mt-1.5 w-full ${selectClass}`} value={project} onChange={(event) => setProject(event.target.value)}><option>الكل</option>{Array.from(new Set(portfolioRows.map((row) => row.project))).map((item) => <option key={item}>{item}</option>)}</select></label><label className="text-xs text-muted">الحالة<select className={`mt-1.5 w-full ${selectClass}`} value={status} onChange={(event) => setStatus(event.target.value)}><option>الكل</option>{Array.from(new Set(portfolioRows.map((row) => row.status))).map((item) => <option key={item}>{item}</option>)}</select></label></div></CardContent></Card>
 
     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 print:hidden">{reports.map((report) => { const Icon = report.icon; return <button key={report.key} type="button" onClick={() => setActive(report.key)} className={`flex min-h-20 items-center gap-3 rounded-xl border p-3 text-start text-xs font-bold transition ${active === report.key ? "border-primary bg-primary-50 text-primary ring-1 ring-primary/10" : "bg-white hover:border-primary/40"}`}><Icon className="h-5 w-5 shrink-0"/>{report.label}</button>; })}</div>
 

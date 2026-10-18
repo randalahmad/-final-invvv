@@ -20,7 +20,7 @@ export const navGroups: NavGroup[] = [
     { href: "/evidence-matrix", label: "مصفوفة أدلة القياس", icon: FolderSearch, permissions: ["evidence.view"] },
     { href: "/evidence-repository", label: "مستودع الأدلة", icon: FolderSearch, permissions: ["evidence.view"] },
     { href: "/readiness-check", label: "فحص الجاهزية", icon: ShieldCheck, permissions: ["compliance.view"] },
-    { href: "/reports", label: "التقارير / ملف الامتثال", icon: BarChart3, permissions: ["compliance.view"] },
+    { href: "/reports", label: "التقارير", icon: BarChart3, permissions: ["compliance.view"] },
     { href: "/account", label: "حسابي", icon: UserCircle },
   ] },
   { label: "إدارة النظام", items: [
@@ -53,4 +53,4 @@ export function navGroupsForPreviewPersona(persona: PreviewPersonaKey): NavGroup
   const allowed = new Set(PREVIEW_PERSONA_PATHS[persona]);
   return navGroups.map((group) => ({ ...group, items: group.items.filter((item) => allowed.has(item.href)).map((item) => item.href === "/reports" ? { ...item, label: "التقارير" } : item) })).filter((group) => group.items.length > 0);
 }
-export const routeTitles: Record<string, string> = { "/dashboard": "الرئيسية", "/journey": "رحلتي الابتكارية", "/strategy": "التوجه الاستراتيجي", "/activities": "منهجيات الابتكار", "/governance": "حوكمة وتفعيل الابتكار", "/solutions": "حصر الحلول الابتكارية", "/impact": "قياس أثر الحلول", "/partners": "الجهات والشراكات", "/challenges": "التحديات", "/my-tasks": "مهامي", "/reviews": "مركز المراجعات والاعتمادات", "/evidence-matrix": "مصفوفة أدلة القياس", "/evidence-repository": "مستودع الأدلة", "/readiness-check": "فحص الجاهزية", "/alerts": "التنبيهات", "/reports": "التقارير / ملف الامتثال", "/account": "حسابي", "/admin/users": "المستخدمون والصلاحيات", "/audit": "سجل التدقيق", "/settings": "إعدادات النظام" };
+export const routeTitles: Record<string, string> = { "/dashboard": "الرئيسية", "/journey": "رحلتي الابتكارية", "/strategy": "التوجه الاستراتيجي", "/activities": "منهجيات الابتكار", "/governance": "حوكمة وتفعيل الابتكار", "/solutions": "حصر الحلول الابتكارية", "/impact": "قياس أثر الحلول", "/partners": "الجهات والشراكات", "/challenges": "التحديات", "/my-tasks": "مهامي", "/reviews": "مركز المراجعات والاعتمادات", "/evidence-matrix": "مصفوفة أدلة القياس", "/evidence-repository": "مستودع الأدلة", "/readiness-check": "فحص الجاهزية", "/alerts": "التنبيهات", "/reports": "التقارير", "/account": "حسابي", "/admin/users": "المستخدمون والصلاحيات", "/audit": "سجل التدقيق", "/settings": "إعدادات النظام" };

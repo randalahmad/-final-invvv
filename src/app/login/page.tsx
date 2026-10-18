@@ -3,6 +3,8 @@ import Link from "next/link";
 
 import { site } from "@/config/site";
 import { LoginForm } from "@/modules/auth/components/login-form";
+import { PreviewLoginForm } from "@/modules/auth/components/preview-login-form";
+import { isUxPreviewMode } from "@/lib/ux-preview";
 import { DevelopmentPreviewEntry } from "@/modules/auth/components/development-preview-entry";
 import { isDevelopmentRolePreviewEnabled } from "@/modules/auth/development-role-preview";
 
@@ -11,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default function LoginPage() {
+  const preview = isUxPreviewMode();
   if (isDevelopmentRolePreviewEnabled()) return <DevelopmentPreviewEntry />;
 
   return (
@@ -24,19 +27,19 @@ export default function LoginPage() {
         {/* Temporary text-based identity — no logo */}
         <div className="mb-8 text-center">
           <h1 className="text-xl font-extrabold text-slate-800">{site.name}</h1>
-          <p className="mt-2 text-sm text-muted">سجّل الدخول لمتابعة الابتكار والامتثال</p>
+          <p className="mt-2 text-sm text-muted">{preview ? "سجّل الدخول بحساب المعاينة المخصص لدورك" : "سجّل الدخول لمتابعة الابتكار والامتثال"}</p>
         </div>
 
         <div className="card-surface w-full rounded-3xl p-8">
-          <LoginForm />
+          {preview ? <PreviewLoginForm /> : <LoginForm />}
         </div>
 
-        <p className="mt-6 text-center text-xs text-muted">
+        {!preview && <p className="mt-6 text-center text-xs text-muted">
           ليس لديك حساب؟{" "}
           <Link href="/register" className="font-semibold text-primary hover:underline">
             إنشاء حساب جديد
           </Link>
-        </p>
+        </p>}
         <p className="mt-2 text-center text-xs text-muted">© 2026 {site.name} — جميع الحقوق محفوظة</p>
       </div>
     </main>

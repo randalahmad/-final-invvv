@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { canPreviewPersonaAccessPath, isUxPreviewMode, previewPersonaFromSearch } from "@/lib/ux-preview";
+import { canPreviewPersonaAccessPath, isUxPreviewMode, previewHomeForPersona } from "@/lib/ux-preview";
 import { DEMO_MODE } from "@/server/demo-data";
+import { UX_PREVIEW_SESSION_COOKIE, uxPreviewAccountFromToken } from "@/server/ux-preview-accounts";
 
 // Edge-safe middleware: protects every route except static assets and the
 // Auth.js API handler. Uses only the edge-safe config (no Prisma / bcrypt).
@@ -10,30 +11,43 @@ export default async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/submit/") && isUxPreviewMode()) return NextResponse.next();
   if (request.nextUrl.pathname === "/api/ux-preview/idea-readiness" && isUxPreviewMode()) return NextResponse.next();
   if (isUxPreviewMode()) {
+    if (request.nextUrl.pathname === "/api/ux-preview/login" || request.nextUrl.pathname === "/api/ux-preview/logout") return NextResponse.next();
     // Internal rewrite target: render it once instead of feeding it back into
     // the public preview routing layer.
     if (request.nextUrl.pathname === "/ux-preview") return NextResponse.next();
     if (request.nextUrl.pathname.startsWith("/api/auth")) {
       return NextResponse.json({ message: "Authentication is disabled in UX Preview Mode" }, { status: 404 });
     }
+    const account = uxPreviewAccountFromToken(request.cookies.get(UX_PREVIEW_SESSION_COOKIE)?.value);
+    if (request.nextUrl.pathname === "/login") {
+      if (!account) return NextResponse.next();
+      const home = new URL(previewHomeForPersona(account.persona), request.url);
+      home.searchParams.set("previewRole", account.persona);
+      return NextResponse.redirect(home);
+    }
+    if (request.nextUrl.pathname === "/register") return NextResponse.redirect(new URL("/login", request.url));
+    if (!account) {
+      const login = new URL("/login", request.url);
+      login.searchParams.set("callbackUrl", `${request.nextUrl.pathname}${request.nextUrl.search}`);
+      return NextResponse.redirect(login);
+    }
+
     const url = request.nextUrl.clone();
-    const requestedRole = request.nextUrl.searchParams.get("previewRole");
     const previewAccount = request.nextUrl.searchParams.get("previewAccount");
-    const previewRole = !requestedRole && process.env.PUBLIC_UX_PREVIEW_DEPLOYMENT === "true"
-      ? "innovator"
-      : previewPersonaFromSearch(requestedRole);
-    if (url.pathname === "/" || url.pathname.startsWith("/login") || url.pathname.startsWith("/register")) {
-      const home = new URL(previewRole === "innovator" ? "/journey" : "/dashboard", request.url);
+    const previewRole = account.persona;
+    if (url.pathname === "/") {
+      const home = new URL(previewHomeForPersona(previewRole), request.url);
       home.searchParams.set("previewRole", previewRole);
       if (previewRole === "innovator" && previewAccount) home.searchParams.set("previewAccount", previewAccount);
       return NextResponse.redirect(home);
     }
-    if (!requestedRole) {
+    if (request.nextUrl.searchParams.get("previewRole") !== previewRole) {
       url.searchParams.set("previewRole", previewRole);
+      if (previewRole !== "innovator") url.searchParams.delete("previewAccount");
       return NextResponse.redirect(url);
     }
     if (!canPreviewPersonaAccessPath(previewRole, request.nextUrl.pathname)) {
-      const home = new URL(previewRole === "innovator" ? "/journey" : "/dashboard", request.url);
+      const home = new URL(previewHomeForPersona(previewRole), request.url);
       home.searchParams.set("previewRole", previewRole);
       if (previewRole === "innovator" && previewAccount) home.searchParams.set("previewAccount", previewAccount);
       return NextResponse.redirect(home);

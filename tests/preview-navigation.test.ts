@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { navGroups, navGroupsForPreviewPersona } from "@/config/navigation";
 import { PREVIEW_PERSONA_PATHS, buildPreviewHref, canPreviewPersonaAccessPath, previewPersonaFromSearch, UX_PREVIEW_PERSONAS, type PreviewPersonaKey } from "@/lib/ux-preview";
+import { authenticateUxPreviewAccount, UX_PREVIEW_ACCOUNTS } from "@/server/ux-preview-accounts";
 
 const labelsFor=(persona:PreviewPersonaKey)=>navGroupsForPreviewPersona(persona).flatMap(group=>group.items.map(item=>item.label));
 describe("preview persona switching",()=>{it("supports the four operational roles plus the isolated innovator experience",()=>{expect(Object.keys(UX_PREVIEW_PERSONAS)).toEqual(["admin","internal","innovator","partner","viewer"]);expect(previewPersonaFromSearch(null)).toBe("internal");});});
+describe("preview login accounts",()=>{
+  it("provides exactly one working account for each preview experience",()=>{expect(UX_PREVIEW_ACCOUNTS.map(account=>account.persona)).toEqual(["admin","internal","innovator","partner","viewer"]);for(const account of UX_PREVIEW_ACCOUNTS)expect(authenticateUxPreviewAccount(account.email,account.password)?.persona).toBe(account.persona);});
+  it("rejects invalid credentials",()=>{expect(authenticateUxPreviewAccount("viewer@innovation.local","wrong")).toBeNull();});
+});
 describe("DGA permission-aware navigation",()=>{
   it("keeps the five DGA units as the primary product structure",()=>{const hrefs=navGroups.flatMap(group=>group.items.map(item=>item.href));for(const href of ["/strategy","/activities","/governance","/solutions","/impact"])expect(hrefs).toContain(href);expect(hrefs).not.toContain("/challenges");expect(hrefs).not.toContain("/partners");});
   it("shows all five human-readable units to admin without official codes",()=>{const labels=labelsFor("admin");for(const name of ["التوجه الاستراتيجي","منهجيات الابتكار","حوكمة وتفعيل الابتكار","حصر الحلول الابتكارية","قياس أثر الحلول"])expect(labels).toContain(name);expect(labels.some(label=>/5\.2[34]\./.test(label))).toBe(false);});
