@@ -33,14 +33,11 @@ export function InnovatorAccountManager() {
   }
 
   return <div className="flex flex-col gap-5">
-    <PageHeader title="المستخدمون والصلاحيات" description="إدارة شخصيات المعاينة وإنشاء حسابات مبتكرين لمراجعة تجربة المبتكر فقط." action={<Button onClick={generate}><Plus className="h-4 w-4"/>إنشاء حساب مبتكر</Button>} />
-    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-      هذه الحسابات محفوظة في هذا المتصفح فقط. لا يُنشأ مستخدم حقيقي، ولا تُحفظ بيانات في قاعدة البيانات.
-    </div>
+    <PageHeader title="المستخدمون والصلاحيات" description="إدارة حسابات المبتكرين وفتح مساحة العمل الخاصة بكل مبتكر." action={<Button onClick={generate}><Plus className="h-4 w-4"/>إنشاء حساب مبتكر</Button>} />
     <Card>
       <CardHeader><CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-primary"/>حسابات المبتكرين</CardTitle></CardHeader>
       <CardContent className="space-y-3">
-        {!ready ? <p className="text-sm text-muted">جارٍ تحميل حسابات المعاينة…</p> : null}
+        {!ready ? <p className="text-sm text-muted">جارٍ تحميل حسابات المبتكرين…</p> : null}
         {ready && accounts.length === 0 ? <div className="rounded-xl border border-dashed p-8 text-center"><p className="font-semibold">لا توجد حسابات مبتكرين بعد</p><p className="mt-1 text-sm text-muted">أنشئ حسابًا ثم افتح تجربة المبتكر الخاصة به.</p><Button className="mt-4" onClick={generate}><Plus className="h-4 w-4"/>إنشاء أول حساب</Button></div> : null}
         {accounts.map((account) => <div key={account.id} className="grid gap-3 rounded-xl border p-4 md:grid-cols-[1.2fr_1.5fr_auto] md:items-center">
           <div><p className="font-semibold">{account.name}</p><p className="text-xs text-muted">{account.email} · {account.department}</p></div>

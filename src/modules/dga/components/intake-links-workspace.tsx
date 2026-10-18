@@ -221,7 +221,7 @@ export function IntakeLinksWorkspace({
               <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-slate-50 p-2 text-xs">
                 <span className="truncate">{publicUrl}</span>
                 <Button size="sm" variant="outline" onClick={() => navigator.clipboard?.writeText(publicUrl)}><Copy className="h-3.5 w-3.5" />نسخ الرابط</Button>
-                {preview ? <span className="text-muted">معاينة العرض العام غير متاحة في وضع المعاينة (بيانات تجريبية غير محفوظة فعليًا)</span> : <a href={`/feedback/${String(current.token)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary"><ExternalLink className="h-3.5 w-3.5" />معاينة العرض العام</a>}
+                {preview ? <span className="text-muted">العرض العام غير متاح لهذا السجل حاليًا.</span> : <a href={`/feedback/${String(current.token)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary"><ExternalLink className="h-3.5 w-3.5" />معاينة العرض العام</a>}
               </div>
             ) : null}
           </CardContent>

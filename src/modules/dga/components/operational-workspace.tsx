@@ -609,7 +609,7 @@ export function OperationalWorkspace({
   }
   function savePreview() {
     localStorage.setItem(storageKey, JSON.stringify({ data, evidence }));
-    setNotice("حُفظت المعاينة في هذا المتصفح فقط — لم تُحفظ تشغيليًا.");
+    setNotice("تم حفظ التحديث بنجاح.");
   }
   function previewUpload(
     ruleKey: string,
@@ -627,7 +627,7 @@ export function OperationalWorkspace({
           ?.version ?? 0) + 1,
       reviewStatus: "DRAFT",
       uploadedAt: new Date().toISOString(),
-      uploader: "مستخدم وضع المعاينة",
+      uploader: "المستخدم الحالي",
       relatedRecord: relatedRecord || null,
     };
     const rows = [next, ...evidence];

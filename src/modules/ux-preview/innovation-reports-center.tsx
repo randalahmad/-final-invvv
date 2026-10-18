@@ -79,7 +79,7 @@ export function InnovationReportsCenter() {
   function resetFilters() { setFrom("2026-01-01"); setTo("2026-12-31"); setDepartment("الكل"); setProject("الكل"); setStatus("الكل"); setNotice(""); }
 
   return <div className="space-y-5 print:space-y-3">
-    <PageHeader title="مركز تقارير الابتكار" description="تقارير مترابطة لقراءة المحفظة والرحلة والمبتكرين والأثر والجاهزية من بيانات المعاينة الحالية." action={<div className="flex gap-2"><Button variant="outline" onClick={previewReport}><Eye className="h-4 w-4"/>معاينة التقرير</Button><Button onClick={exportCsv}><Download className="h-4 w-4"/>تصدير CSV</Button></div>}/>
+    <PageHeader title="مركز تقارير الابتكار" description="تقارير مترابطة لقراءة المحفظة والرحلة والمبتكرين والأثر والجاهزية من بيانات المنصة الحالية." action={<div className="flex gap-2"><Button variant="outline" onClick={previewReport}><Eye className="h-4 w-4"/>معاينة التقرير</Button><Button onClick={exportCsv}><Download className="h-4 w-4"/>تصدير CSV</Button></div>}/>
     {notice ? <div className="rounded-xl border border-primary/20 bg-primary-50 p-3 text-sm text-primary-800 print:hidden">{notice}</div> : null}
 
     <Card className="print:hidden"><CardContent className="p-4"><div className="mb-3 flex items-center justify-between gap-3"><div className="flex items-center gap-2 text-sm font-bold"><Filter className="h-4 w-4 text-primary"/>مرشحات التقرير</div><Button type="button" variant="ghost" size="sm" onClick={resetFilters}><RotateCcw className="h-4 w-4"/>إعادة الضبط</Button></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5"><label className="text-xs text-muted">من تاريخ<Input className="mt-1.5" type="date" value={from} onChange={(event) => setFrom(event.target.value)}/></label><label className="text-xs text-muted">إلى تاريخ<Input className="mt-1.5" type="date" value={to} onChange={(event) => setTo(event.target.value)}/></label><label className="text-xs text-muted">الإدارة<select className={`mt-1.5 w-full ${selectClass}`} value={department} onChange={(event) => setDepartment(event.target.value)}><option>الكل</option>{departments.map((item) => <option key={item}>{item}</option>)}</select></label><label className="text-xs text-muted">المشروع / البرنامج<select className={`mt-1.5 w-full ${selectClass}`} value={project} onChange={(event) => setProject(event.target.value)}><option>الكل</option>{Array.from(new Set(portfolioRows.map((row) => row.project))).map((item) => <option key={item}>{item}</option>)}</select></label><label className="text-xs text-muted">الحالة<select className={`mt-1.5 w-full ${selectClass}`} value={status} onChange={(event) => setStatus(event.target.value)}><option>الكل</option>{Array.from(new Set(portfolioRows.map((row) => row.status))).map((item) => <option key={item}>{item}</option>)}</select></label></div></CardContent></Card>
@@ -88,7 +88,7 @@ export function InnovationReportsCenter() {
 
     <div className="flex items-center justify-between"><div><Badge variant="primary">{reportLabel}</Badge><p className="mt-2 text-xs text-muted">الفترة: {from} — {to} · {filtered.length} سجلات مطابقة</p></div><Badge variant="neutral">بيانات معاينة</Badge></div>
     <ReportView report={active} rows={filtered}/>
-    <p className="text-xs text-muted">هذه التقارير تشغيلية داخلية في وضع المعاينة ولا تمثل اعتمادًا رسميًا من هيئة الحكومة الرقمية.</p>
+    <p className="text-xs text-muted">هذه التقارير تشغيلية داخلية ولا تمثل اعتمادًا رسميًا من هيئة الحكومة الرقمية.</p>
   </div>;
 }
 

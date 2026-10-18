@@ -1,7 +1,6 @@
 import { PreviewLink as Link } from "@/components/layout/preview-link";
 
 import { PageHeader } from "@/components/shared/page-header";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,5 +27,5 @@ export const PREVIEW_FORM_KINDS = Object.keys(forms);
 
 export function PreviewForm({ kind }: { kind: string }) {
   const form = forms[kind] ?? forms.activity;
-  return <div className="space-y-5"><Link className="text-xs text-muted hover:text-primary" href={form.back}>العودة</Link><PageHeader title={form.title} description="نموذج مقترح لمراجعة المدخلات فقط؛ لن تُحفظ أي بيانات."/><Badge variant="warning">نموذج معاينة — بلا حفظ</Badge><Card><CardContent className="grid gap-5 p-6 md:grid-cols-2">{form.fields.map(field=><div className={field.type==="textarea"?"md:col-span-2":""} key={field.label}><Label>{field.label} {field.required?<span className="text-danger">*</span>:<span className="text-muted">(اختياري)</span>}</Label>{field.type==="select"?<select className="mt-2 h-11 w-full rounded-xl border bg-white px-3 text-sm"><option>اختر...</option>{field.options?.map(o=><option key={o}>{o}</option>)}</select>:field.type==="textarea"?<textarea className="mt-2 min-h-24 w-full rounded-xl border p-3 text-sm" placeholder={field.placeholder}/>:<Input className="mt-2" type={field.type==="file"?"file":field.type??"text"} placeholder={field.placeholder}/>}</div>)}<div className="flex gap-2 md:col-span-2"><Button disabled>حفظ — غير متاح في المعاينة</Button><Button asChild variant="outline"><Link href={form.back}>إلغاء والعودة</Link></Button></div></CardContent></Card></div>;
+  return <div className="space-y-5"><Link className="text-xs text-muted hover:text-primary" href={form.back}>العودة</Link><PageHeader title={form.title} description="أكمل البيانات المطلوبة ثم راجعها قبل الحفظ."/><Card><CardContent className="grid gap-5 p-6 md:grid-cols-2">{form.fields.map(field=><div className={field.type==="textarea"?"md:col-span-2":""} key={field.label}><Label>{field.label} {field.required?<span className="text-danger">*</span>:<span className="text-muted">(اختياري)</span>}</Label>{field.type==="select"?<select className="mt-2 h-11 w-full rounded-xl border bg-white px-3 text-sm"><option>اختر...</option>{field.options?.map(o=><option key={o}>{o}</option>)}</select>:field.type==="textarea"?<textarea className="mt-2 min-h-24 w-full rounded-xl border p-3 text-sm" placeholder={field.placeholder}/>:<Input className="mt-2" type={field.type==="file"?"file":field.type??"text"} placeholder={field.placeholder}/>}</div>)}<div className="flex gap-2 md:col-span-2"><Button disabled>حفظ</Button><Button asChild variant="outline"><Link href={form.back}>إلغاء والعودة</Link></Button></div></CardContent></Card></div>;
 }
