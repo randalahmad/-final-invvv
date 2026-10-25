@@ -19,6 +19,7 @@ import { ImpactPortfolioPreview, ImpactWorkspacePreview } from "@/modules/impact
 import { InnovatorJourneyPreview } from "./innovator-journey-preview";
 import { InnovatorAccountManager } from "./innovator-account-manager";
 import { InnovationReportsCenter } from "./innovation-reports-center";
+import { IdeaRankingCenter } from "./idea-ranking-center";
 
 const strategies = [["SO-01","رفع كفاءة تبني الحلول الابتكارية","إدارة الابتكار","نشط","72%"],["SO-02","تعزيز الشراكات البحثية والتقنية","مركز الشراكات","نشط","58%"],["SO-03","بناء ثقافة الابتكار المؤسسي","الموارد البشرية","مسودة","35%"]];
 const programs = [["هاكاثون المدن المستدامة 2026","هاكاثون","جارٍ","مركز الابتكار","15 أغسطس 2026"],["برنامج مسرعة الحلول الحكومية","برنامج","مخطط","إدارة التحول المؤسسي","1 سبتمبر 2026"],["ورشة تصميم الخدمات حول المستفيد","ورشة عمل","مكتمل","إدارة تجربة المستفيد","28 يوليو 2026"]];
@@ -68,6 +69,7 @@ export function PreviewScreen({path,persona}:{path:string;persona:PreviewPersona
   const can=(permission:PermissionKey)=>permissions.has(permission);
   const unavailable=()=> <div className="py-20 text-center"><Badge variant="neutral">{UX_PREVIEW_PERSONAS[persona].label}</Badge><h1 className="mt-3 text-lg font-bold">هذه الوجهة غير متاحة لهذه الشخصية</h1><p className="mt-1 text-[13px] text-muted">يعكس ذلك صلاحيات الدور الحالية.</p><Button asChild className="mt-4" variant="outline"><Link href="/dashboard">العودة إلى لوحة العمل</Link></Button></div>;
   if(path==="/journey")return persona==="innovator"?<InnovatorJourneyPreview/>:unavailable();
+  if(path==="/idea-ranking")return persona==="admin"||persona==="internal"?<IdeaRankingCenter/>:unavailable();
   // Resolve the operational 5.24.1 preview before the generic DGA matcher.
   // Otherwise `/solutions` is swallowed by DgaUnitPage's static field cards.
   if(path==="/solutions")return can("solution.view")?<SolutionPortfolioPreview persona={persona}/>:unavailable();

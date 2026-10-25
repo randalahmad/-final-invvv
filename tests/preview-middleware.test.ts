@@ -21,6 +21,11 @@ describe("preview authenticated account middleware", () => {
     expect(response.headers.get("location")).toBeNull();
     expect(response.headers.get("x-middleware-rewrite")).toBeNull();
   });
+  it("allows the preview-only idea ranking API to reach its own safety gate", async () => {
+    const response = await middleware(new NextRequest("https://preview.local/api/ux-preview/idea-ranking", { method: "POST" })) as NextResponse;
+    expect(response.headers.get("location")).toBeNull();
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+  });
   it("redirects unauthenticated app requests to preview login", async () => {
     const request = new NextRequest("https://preview.local/reports");
     const response = await middleware(request) as NextResponse;

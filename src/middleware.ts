@@ -10,6 +10,7 @@ export default async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/contribute/")) return NextResponse.next();
   if (request.nextUrl.pathname.startsWith("/submit/") && isUxPreviewMode()) return NextResponse.next();
   if (request.nextUrl.pathname === "/api/ux-preview/idea-readiness" && isUxPreviewMode()) return NextResponse.next();
+  if (request.nextUrl.pathname === "/api/ux-preview/idea-ranking" && isUxPreviewMode()) return NextResponse.next();
   if (isUxPreviewMode()) {
     if (request.nextUrl.pathname === "/api/ux-preview/login" || request.nextUrl.pathname === "/api/ux-preview/logout") return NextResponse.next();
     // Internal rewrite target: render it once instead of feeding it back into
