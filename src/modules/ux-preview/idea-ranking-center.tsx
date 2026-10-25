@@ -1,48 +1,50 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BrainCircuit, CheckCircle2, LoaderCircle, RefreshCw, Scale, Sparkles, Trophy } from "lucide-react";
+import { AlertTriangle, BrainCircuit, CheckCircle2, LoaderCircle, Scale, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { IDEA_JUDGING_CRITERIA, ideaRankingFixtures } from "./idea-ranking-data";
-import type { IdeaRankingResult } from "./idea-ranking-schema";
-
-type Limit = 5 | 10 | 20;
+import { IDEA_JUDGING_CRITERIA, ideaEvaluationFixtures } from "./idea-ranking-data";
+import type { IdeaEvaluationResult } from "./idea-ranking-schema";
 
 export function IdeaRankingCenter() {
-  const [limit, setLimit] = useState<Limit>(10);
-  const [result, setResult] = useState<IdeaRankingResult | null>(null);
+  const [selectedId, setSelectedId] = useState<string>(ideaEvaluationFixtures[0].id);
+  const [result, setResult] = useState<IdeaEvaluationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const ideasById = useMemo(() => new Map<string, (typeof ideaRankingFixtures)[number]>(ideaRankingFixtures.map((idea) => [idea.id, idea])), []);
+  const selectedIdea = useMemo(() => ideaEvaluationFixtures.find((idea) => idea.id === selectedId)!, [selectedId]);
+  const resultByKey = useMemo(() => new Map(result?.criteria.map((criterion) => [criterion.key, criterion]) ?? []), [result]);
 
-  async function runRanking() {
-    setLoading(true); setError("");
+  async function evaluateIdea() {
+    setLoading(true); setError(""); setResult(null);
     try {
-      const response = await fetch("/api/ux-preview/idea-ranking", { method: "POST" });
+      const response = await fetch("/api/ux-preview/idea-ranking", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ideaId: selectedId }) });
       const contentType = response.headers.get("content-type") ?? "";
-      const payload = contentType.includes("application/json") ? await response.json() as { result?: IdeaRankingResult; error?: string } : { error: "تعذر قراءة استجابة خدمة التقييم." };
+      const payload = contentType.includes("application/json") ? await response.json() as { result?: IdeaEvaluationResult; error?: string } : { error: "تعذر قراءة استجابة خدمة التقييم." };
       if (!response.ok || !payload.result) throw new Error(payload.error || "تعذر تشغيل التقييم الذكي.");
       setResult(payload.result);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "تعذر تشغيل التقييم الذكي."); }
     finally { setLoading(false); }
   }
 
-  const visible = result?.results.slice(0, limit) ?? [];
+  function selectIdea(id: string) { setSelectedId(id); setResult(null); setError(""); }
+
   return <div className="space-y-5" dir="rtl">
-    <PageHeader title="تقييم وترتيب الأفكار بالذكاء الاصطناعي" description="مساحة مساندة للموظف لفرز الأفكار وفق معايير موحدة، ثم مراجعة أفضل 20 أو 10 أو 5 أفكار قبل قرار اللجنة." action={<Button onClick={runRanking} disabled={loading}>{loading ? <><LoaderCircle className="h-4 w-4 animate-spin"/>جارٍ تقييم 20 فكرة…</> : result ? <><RefreshCw className="h-4 w-4"/>إعادة التقييم</> : <><Sparkles className="h-4 w-4"/>تشغيل التقييم الذكي</>}</Button>}/>
-    <div className="grid gap-4 md:grid-cols-3"><Metric icon={<BrainCircuit className="h-8 w-8 text-primary"/>} label="أفكار جاهزة للفرز" value="20"/><Metric icon={<Scale className="h-8 w-8 text-secondary"/>} label="معايير موزونة" value="6"/><Metric icon={<Trophy className="h-8 w-8 text-amber-500"/>} label="القائمة المعروضة" value={`Top ${limit}`}/></div>
-    <Card><CardHeader><CardTitle>معايير التحكيم</CardTitle></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{IDEA_JUDGING_CRITERIA.map((criterion) => <div key={criterion.key} className="rounded-xl border border-border bg-slate-50/70 p-4"><div className="flex items-center justify-between gap-2"><b className="text-sm">{criterion.label}</b><Badge variant="primary">{criterion.weight}%</Badge></div><p className="mt-2 text-xs leading-6 text-muted">{criterion.description}</p></div>)}</CardContent></Card>
-    {error ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-danger">{error}</div> : null}
-    {!result ? <Card className="border-dashed"><CardContent className="flex flex-col items-center py-14 text-center"><BrainCircuit className="h-10 w-10 text-primary"/><h2 className="mt-3 text-lg font-bold">القائمة جاهزة للتقييم</h2><p className="mt-2 max-w-xl text-sm leading-7 text-muted">اضغط «تشغيل التقييم الذكي». سيحلل الذكاء الاصطناعي الأفكار العشرين ويعرض الترتيب والدرجات والمبررات والإجراء المقترح للموظف.</p></CardContent></Card> : <>
-      <Card><CardContent className="p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-bold">نتائج الفرز الذكي</p><p className="mt-1 text-xs text-muted">{result.executiveSummary}</p></div><div className="flex rounded-xl bg-slate-100 p-1">{([20,10,5] as Limit[]).map((value) => <button key={value} type="button" onClick={() => setLimit(value)} className={`rounded-lg px-4 py-2 text-xs font-bold transition ${limit === value ? "bg-white text-primary shadow-sm" : "text-muted"}`}>Top {value}</button>)}</div></div></CardContent></Card>
-      <div className="space-y-3">{visible.map((item, index) => { const idea = ideasById.get(item.ideaId); if (!idea) return null; return <Card key={item.ideaId} className={index < 5 ? "border-primary/20" : ""}><CardContent className="p-5"><div className="grid gap-4 lg:grid-cols-[auto_1fr_160px]"><div className={`grid h-11 w-11 place-items-center rounded-xl text-lg font-black ${index < 5 ? "bg-primary text-white" : "bg-slate-100 text-slate-600"}`}>{index + 1}</div><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-bold">{idea.title}</h3><Badge variant={item.total >= 80 ? "success" : item.total >= 65 ? "primary" : "warning"}>{item.recommendation}</Badge></div><p className="mt-1 text-xs text-muted">{idea.department} · {idea.status}</p><p className="mt-3 text-sm leading-7">{item.rationale}</p><p className="mt-2 flex items-center gap-2 text-xs font-semibold text-primary"><CheckCircle2 className="h-4 w-4"/>الإجراء المقترح: {item.nextAction}</p></div><div><div className="flex items-end justify-between"><span className="text-xs text-muted">النتيجة</span><b className="text-3xl text-primary">{item.total}</b></div><Progress className="mt-2" value={item.total}/><div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-muted"><span>استراتيجي {item.strategicAlignment}/25</span><span>القيمة {item.problemValue}/20</span><span>التنفيذ {item.feasibility}/20</span><span>الابتكار {item.innovation}/15</span><span>الأثر {item.impact}/15</span><span>الجاهزية {item.readiness}/5</span></div></div></div></CardContent></Card>; })}</div>
-      <p className="text-center text-xs leading-6 text-muted">الترتيب توصية مساندة للموظف ولا يمثل قرار اعتماد. يعتمد القرار النهائي على مراجعة اللجنة والمعلومات الموثقة.</p>
-    </>}
+    <PageHeader title="تقييم الأفكار بالذكاء الاصطناعي" description="يختار الموظف فكرة، ثم يحصل على تقييم استشاري منظم وفق معايير تحكيم موزونة قبل المراجعة البشرية."/>
+    <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
+      <aside className="space-y-3"><p className="text-sm font-bold">الأفكار بانتظار التقييم</p>{ideaEvaluationFixtures.map((idea) => <button key={idea.id} type="button" onClick={() => selectIdea(idea.id)} className={`w-full rounded-xl border p-4 text-right transition ${selectedId === idea.id ? "border-primary bg-primary-50 ring-1 ring-primary/10" : "border-border bg-white hover:border-primary/40"}`}><span className="block text-sm font-bold">{idea.title}</span><span className="mt-1 block text-xs text-muted">{idea.department}</span><Badge className="mt-2" variant={idea.status === "جاهزة للمراجعة" ? "success" : "warning"}>{idea.status}</Badge></button>)}</aside>
+      <div className="space-y-5">
+        <Card><CardHeader><div className="flex flex-wrap items-start justify-between gap-3"><div><CardTitle>{selectedIdea.title}</CardTitle><p className="mt-1 text-xs text-muted">{selectedIdea.department}</p></div><Button onClick={evaluateIdea} disabled={loading}>{loading ? <><LoaderCircle className="h-4 w-4 animate-spin"/>جارٍ تقييم الفكرة…</> : <><Sparkles className="h-4 w-4"/>تقييم الفكرة بالذكاء الاصطناعي</>}</Button></div></CardHeader><CardContent className="grid gap-3 text-sm sm:grid-cols-2"><Info label="وصف الفكرة" value={selectedIdea.description}/><Info label="المستفيدون" value={selectedIdea.beneficiaries}/><Info label="الأثر المتوقع" value={selectedIdea.expectedImpact}/><Info label="الجاهزية الحالية" value={selectedIdea.readiness}/></CardContent></Card>
+        <Card><CardHeader><CardTitle>معايير التحكيم المستخدمة</CardTitle></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2">{IDEA_JUDGING_CRITERIA.map((criterion) => { const score = resultByKey.get(criterion.key); return <div key={criterion.key} className="rounded-xl border border-border p-4"><div className="flex items-center justify-between gap-2"><b className="text-sm">{criterion.label}</b><Badge variant="primary">الوزن {criterion.weight}%</Badge></div><p className="mt-2 text-xs leading-6 text-muted">{criterion.description}</p>{score ? <><div className="mt-3 flex items-end justify-between"><span className="text-xs text-muted">درجة المعيار</span><b className="text-xl text-primary">{score.score}/100</b></div><Progress className="mt-2" value={score.score}/><p className="mt-2 text-xs leading-6">{score.rationale}</p></> : null}</div>; })}</CardContent></Card>
+        {error ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-danger">{error}</div> : null}
+        {result ? <><Card className="border-primary/20"><CardContent className="grid gap-5 p-5 md:grid-cols-[180px_1fr]"><div className="rounded-2xl bg-primary-50 p-5 text-center"><p className="text-xs text-muted">النتيجة الموزونة</p><p className="mt-2 text-5xl font-black text-primary">{result.totalScore}</p><Badge className="mt-3" variant={result.totalScore >= 75 ? "success" : "warning"}>{result.recommendation}</Badge></div><div><h3 className="font-bold">ملخص التقييم</h3><p className="mt-2 text-sm leading-7">{result.executiveSummary}</p><p className="mt-4 flex items-center gap-2 text-sm font-bold text-primary"><CheckCircle2 className="h-5 w-5"/>الإجراء التالي: {result.nextAction}</p></div></CardContent></Card><div className="grid gap-4 md:grid-cols-3"><ListCard title="نقاط القوة" items={result.strengths} icon={<CheckCircle2 className="h-5 w-5 text-success"/>}/><ListCard title="المخاطر" items={result.risks} icon={<AlertTriangle className="h-5 w-5 text-warning"/>}/><ListCard title="معلومات ناقصة" items={result.missingInformation} icon={<BrainCircuit className="h-5 w-5 text-primary"/>}/></div><p className="text-center text-xs text-muted">التقييم توصية مساندة للموظف ولا يمثل قرار قبول أو رفض. القرار النهائي للمراجعين واللجنة المخولة.</p></> : <Card className="border-dashed"><CardContent className="flex flex-col items-center py-10 text-center"><Scale className="h-9 w-9 text-primary"/><p className="mt-3 font-bold">اختر فكرة وشغّل التقييم</p><p className="mt-1 text-sm text-muted">ستظهر درجة كل معيار والمبررات والنواقص والتوصية للموظف.</p></CardContent></Card>}
+      </div>
+    </div>
   </div>;
 }
 
-function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) { return <Card><CardContent className="flex items-center gap-3 p-5">{icon}<div><p className="text-xs text-muted">{label}</p><p className="mt-1 text-2xl font-black">{value}</p></div></CardContent></Card>; }
+function Info({ label, value }: { label: string; value: string }) { return <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs font-bold text-muted">{label}</p><p className="mt-1.5 leading-7">{value}</p></div>; }
+function ListCard({ title, items, icon }: { title: string; items: string[]; icon: React.ReactNode }) { return <Card><CardHeader><CardTitle className="flex items-center gap-2 text-sm">{icon}{title}</CardTitle></CardHeader><CardContent className="space-y-2">{items.length ? items.map((item) => <p key={item} className="rounded-lg bg-slate-50 p-2.5 text-xs leading-5">{item}</p>) : <p className="text-xs text-muted">لا توجد عناصر.</p>}</CardContent></Card>; }

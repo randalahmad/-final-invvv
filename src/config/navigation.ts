@@ -11,7 +11,7 @@ export const navGroups: NavGroup[] = [
     { href: "/strategy", label: "التوجه الاستراتيجي", icon: Target, permissions: ["strategy.objective.view"] },
     { href: "/activities", label: "منهجيات الابتكار", icon: Activity, permissions: ["activity.view"] },
     { href: "/governance", label: "حوكمة وتفعيل الابتكار", icon: Landmark, permissions: ["committee.view", "idea.view"] },
-    { href: "/idea-ranking", label: "تقييم وترتيب الأفكار", icon: BrainCircuit, permissions: ["idea.evaluate"] },
+    { href: "/idea-ranking", label: "تقييم الأفكار بالذكاء الاصطناعي", icon: BrainCircuit, permissions: ["idea.evaluate"] },
     { href: "/solutions", label: "حصر الحلول الابتكارية", icon: FileCheck2, permissions: ["solution.view"] },
     { href: "/impact", label: "قياس أثر الحلول", icon: TrendingUp, permissions: ["impact.view"] },
   ] },
@@ -54,4 +54,4 @@ export function navGroupsForPreviewPersona(persona: PreviewPersonaKey): NavGroup
   const allowed = new Set(PREVIEW_PERSONA_PATHS[persona]);
   return navGroups.map((group) => ({ ...group, items: group.items.filter((item) => allowed.has(item.href)).map((item) => item.href === "/reports" ? { ...item, label: "التقارير" } : item) })).filter((group) => group.items.length > 0);
 }
-export const routeTitles: Record<string, string> = { "/dashboard": "الرئيسية", "/journey": "رحلتي الابتكارية", "/strategy": "التوجه الاستراتيجي", "/activities": "منهجيات الابتكار", "/governance": "حوكمة وتفعيل الابتكار", "/idea-ranking": "تقييم وترتيب الأفكار", "/solutions": "حصر الحلول الابتكارية", "/impact": "قياس أثر الحلول", "/partners": "الجهات والشراكات", "/challenges": "التحديات", "/my-tasks": "مهامي", "/reviews": "مركز المراجعات والاعتمادات", "/evidence-matrix": "مصفوفة أدلة القياس", "/evidence-repository": "مستودع الأدلة", "/readiness-check": "فحص الجاهزية", "/alerts": "التنبيهات", "/reports": "التقارير", "/account": "حسابي", "/admin/users": "المستخدمون والصلاحيات", "/audit": "سجل التدقيق", "/settings": "إعدادات النظام" };
+export const routeTitles: Record<string, string> = { "/dashboard": "الرئيسية", "/journey": "رحلتي الابتكارية", "/strategy": "التوجه الاستراتيجي", "/activities": "منهجيات الابتكار", "/governance": "حوكمة وتفعيل الابتكار", "/idea-ranking": "تقييم الأفكار بالذكاء الاصطناعي", "/solutions": "حصر الحلول الابتكارية", "/impact": "قياس أثر الحلول", "/partners": "الجهات والشراكات", "/challenges": "التحديات", "/my-tasks": "مهامي", "/reviews": "مركز المراجعات والاعتمادات", "/evidence-matrix": "مصفوفة أدلة القياس", "/evidence-repository": "مستودع الأدلة", "/readiness-check": "فحص الجاهزية", "/alerts": "التنبيهات", "/reports": "التقارير", "/account": "حسابي", "/admin/users": "المستخدمون والصلاحيات", "/audit": "سجل التدقيق", "/settings": "إعدادات النظام" };
